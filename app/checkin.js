@@ -142,6 +142,6 @@ return StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
   },
-  primaryBtnText: { color: colors.bg, fontFamily: 'Inter_700Bold', fontSize: 16 },
+  primaryBtnText: { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1 },
 });
 }

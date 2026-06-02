@@ -302,26 +302,25 @@ function makeStyles(colors, spacing, radius, heroWidth = 390) {
 return StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   container: { padding: spacing.lg },
-  heroSection: {
-    height: Math.round(heroWidth * 0.9),
-    ...Platform.select({
-      web: { borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.xs },
-      default: { marginHorizontal: -spacing.lg, marginTop: -spacing.lg, overflow: 'hidden' },
-    }),
-  },
-  heroCard: {
-    flex: 1,
-    padding: spacing.lg,
-    justifyContent: 'space-between',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  heroContent: {
-    marginTop: 'auto',
-    maxWidth: 340,
-  },
+    heroSection: {
+      height: Math.round(heroWidth * 0.9),
+      ...Platform.select({
+        web: { borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.xs },
+        default: { marginHorizontal: -spacing.lg, marginTop: -spacing.lg, overflow: 'hidden' },
+      }),
+    },
+    heroCard: {
+      flex: 1,
+      padding: spacing.lg,
+      justifyContent: 'space-between',
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    heroHeader: {
+      marginBottom: spacing.md,
+    },
   heroAction: {
     marginTop: spacing.lg,
     alignSelf: 'flex-start',
@@ -429,7 +428,7 @@ return StyleSheet.create({
     borderRadius: radius.pill,
     alignItems: 'center',
   },
-  primaryBtnText: { color: colors.bg, fontFamily: 'Inter_700Bold', fontSize: 16 },
+    primaryBtnText: { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1 },
   secondaryBtn: {
     marginTop: spacing.md,
     backgroundColor: colors.surface,
