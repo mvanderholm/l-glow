@@ -58,23 +58,18 @@ export default function Home() {
         ) : (
           <View style={styles.heroSection}>
             <View style={styles.heroCard}>
-            <View style={styles.aboutRow}>
-              <Link href="/learn" asChild>
-                <Pressable><Text style={[styles.aboutLink, { color: 'rgba(236,232,223,0.9)' }]}>Learn</Text></Pressable>
-              </Link>
-              <Text style={[styles.aboutLinkDivider, { color: 'rgba(236,232,223,0.5)' }]}>·</Text>
-              <Link href="/about" asChild>
-                <Pressable><Text style={[styles.aboutLink, { color: 'rgba(236,232,223,0.9)' }]}>About Thea</Text></Pressable>
-              </Link>
+            <View style={styles.heroHeader}>
+              <Text style={[type.label, { color: colors.textMuted }]}>{season.name.toUpperCase()}</Text>
             </View>
+            
             <View style={styles.heroContent}>
-              <Text style={[type.label, { color: colors.textMuted }]}>Saturday · {season.name}</Text>
-              <Text style={[type.h1, { color: colors.text, marginTop: spacing.sm }]}>Good morning, {savedDosha ? 'friend' : 'let’s begin'}.</Text>
-              <Text style={[type.muted, { marginTop: spacing.sm, maxWidth: 320 }]}>Tap into your constitution, today’s season, and the small rituals that help you feel more like yourself.</Text>
+              <Text style={[type.label, { color: colors.textMuted }]}>{season.name.toUpperCase()}</Text>
+              <Text style={[type.h1, { color: colors.text, marginBottom: spacing.sm }]}>Good morning,{'\n'}{savedDosha ? 'friend' : "let's begin"}</Text>
+              <Text style={[type.muted, { color: colors.textMuted, marginBottom: spacing.lg }]}>Let's take care of you today.</Text>
               <Link href="/checkin" asChild>
-                <Pressable style={styles.heroAction}>
-                  <Text style={styles.heroActionText}>Start my day</Text>
-                </Pressable>
+                <Pressable style={styles.primaryBtn}>
+                <Text style={styles.primaryBtnText}>Start my day</Text>
+              </Pressable>
               </Link>
             </View>
             </View>
