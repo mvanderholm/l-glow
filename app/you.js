@@ -10,7 +10,7 @@ import { DoshaWheel } from '../components/DoshaWheel';
 export default function You() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
-  const innerWidth = (Platform.OS === 'web' ? Math.min(windowWidth, 480) : windowWidth) - spacing.lg * 2;
+  const innerWidth = Math.max((Platform.OS === 'web' ? Math.min(windowWidth, 480) : windowWidth) - spacing.lg * 2, 1);
   const router = useRouter();
   const styles = makeStyles(c, spacing, radius);
 
@@ -27,25 +27,37 @@ export default function You() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={type.label}>Your Practice</Text>
+        <View style={styles.heroCard}>
+          <Text style={type.label}>You</Text>
+          <Text style={[type.h1, { marginTop: spacing.sm }]}>Your practice</Text>
+          <Text style={[type.muted, { marginTop: spacing.xs, lineHeight: 22 }]}>A gentle place to see where you are, what you’re carrying, and where to begin again. The prototype design now holds the existing self-knowledge flows.</Text>
+        </View>
 
         {result === null ? (
           <View style={{ height: 60 }} />
         ) : result ? (
           <>
             <Text style={[type.h1, { marginTop: spacing.sm }]}>Welcome back.</Text>
+            <Text style={[type.muted, { marginTop: spacing.xs }]}>Wellness is a return to you — not a performance, not a punishment.</Text>
             {result.scores && (
-              <View style={{ marginTop: spacing.xl, alignItems: 'center' }}>
+              <View style={styles.profileCard}>
                 <DoshaWheel scores={result.scores} primary={result.dosha} size={wheelSize} />
+                <View style={{ flex: 1, marginLeft: spacing.md }}>
+                  <Text style={type.label}>Your dosha</Text>
+                  <Text style={[type.h2, { marginTop: spacing.xs }]}>{doshaInfo[result.dosha].name}</Text>
+                  <Text style={[type.muted, { marginTop: spacing.xs, lineHeight: 20 }]}>Your home base. The daily check-in helps you notice what the day is asking of you.</Text>
+                </View>
               </View>
             )}
           </>
         ) : (
           <>
             <Text style={[type.h1, { marginTop: spacing.sm }]}>Start here.</Text>
-            <Text style={[type.muted, { marginTop: spacing.xs }]}>
-              Take the dosha quiz to get recommendations tuned to you.
-            </Text>
+            <Text style={[type.muted, { marginTop: spacing.xs }]}>Take the dosha quiz to get recommendations tuned to you.</Text>
+            <View style={styles.emptyProfileCard}>
+              <Text style={type.label}>Your practice</Text>
+              <Text style={[type.body, { marginTop: spacing.sm }]}>The app is already set up to guide you through your constitution, a daily check-in, and tea-light calm.</Text>
+            </View>
           </>
         )}
 
@@ -124,6 +136,33 @@ function makeStyles(c, spacing, radius) {
     container: {
       padding: spacing.lg,
       paddingBottom: spacing.xl,
+    },
+    heroCard: {
+      padding: spacing.lg,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderLeftWidth: 3,
+      borderLeftColor: c.sage,
+    },
+    profileCard: {
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    emptyProfileCard: {
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
     },
     card: {
       marginTop: spacing.lg,

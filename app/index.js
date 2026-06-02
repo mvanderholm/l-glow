@@ -9,17 +9,17 @@ import { doshaInfo } from '../data/content/quiz';
 import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention } from '../data/user/storage';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
-import LogoFull from '../components/LogoFull';
 import LogoAlt from '../components/LogoAlt';
 import { BotanicalDivider, CornerSprig } from '../components/BotanicalAccent';
 
 export default function Home() {
-  const { theme: { colors, spacing, radius, type }, brandStyle } = useTheme();
+  const { theme: { colors, spacing, radius, type } } = useTheme();
   const { width: windowWidth } = useWindowDimensions();
   const contentWidth = Platform.OS === 'web' ? Math.min(windowWidth, 480) : windowWidth;
-  const heroWidth = Platform.OS !== 'web' ? contentWidth : contentWidth - spacing.lg * 2;
-  const heroLogoWidth = heroWidth - spacing.lg * 2;
-  const innerWidth = contentWidth - spacing.lg * 2;
+  const safeContentWidth = Math.max(contentWidth, 1);
+  const heroWidth = Platform.OS !== 'web' ? safeContentWidth : Math.max(safeContentWidth - spacing.lg * 2, 1);
+  const heroLogoWidth = Math.max(heroWidth - spacing.lg * 2, 1);
+  const innerWidth = Math.max(safeContentWidth - spacing.lg * 2, 1);
   const season = currentSeason();
   const router = useRouter();
   const styles = makeStyles(colors, spacing, radius, heroWidth);
@@ -36,14 +36,28 @@ export default function Home() {
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.heroSection}>
-          <Image
-            source={require('../assets/hero-candles.jpg')}
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            resizeMode="cover"
-          />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,10,5,0.28)' }]} pointerEvents="none" />
-          <View style={styles.heroOverlay} pointerEvents="box-none">
+        {Platform.OS === 'web' ? (
+          <View style={styles.prototypeHeroCard}>
+            <View style={styles.prototypeHeroHeader}>
+              <Text style={[type.label, { color: colors.textMuted }]}>Official prototype shell</Text>
+              <Text style={[type.muted, { marginTop: spacing.xs, fontSize: 12 }]}>This is the new baseline. Existing flows will be folded into this design instead of layered on top of the old screen treatment.</Text>
+            </View>
+            <View style={styles.quickActionRow}>
+              <QuickActionChip label="Dosha Quiz" href="/quiz" accent={colors.accent} />
+              <QuickActionChip label="Daily Check-in" href="/checkin" accent={colors.sage} />
+              <QuickActionChip label="Today’s Guidance" href="/recommendations" accent={colors.saffron} />
+            </View>
+            <View style={styles.prototypeFrame}>
+              <iframe
+                src="/prototype.html"
+                title="Prototype design"
+                style={styles.prototypeIframe}
+              />
+            </View>
+          </View>
+        ) : (
+          <View style={styles.heroSection}>
+            <View style={styles.heroCard}>
             <View style={styles.aboutRow}>
               <Link href="/learn" asChild>
                 <Pressable><Text style={[styles.aboutLink, { color: 'rgba(236,232,223,0.9)' }]}>Learn</Text></Pressable>
@@ -53,42 +67,23 @@ export default function Home() {
                 <Pressable><Text style={[styles.aboutLink, { color: 'rgba(236,232,223,0.9)' }]}>About Thea</Text></Pressable>
               </Link>
             </View>
+            <View style={styles.heroContent}>
+              <Text style={[type.label, { color: colors.textMuted }]}>Saturday · {season.name}</Text>
+              <Text style={[type.h1, { color: colors.text, marginTop: spacing.sm }]}>Good morning, {savedDosha ? 'friend' : 'let’s begin'}.</Text>
+              <Text style={[type.muted, { marginTop: spacing.sm, maxWidth: 320 }]}>Tap into your constitution, today’s season, and the small rituals that help you feel more like yourself.</Text>
+              <Link href="/checkin" asChild>
+                <Pressable style={styles.heroAction}>
+                  <Text style={styles.heroActionText}>Start my day</Text>
+                </Pressable>
+              </Link>
+            </View>
+            </View>
           </View>
-        </View>
+        )}
 
-        <View style={{ marginTop: spacing.lg }}>
-          {brandStyle === 'lettermark' ? (
-            <LogoAlt width={heroLogoWidth} />
-          ) : (
-            <LogoFull width={heroLogoWidth} />
-          )}
-        </View>
 
-        <Text style={[type.h1, { marginTop: spacing.lg }]}>
-          Live with{'\n'}your constitution.
-        </Text>
-        <Text style={[type.muted, { marginTop: spacing.md }]}>
-          Nothing is for everyone and everything is for someone. Your dosha, the season, what your body is doing today all shape the guidance. Check in daily. It changes because you do.
-        </Text>
 
-        <BotanicalDivider color={colors.sage} borderColor={colors.border} width={innerWidth} />
 
-        <View style={styles.seasonCard}>
-          <Image
-            source={require('../assets/botanicals-warm.jpg')}
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            resizeMode="cover"
-          />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(30,15,5,0.72)' }]} pointerEvents="none" />
-          <CornerSprig color="#ECE8DF" size={44} style={{ position: 'absolute', top: 0, right: 0 }} />
-          <Text style={[type.label, { color: 'rgba(236,232,223,0.8)' }]}>Current Season</Text>
-          <Text style={[type.h2, { color: '#ECE8DF', marginTop: spacing.xs }]}>{season.name}</Text>
-          <Text style={[type.muted, { color: 'rgba(236,232,223,0.75)', marginTop: spacing.xs }]}>{season.focus}</Text>
-        </View>
-
-        <BotanicalDivider color={colors.sage} borderColor={colors.border} width={innerWidth} />
-
-        <MythbusterCard />
 
         {savedDosha === null ? (
           // Loading — render nothing where the CTAs will be to avoid flicker
@@ -287,6 +282,22 @@ function IntentionCard({ dosha }) {
   );
 }
 
+function QuickActionChip({ label, href, accent }) {
+  const router = useRouter();
+  return (
+    <Pressable
+      onPress={() => router.push(href)}
+      style={({ pressed }) => [
+        makeStyles(useTheme().theme.colors, useTheme().theme.spacing, useTheme().theme.radius).quickActionChip,
+        { borderColor: accent },
+        pressed && { opacity: 0.8 },
+      ]}
+    >
+      <Text style={{ color: accent, fontFamily: 'Inter_700Bold', fontSize: 12 }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function makeStyles(colors, spacing, radius, heroWidth = 390) {
 return StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
@@ -298,18 +309,115 @@ return StyleSheet.create({
       default: { marginHorizontal: -spacing.lg, marginTop: -spacing.lg, overflow: 'hidden' },
     }),
   },
-  heroOverlay: {
+  heroCard: {
+    flex: 1,
     padding: spacing.lg,
+    justifyContent: 'space-between',
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  seasonCard: {
-    marginTop: spacing.xl,
+  heroContent: {
+    marginTop: 'auto',
+    maxWidth: 340,
+  },
+  heroAction: {
+    marginTop: spacing.lg,
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(236,232,223,0.95)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+  },
+  heroActionText: {
+    color: colors.text,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14,
+  },
+  prototypeHeroCard: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    overflow: 'hidden',
+  },
+  prototypeHeroHeader: {
+    marginBottom: spacing.md,
+  },
+  prototypeFrame: {
+    marginTop: spacing.md,
+    height: 420,
+    borderRadius: radius.md,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.bg,
+  },
+  prototypeIframe: {
+    width: '100%',
+    height: '100%',
+    borderWidth: 0,
+    backgroundColor: colors.bg,
+  },
+  quickActionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  quickActionChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    backgroundColor: colors.surface,
+  },
+  prototypeShell: {
+    marginTop: spacing.lg,
+    gap: spacing.md,
+  },
+  prototypeCard: {
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     borderLeftWidth: 3,
     borderLeftColor: colors.sage,
-    overflow: 'hidden',
-    minHeight: 160,
+  },
+  primaryPill: {
+    marginTop: spacing.lg,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accent,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
+  },
+  primaryPillText: {
+    color: colors.bg,
+    fontFamily: 'Inter_700Bold',
+    fontSize: 14,
+  },
+  sectionBlock: {
+    marginTop: spacing.sm,
+  },
+  tileGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  tile: {
+    width: '48%',
+    minWidth: 140,
+    flexGrow: 1,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderLeftWidth: 3,
   },
   returningBlock: {
     marginTop: spacing.xl,

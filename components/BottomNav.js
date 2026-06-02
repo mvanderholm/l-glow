@@ -5,14 +5,14 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 
 const TABS = [
-  { name: 'Home',     href: '/',        icon: HomeIcon },
-  { name: 'Journey',  href: '/journey', icon: JourneyIcon },
-  { name: 'Tools',    href: '/tools',   icon: ToolsIcon },
-  { name: 'Check In', href: '/checkin', icon: CheckInIcon },
-  { name: 'You',      href: '/you',     icon: YouIcon },
+  { name: 'Home',    href: '/',        icon: HomeIcon },
+  { name: 'Journey', href: '/journey', icon: JourneyIcon },
+  { name: 'Tools',   href: '/tools',   icon: ToolsIcon },
+  { name: 'Journal', href: '/journal', icon: JournalIcon },
+  { name: 'You',     href: '/you',     icon: YouIcon },
 ];
 
-const PRIMARY_ROUTES = new Set(['/', '/journey', '/tools', '/checkin', '/you']);
+const PRIMARY_ROUTES = new Set(['/', '/journey', '/tools', '/journal', '/you']);
 
 export default function BottomNav() {
   const { theme: { colors: c } } = useTheme();
@@ -87,11 +87,11 @@ function ToolsIcon({ color, size }) {
   );
 }
 
-function CheckInIcon({ color, size }) {
+function JournalIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.5} />
-      <Path d="M8.5 12l2.5 2.5 4.5-4.5" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M7 4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5v15a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5v-15Z" stroke={color} strokeWidth={1.5} />
+      <Path d="M10 7h4M10 11h4M10 15h2" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     </Svg>
   );
 }

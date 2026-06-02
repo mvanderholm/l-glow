@@ -38,6 +38,15 @@ function makeStyles(c, spacing, radius) {
       padding: spacing.lg,
       paddingBottom: spacing.xl,
     },
+    heroCard: {
+      padding: spacing.lg,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderLeftWidth: 3,
+      borderLeftColor: c.sage,
+    },
     pendingCard: {
       marginTop: spacing.lg,
       padding: spacing.lg,
@@ -47,6 +56,14 @@ function makeStyles(c, spacing, radius) {
       borderColor: c.border,
       borderLeftWidth: 3,
       borderLeftColor: c.honeyAmber,
+    },
+    snapshotCard: {
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+      backgroundColor: c.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: c.border,
     },
   });
 }
