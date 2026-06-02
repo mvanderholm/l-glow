@@ -14,18 +14,13 @@ import { BotanicalDivider, CornerSprig } from '../components/BotanicalAccent';
 
 export default function Home() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
-  const { width: windowWidth } = useWindowDimensions();
-  const contentWidth = Platform.OS === 'web' ? Math.min(windowWidth, 480) : windowWidth;
-  const safeContentWidth = Math.max(contentWidth, 1);
-  const heroWidth = Platform.OS !== 'web' ? safeContentWidth : Math.max(safeContentWidth - spacing.lg * 2, 1);
-  const heroLogoWidth = Math.max(heroWidth - spacing.lg * 2, 1);
-  const innerWidth = Math.max(safeContentWidth - spacing.lg * 2, 1);
   const season = currentSeason();
-  const router = useRouter();
-  const styles = makeStyles(colors, spacing, radius, heroWidth);
+  const styles = makeStyles(colors, spacing, radius);
 
-  // null = loading, false = no result, string = saved dosha
   const [savedDosha, setSavedDosha] = useState(null);
+  const [userName, setUserName] = useState('Lindsey');
+  const [selectedRemedy] = useState({ name: 'amber candle, tea & dried flowers', emoji: '🕯️' });
+  const [selectedAffirmation] = useState({ text: 'I am rooted, but I flow.' });
 
   useEffect(() => {
     loadDoshaResult().then(result => {
@@ -35,85 +30,132 @@ export default function Home() {
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        {Platform.OS === 'web' ? (
-          <View style={styles.prototypeHeroCard}>
-            <View style={styles.prototypeHeroHeader}>
-              <Text style={[type.label, { color: colors.textMuted }]}>Official prototype shell</Text>
-              <Text style={[type.muted, { marginTop: spacing.xs, fontSize: 12 }]}>This is the new baseline. Existing flows will be folded into this design instead of layered on top of the old screen treatment.</Text>
-            </View>
-            <View style={styles.quickActionRow}>
-              <QuickActionChip label="Dosha Quiz" href="/quiz" accent={colors.accent} />
-              <QuickActionChip label="Daily Check-in" href="/checkin" accent={colors.sage} />
-              <QuickActionChip label="Today’s Guidance" href="/recommendations" accent={colors.saffron} />
-            </View>
-            <View style={styles.prototypeFrame}>
-              <iframe
-                src="/prototype.html"
-                title="Prototype design"
-                style={styles.prototypeIframe}
-              />
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Header with menu, logo, bell */}
+        <View style={styles.header}>
+          <Pressable style={styles.headerButton}>
+            <Text style={styles.headerIcon}>☰</Text>
+          </Pressable>
+          <View style={styles.logo}>
+            <Text style={styles.logoText}>L. GL</Text>
+            <View style={styles.logoDot} />
+            <Text style={styles.logoText}>W</Text>
+          </View>
+          <Pressable style={styles.headerButton}>
+            <Text style={styles.headerIcon}>🔔</Text>
+          </Pressable>
+        </View>
+
+        {/* Greeting Card */}
+        <View style={styles.greetingCard}>
+          <Text style={[type.label, { color: colors.textMuted, marginBottom: spacing.sm }]}>
+            SATURDAY · {season.name.toUpperCase()}
+          </Text>
+          <Text style={[type.h1, { color: colors.text }]}>
+            Good morning,
+          </Text>
+          <Text style={[type.h1, { color: colors.text, marginBottom: spacing.md }]}>
+            {userName}
+          </Text>
+          <Text style={[type.muted, { color: colors.textMuted }]}>
+            Let's take care of you today.
+          </Text>
+        </View>
+
+        {/* Remedy Recommendation Card */}
+        <View style={styles.remedyCard}>
+          <View style={styles.remedyImage}>
+            <Text style={styles.remedyEmoji}>{selectedRemedy.emoji}</Text>
+          </View>
+          <Text style={[type.body, { color: colors.text, marginTop: spacing.md }]}>
+            {selectedRemedy.name}
+          </Text>
+          <View style={styles.cardActions}>
+            <Pressable style={styles.actionBtn}>
+              <Text style={[type.label, { color: colors.accent, fontSize: 11 }]}>Replace</Text>
+            </Pressable>
+            <Pressable style={styles.actionBtn}>
+              <Text style={[type.label, { color: colors.accent, fontSize: 11 }]}>Remove</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Start My Day Button */}
+        <Link href="/checkin" asChild>
+          <Pressable style={styles.primaryBtn}>
+            <Text style={styles.primaryBtnText}>Start my day</Text>
+          </Pressable>
+        </Link>
+
+        {/* Daily Affirmation Card */}
+        <View style={styles.affirmationCard}>
+          <View style={styles.affirmationImageWrapper}>
+            <View style={styles.affirmationImagePlaceholder}>
+              <Text style={styles.affirmationEmoji}>🏛️</Text>
             </View>
           </View>
-        ) : (
-          <View style={styles.heroSection}>
-            <View style={styles.heroCard}>
-            <View style={styles.heroHeader}>
-              <Text style={[type.label, { color: colors.textMuted }]}>{season.name.toUpperCase()}</Text>
-            </View>
-            
-            <View style={styles.heroContent}>
-              <Text style={[type.label, { color: colors.textMuted }]}>{season.name.toUpperCase()}</Text>
-              <Text style={[type.h1, { color: colors.text, marginBottom: spacing.sm }]}>Good morning,{'\n'}{savedDosha ? 'friend' : "let's begin"}</Text>
-              <Text style={[type.muted, { color: colors.textMuted, marginBottom: spacing.lg }]}>Let's take care of you today.</Text>
-              <Link href="/checkin" asChild>
-                <Pressable style={styles.primaryBtn}>
-                <Text style={styles.primaryBtnText}>Start my day</Text>
+          <View style={styles.affirmationContent}>
+            <Text style={[type.label, { color: colors.accent, marginBottom: spacing.xs }]}>
+              DAILY AFFIRMATION
+            </Text>
+            <Text style={[styles.affirmationText]}>
+              {selectedAffirmation.text}
+            </Text>
+            <Pressable style={{ marginTop: spacing.md }}>
+              <Text style={styles.refreshIcon}>🔄</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {/* Begin Here Section */}
+        <View style={styles.beginHereSection}>
+          <Text style={[type.h2, { color: colors.text, marginBottom: spacing.lg }]}>
+            Begin here
+          </Text>
+          <View style={styles.featureGrid}>
+            <Link href="/herbs" asChild>
+              <Pressable style={styles.featureCard}>
+                <Text style={styles.featureEmoji}>🌿</Text>
+                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Apothecary</Text>
               </Pressable>
-              </Link>
-            </View>
-            </View>
+            </Link>
+            <Link href="/breathwork" asChild>
+              <Pressable style={styles.featureCard}>
+                <Text style={styles.featureEmoji}>💨</Text>
+                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Breathwork</Text>
+              </Pressable>
+            </Link>
+            <Link href="/recipes" asChild>
+              <Pressable style={styles.featureCard}>
+                <Text style={styles.featureEmoji}>🍲</Text>
+                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Recipes</Text>
+              </Pressable>
+            </Link>
+            <Link href="/meditation" asChild>
+              <Pressable style={styles.featureCard}>
+                <Text style={styles.featureEmoji}>🧘</Text>
+                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Meditate</Text>
+              </Pressable>
+            </Link>
           </View>
-        )}
+        </View>
 
+        {/* Footer */}
+        <View style={styles.footer}>
+          <Text style={[type.label, { color: colors.textMuted, fontSize: 20, marginBottom: spacing.sm }]}>❧</Text>
+          <Text style={[type.muted, { color: colors.textMuted, textAlign: 'center' }]}>
+            Wellness, rooted in you.
+          </Text>
+        </View>
 
-
-
-
-        {savedDosha === null ? (
-          // Loading — render nothing where the CTAs will be to avoid flicker
-          <View style={{ height: 160 }} />
-        ) : savedDosha ? (
-          // Returning user
+        {/* Additional content for returning users */}
+        {savedDosha === null ? null : savedDosha ? (
           <ReturningUser dosha={savedDosha} />
         ) : (
-          // New user
           <NewUser />
         )}
       </ScrollView>
     </SafeAreaView>
-  );
-}
-
-const APP_STORE_URL = 'https://apps.apple.com/app/lavender-glow/id0000000000';
-const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=com.lavenderglow.app';
-
-function DownloadCTAs() {
-  const { theme: { colors, spacing, radius, type } } = useTheme();
-  const styles = makeStyles(colors, spacing, radius);
-  if (Platform.OS !== 'web') return null;
-  return (
-    <View style={styles.downloadBlock}>
-      <Text style={[type.label, { textAlign: 'center', marginBottom: spacing.md }]}>
-        Get the full experience
-      </Text>
-      <Pressable style={styles.downloadBtn} onPress={() => Linking.openURL(APP_STORE_URL)}>
-        <Text style={styles.downloadBtnText}>Download on the App Store</Text>
-      </Pressable>
-      <Pressable style={[styles.downloadBtn, { marginTop: spacing.sm }]} onPress={() => Linking.openURL(PLAY_STORE_URL)}>
-        <Text style={styles.downloadBtnText}>Get it on Google Play</Text>
-      </Pressable>
-    </View>
   );
 }
 
@@ -159,8 +201,6 @@ function ReturningUser({ dosha }) {
           <Text style={styles.ghostBtnText}>Retake the quiz</Text>
         </Pressable>
       </Link>
-
-      <DownloadCTAs />
     </View>
   );
 }
@@ -176,43 +216,11 @@ function NewUser() {
         </Pressable>
       </Link>
 
-      <Link href="/checkin" asChild>
-        <Pressable style={styles.secondaryBtn}>
-          <Text style={styles.secondaryBtnText}>Daily Check-in</Text>
-        </Pressable>
-      </Link>
-
       <Link href="/recommendations" asChild>
         <Pressable style={styles.secondaryBtn}>
           <Text style={styles.secondaryBtnText}>Today's Guidance</Text>
         </Pressable>
       </Link>
-
-      <DownloadCTAs />
-    </View>
-  );
-}
-
-function MythbusterCard() {
-  const { theme: { colors, spacing, radius, type } } = useTheme();
-  const styles = makeStyles(colors, spacing, radius);
-  const myth = currentMythbuster();
-  if (!myth) return null;
-
-  return (
-    <View style={styles.mythbusterCard}>
-      <CornerSprig color={colors.saffron} size={44} style={{ position: 'absolute', top: 0, right: 0 }} />
-      <Text style={type.label}>This Week</Text>
-      <Text style={[type.h2, { marginTop: spacing.xs }]}>Mythbusters</Text>
-      <Text style={[type.body, { marginTop: spacing.sm, fontStyle: 'italic' }]}>
-        "{myth.myth}"
-      </Text>
-      {myth.take && (
-        <Text style={[type.body, { marginTop: spacing.md, lineHeight: 24 }]}>{myth.take}</Text>
-      )}
-      {myth.reframe && (
-        <Text style={[type.muted, { marginTop: spacing.sm, lineHeight: 22 }]}>{myth.reframe}</Text>
-      )}
     </View>
   );
 }
@@ -277,243 +285,249 @@ function IntentionCard({ dosha }) {
   );
 }
 
-function QuickActionChip({ label, href, accent }) {
-  const router = useRouter();
-  return (
-    <Pressable
-      onPress={() => router.push(href)}
-      style={({ pressed }) => [
-        makeStyles(useTheme().theme.colors, useTheme().theme.spacing, useTheme().theme.radius).quickActionChip,
-        { borderColor: accent },
-        pressed && { opacity: 0.8 },
-      ]}
-    >
-      <Text style={{ color: accent, fontFamily: 'Inter_700Bold', fontSize: 12 }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function makeStyles(colors, spacing, radius, heroWidth = 390) {
-return StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.bg },
-  container: { padding: spacing.lg },
-    heroSection: {
-      height: Math.round(heroWidth * 0.9),
-      ...Platform.select({
-        web: { borderRadius: radius.lg, overflow: 'hidden', marginBottom: spacing.xs },
-        default: { marginHorizontal: -spacing.lg, marginTop: -spacing.lg, overflow: 'hidden' },
-      }),
+function makeStyles(colors, spacing, radius) {
+  return StyleSheet.create({
+    safeArea: { 
+      flex: 1, 
+      backgroundColor: colors.bg 
     },
-    heroCard: {
-      flex: 1,
-      padding: spacing.lg,
+    scrollContent: { 
+      paddingHorizontal: spacing.lg,
+      paddingTop: spacing.md,
+      paddingBottom: spacing.xl,
+    },
+    
+    // Header
+    header: {
+      flexDirection: 'row',
       justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: spacing.xl,
+      paddingHorizontal: spacing.xs,
+    },
+    headerButton: {
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    headerIcon: {
+      fontSize: 24,
+    },
+    logo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.xs,
+    },
+    logoText: {
+      fontFamily: 'PlayfairDisplay_700Bold',
+      fontSize: 24,
+      color: colors.text,
+      letterSpacing: 2,
+    },
+    logoDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.accent,
+    },
+
+    // Greeting Card
+    greetingCard: {
+      marginBottom: spacing.lg,
+    },
+
+    // Remedy Card
+    remedyCard: {
       backgroundColor: colors.surface,
       borderRadius: radius.lg,
       borderWidth: 1,
       borderColor: colors.border,
+      padding: spacing.lg,
+      marginBottom: spacing.lg,
+      alignItems: 'center',
     },
-    heroHeader: {
+    remedyImage: {
+      width: 80,
+      height: 80,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    remedyEmoji: {
+      fontSize: 48,
+    },
+    cardActions: {
+      flexDirection: 'row',
+      gap: spacing.md,
+      marginTop: spacing.md,
+    },
+    actionBtn: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: spacing.xs,
+    },
+
+    // Primary Button
+    primaryBtn: {
+      backgroundColor: colors.accent,
+      paddingVertical: spacing.md,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+      marginBottom: spacing.lg,
+    },
+    primaryBtnText: { 
+      color: '#FFFFFF', 
+      fontFamily: 'Inter_700Bold', 
+      fontSize: 16,
+      letterSpacing: 0.5,
+    },
+
+    // Affirmation Card
+    affirmationCard: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: 'hidden',
+      marginBottom: spacing.lg,
+    },
+    affirmationImageWrapper: {
+      width: 100,
+      backgroundColor: colors.surfaceAlt,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    affirmationImagePlaceholder: {
+      width: 80,
+      height: 80,
+      backgroundColor: colors.border,
+      borderRadius: radius.md,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    affirmationEmoji: {
+      fontSize: 40,
+    },
+    affirmationContent: {
+      flex: 1,
+      padding: spacing.lg,
+      justifyContent: 'flex-start',
+    },
+    affirmationText: {
+      fontFamily: 'PlayfairDisplay_700Bold',
+      fontSize: 16,
+      lineHeight: 22,
+      color: colors.text,
+      fontStyle: 'italic',
+    },
+    refreshIcon: {
+      fontSize: 18,
+    },
+
+    // Begin Here Section
+    beginHereSection: {
+      marginBottom: spacing.xl,
+    },
+    featureGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.md,
+      justifyContent: 'space-between',
+    },
+    featureCard: {
+      width: '48%',
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: spacing.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 120,
+    },
+    featureEmoji: {
+      fontSize: 40,
       marginBottom: spacing.md,
     },
-  heroAction: {
-    marginTop: spacing.lg,
-    alignSelf: 'flex-start',
-    backgroundColor: 'rgba(236,232,223,0.95)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  heroActionText: {
-    color: colors.text,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 14,
-  },
-  prototypeHeroCard: {
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
-  },
-  prototypeHeroHeader: {
-    marginBottom: spacing.md,
-  },
-  prototypeFrame: {
-    marginTop: spacing.md,
-    height: 420,
-    borderRadius: radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.bg,
-  },
-  prototypeIframe: {
-    width: '100%',
-    height: '100%',
-    borderWidth: 0,
-    backgroundColor: colors.bg,
-  },
-  quickActionRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  quickActionChip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    backgroundColor: colors.surface,
-  },
-  prototypeShell: {
-    marginTop: spacing.lg,
-    gap: spacing.md,
-  },
-  prototypeCard: {
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.sage,
-  },
-  primaryPill: {
-    marginTop: spacing.lg,
-    alignSelf: 'flex-start',
-    backgroundColor: colors.accent,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-  },
-  primaryPillText: {
-    color: colors.bg,
-    fontFamily: 'Inter_700Bold',
-    fontSize: 14,
-  },
-  sectionBlock: {
-    marginTop: spacing.sm,
-  },
-  tileGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  tile: {
-    width: '48%',
-    minWidth: 140,
-    flexGrow: 1,
-    padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderLeftWidth: 3,
-  },
-  returningBlock: {
-    marginTop: spacing.xl,
-  },
-  primaryBtn: {
-    marginTop: spacing.lg,
-    backgroundColor: colors.accent,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-  },
-    primaryBtnText: { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1 },
-  secondaryBtn: {
-    marginTop: spacing.md,
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  secondaryBtnText: { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 16 },
-  ghostBtn: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  ghostBtnText: { color: colors.textMuted, fontFamily: 'Inter_400Regular', fontSize: 14 },
-  aboutRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  aboutLink: {
-    color: colors.textMuted,
-    fontSize: 13,
-  },
-  aboutLinkDivider: {
-    color: colors.border,
-    fontSize: 13,
-  },
-  downloadBlock: {
-    marginTop: spacing.xl,
-    paddingTop: spacing.xl,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  downloadBtn: {
-    backgroundColor: colors.surface,
-    paddingVertical: spacing.md,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  downloadBtnText: { color: colors.text, fontFamily: 'Inter_600SemiBold', fontSize: 15 },
-  mythbusterCard: {
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.saffron,
-    overflow: 'hidden',
-  },
-  intentionCard: {
-    marginTop: spacing.lg,
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
-  },
-  intentionChipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  intentionChip: {
-    backgroundColor: colors.surfaceAlt,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.accent + '66',
-  },
-  intentionChipText: {
-    color: colors.accent,
-    fontSize: 14,
-  },
-  intentionInput: {
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surfaceAlt,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    color: colors.text,
-    fontSize: 14,
-  },
-});
+
+    // Footer
+    footer: {
+      alignItems: 'center',
+      marginBottom: spacing.xl,
+    },
+
+    // Returning User
+    returningBlock: {
+      marginTop: spacing.xl,
+      paddingTop: spacing.xl,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    secondaryBtn: {
+      marginTop: spacing.md,
+      backgroundColor: colors.surface,
+      paddingVertical: spacing.md,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    secondaryBtnText: { 
+      color: colors.text, 
+      fontFamily: 'Inter_600SemiBold', 
+      fontSize: 16 
+    },
+    ghostBtn: {
+      marginTop: spacing.md,
+      paddingVertical: spacing.md,
+      alignItems: 'center',
+    },
+    ghostBtnText: { 
+      color: colors.textMuted, 
+      fontFamily: 'Inter_400Regular', 
+      fontSize: 14 
+    },
+
+    // Intention
+    intentionCard: {
+      marginTop: spacing.lg,
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderLeftWidth: 3,
+      borderLeftColor: colors.accent,
+    },
+    intentionChipRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: spacing.sm,
+      marginTop: spacing.md,
+    },
+    intentionChip: {
+      backgroundColor: colors.surfaceAlt,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+      borderColor: colors.accent + '66',
+    },
+    intentionChipText: {
+      color: colors.accent,
+      fontSize: 14,
+    },
+    intentionInput: {
+      marginTop: spacing.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.sm,
+      backgroundColor: colors.surfaceAlt,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      color: colors.text,
+      fontSize: 14,
+    },
+  });
 }
