@@ -1,0 +1,27 @@
+node_modules/
+.claude/
+mnt/
+docs/*.mp4
+
+# Practitioner training materials — proprietary, do not commit
+docs/*.pdf
+.expo/
+dist/
+web-build/
+
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.pem
+
+.env*.local
+google-play-service-account.json
+
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+.DS_Store
+*.tsbuildinfo

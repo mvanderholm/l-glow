@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 215" role="img" aria-label="Lavender Glow">
+  <title>Lavender Glow</title>
+  <desc>Lavender Glow lettermark: Ô glyph with L. GLÔW LIVING wordmark.</desc>
+  <rect width="200" height="215" fill="#F5EDD0"/>
+  <text x="100" y="128" font-family="Georgia, 'Times New Roman', serif" font-size="100" text-anchor="middle" fill="#8B7287">Ô</text>
+  <line x1="58" y1="146" x2="142" y2="146" stroke="#8B7287" stroke-width="0.7" opacity="0.45"/>
+  <text x="100" y="167" font-family="Georgia, 'Times New Roman', serif" font-size="18" letter-spacing="3" text-anchor="middle" fill="#8B7287">L. GLÔW</text>
+  <text x="100" y="188" font-family="Georgia, serif" font-size="11" letter-spacing="5" text-anchor="middle" fill="#8B7287">LIVING</text>
+</svg>
