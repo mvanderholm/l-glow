@@ -1,6 +1,6 @@
 # Voice Memo Transcripts
 
-Source material for the Lavender Glow voice guide and all clinical content. These are Thea's voice memos, transcribed locally with WhisperDesktop (ggml-medium model). They are the canonical record of her teaching in her own words and should be treated as primary source material — anything the app says clinically should be traceable back to one of these files (or to future transcripts that get added here).
+Source material for the L. Glow voice guide and all clinical content. These are Thea's voice memos, transcribed locally with WhisperDesktop (ggml-medium model). They are the canonical record of her teaching in her own words and should be treated as primary source material — anything the app says clinically should be traceable back to one of these files (or to future transcripts that get added here).
 
 ## Files
 
@@ -40,6 +40,20 @@ Vata and Pitta are usually rendered correctly. Doshas, prakriti, and abhyanga al
 - The voice guide (`docs/voice-guide.md`) is the distilled, structured summary of these transcripts. Read the voice guide first; come back to the transcripts for primary-source detail.
 - When drafting any clinical content for the app, the relevant transcript should be the source. Quote or adapt Thea's language closely; do not invent ayurvedic content.
 - Do not edit the transcripts themselves. They are the historical record. Corrections (Sanskrit spellings etc.) happen when the content is adapted into the app, not in the transcripts.
+
+5. **05_vata_dosha_.txt** — Deep dive into all three doshas with a full physical and mental comparison table: height, frame, weight, skin, eyes, hair, teeth, nails, joints, circulation, appetite, thirst, sweat, elimination, sensitivities, immunity, disease patterns, activity, endurance, sleep, dreams, memory, speech, temperament, emotions, and faith. Also covers prakriti vs vikriti. Adapted into `data/content/quiz.js` doshaInfo `traits` fields (June 2026, DRAFT).
+
+6. **06_gunas.txt** — Introduction to the Three Gunas (Sattva, Rajas, Tamas) from the Bhagavad Gita tradition. Covers definitions, the Law of Alternation, and the Law of Continuity. Day/night/sunrise as guna metaphor. Adapted into the `gunas-mental` Learn entry (June 2026, DRAFT).
+
+7. **07_gunas_2.txt** — How to cultivate sattva: right diet, physical purification, sense control, mantra, devotion. Sattva as the key to Ayurvedic healing. Disease as tamasic state; acute disease as rajasic. Admixtures of gunas (rajistic sattva, tamasic rajas, etc.). Adapted into the `cultivating-sattva` Learn entry (June 2026, DRAFT).
+
+8. **08_listen_to_your_gut.txt** — Mental Constitution Chart: a 24-dimension Guna self-assessment (Sattvic / Rajasic / Tamasic) covering diet, sleep, speech, anger, fear, desire, love, concentration, creativity, spiritual practice, and more. Thea explicitly flags this as a future app feature: *"This is really fun for the app — something we can definitely bring in when somebody is comfortable."* Scaffolded as roadmap item #32.
+
+9. **09_prana_tejas_ojas.txt** — Prana (life force/air), Tejas (inner fire/radiance), and Ojas (stored vitality/water) as the three vital essences. How they relate to each other and to the doshas. Parallels to Chinese medicine's Qi/Yin/Yang. Adapted into the expanded `ojas` Learn entry (June 2026, DRAFT).
+
+10. **10_3_bodies_5_sheaths.txt** — The three bodies (physical, subtle, causal) and five sheaths (koshas) from Vedic philosophy. **Explicitly excluded from the app by Thea** ("This is all a little bit woo woo to me. I don't know if I want to add any of this in there."). Do not adapt this content into app screens.
+
+11. **11_doshas_2.txt** — Duplicate of 05_vata_dosha_.txt. Same content recorded in a second session. No additional information. No further adaptation needed.
 
 ## Adding new transcripts
 

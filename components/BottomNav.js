@@ -19,43 +19,52 @@ export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
-  const visible = PRIMARY_ROUTES.has(pathname);
+  const bottomPad = Math.max(insets.bottom, 8);
 
   return (
-    <View
-      style={[styles.container, {
-        backgroundColor: c.surface,
-        borderTopColor: c.border,
-        paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 6 : 0),
-        opacity: visible ? 1 : 0,
-      }]}
-      pointerEvents={visible ? 'auto' : 'none'}
-    >
-      {TABS.map(tab => {
-        const active = pathname === tab.href;
-        const color = active ? c.accent : c.textMuted;
-        const Icon = tab.icon;
-        return (
-          <Pressable
-            key={tab.href}
-            style={({ pressed }) => [styles.tab, pressed && { opacity: 0.6 }]}
-            onPress={() => { if (!active) router.replace(tab.href); }}
-            accessibilityLabel={tab.name}
-            accessibilityRole="button"
-          >
-            <Icon color={color} size={22} />
-            <Text style={[
-              styles.label,
-              { color, fontFamily: active ? 'Inter_700Bold' : 'Inter_400Regular' },
-            ]}>
-              {tab.name}
-            </Text>
-          </Pressable>
-        );
-      })}
+    <View style={[styles.wrapper, { paddingBottom: bottomPad, backgroundColor: c.bg }]}>
+      <View style={[styles.pill, {
+        backgroundColor: 'rgba(251,249,244,0.90)',
+        borderColor: 'rgba(75,62,58,0.06)',
+        // iOS shadow
+        shadowColor: '#3C302C',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.12,
+        shadowRadius: 28,
+        // Android
+        elevation: 8,
+      }]}>
+        {TABS.map(tab => {
+          const active = pathname === tab.href;
+          const color = active ? c.accent : c.textMuted;
+          const Icon = tab.icon;
+          return (
+            <Pressable
+              key={tab.href}
+              style={({ pressed }) => [styles.tab, { opacity: pressed ? 0.6 : 1 }]}
+              onPress={() => { if (!active) router.replace(tab.href); }}
+              accessibilityLabel={tab.name}
+              accessibilityRole="button"
+            >
+              <Icon color={color} size={22} />
+              <Text style={[
+                styles.label,
+                {
+                  color,
+                  fontFamily: active ? 'Inter_600SemiBold' : 'Inter_400Regular',
+                },
+              ]}>
+                {tab.name}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
+
+// ── SVG Icons ──────────────────────────────────────────────────────────────
 
 function HomeIcon({ color, size }) {
   return (
@@ -106,10 +115,18 @@ function YouIcon({ color, size }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  wrapper: {
+    paddingHorizontal: 8,
+    paddingTop: 4,
+  },
+  pill: {
     flexDirection: 'row',
-    borderTopWidth: 1,
-    paddingTop: 10,
+    borderRadius: 30,
+    borderWidth: 1,
+    paddingTop: 9,
+    paddingBottom: 10,
+    paddingHorizontal: 8,
+    overflow: Platform.OS === 'android' ? 'hidden' : 'visible',
   },
   tab: {
     flex: 1,
@@ -120,6 +137,6 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 10,
-    letterSpacing: 0.3,
+    letterSpacing: 0.2,
   },
 });

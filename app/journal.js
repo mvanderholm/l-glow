@@ -1,98 +1,172 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useDrawer } from '../context/DrawerContext';
+import { card } from '../theme/index';
+import Svg, { Path } from 'react-native-svg';
 
-const dateKey = (d = new Date()) =>
-  `@lavender-glow/journal_${d.toISOString().slice(0, 10)}`;
+const KEY = (d = new Date()) => `@lglow/journal2_${d.toISOString().slice(0, 10)}`;
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
-const formatDate = (d = new Date()) =>
-  d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+const PROMPTS = [
+  { id: 'grateful', label: "Today I'm grateful for…" },
+  { id: 'showed',   label: "I showed up for myself by…" },
+  { id: 'tomorrow', label: "Tomorrow I will…" },
+];
+
+const PAST = [
+  { month: 'MAY', day: 19, title: 'Morning pages',   excerpt: 'Woke before the sun. The garden was still. I felt the quiet hold me…' },
+  { month: 'MAY', day: 17, title: 'After abhyanga',  excerpt: 'Warm sesame oil, slow strokes toward the heart. My shoulders finally dropped…' },
+  { month: 'MAY', day: 14, title: 'A heavy day, softened', excerpt: 'Kapha season is asking me to move. A walk among the eucalyptus helped…' },
+];
 
 export default function Journal() {
-  const { theme: { colors: c, spacing, radius, type } } = useTheme();
-  const styles = makeStyles(c, spacing, radius);
-  const [text, setText] = useState('');
-  const [saved, setSaved] = useState(false);
+  const { theme: { colors: c, spacing } } = useTheme();
+  const { open: openDrawer } = useDrawer();
   const today = new Date();
+  const [answers, setAnswers] = useState({ grateful: '', showed: '', tomorrow: '' });
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(dateKey(today)).then(val => {
-      if (val) setText(val);
+    AsyncStorage.getItem(KEY(today)).then(v => {
+      if (v) try { setAnswers(JSON.parse(v)); } catch {}
     });
   }, []);
 
   async function save() {
-    await AsyncStorage.setItem(dateKey(today), text.trim());
+    await AsyncStorage.setItem(KEY(today), JSON.stringify(answers));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={[type.label, { color: c.textMuted }]}>{formatDate(today)}</Text>
-          <Text style={[type.h1, { marginTop: spacing.sm }]}>Journal</Text>
-          <Text style={[type.muted, { marginTop: spacing.xs }]}>
-            What are you carrying today? What moved?
-          </Text>
+      {/* Header */}
+      <View style={[styles.header, { paddingHorizontal: 20 }]}>
+        <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        <Text style={[styles.hTitle, { color: c.text }]}>Journal</Text>
+        <Pressable style={styles.hBtn}><PlusIcon color={c.text} /></Pressable>
+      </View>
 
-          <TextInput
-            style={[styles.input, { color: c.text }]}
-            value={text}
-            onChangeText={t => { setText(t); setSaved(false); }}
-            placeholder="Start writing…"
-            placeholderTextColor={c.textMuted}
-            multiline
-            textAlignVertical="top"
-          />
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
-          <Pressable
-            style={[styles.saveBtn, { backgroundColor: saved ? c.sage : c.saffron }]}
-            onPress={save}
-          >
-            <Text style={[styles.saveBtnText, { color: c.bg }]}>
-              {saved ? 'Saved' : 'Save'}
-            </Text>
-          </Pressable>
+          {/* Main form card */}
+          <View style={[styles.formCard, { backgroundColor: c.surface, ...card }]}>
+            {/* Date badge + image row */}
+            <View style={styles.topRow}>
+              <View style={[styles.dateBadge, { backgroundColor: 'rgba(251,249,244,0.94)', ...card }]}>
+                <Text style={[styles.dateMonth, { color: c.accent }]}>{MONTHS[today.getMonth()]}</Text>
+                <Text style={[styles.dateDay, { color: c.text }]}>{today.getDate()}</Text>
+              </View>
+              <View style={[styles.topImage, { backgroundColor: c.surfaceAlt, overflow: 'hidden' }]}>
+                <Image source={require('../assets/hero-candles.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+              </View>
+            </View>
+
+            <View style={styles.formBody}>
+              <Text style={[styles.formTitle, { color: c.text }]}>Evening Reflection</Text>
+              <Text style={[styles.formSub, { color: c.textMuted }]}>A few honest lines before rest.</Text>
+
+              {PROMPTS.map((p, idx) => (
+                <View key={p.id}>
+                  <View style={[styles.promptBlock, idx > 0 && { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingTop: 16 }]}>
+                    <View style={{ flexDirection: 'row', gap: 6, marginBottom: 6 }}>
+                      <Text style={{ color: c.textMuted, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>+</Text>
+                      <Text style={[styles.promptLabel, { color: c.text }]}>{p.label}</Text>
+                    </View>
+                    <TextInput
+                      style={[styles.input, { color: c.text }]}
+                      value={answers[p.id]}
+                      onChangeText={t => { setAnswers(prev => ({ ...prev, [p.id]: t })); setSaved(false); }}
+                      placeholder="Write here..."
+                      placeholderTextColor={c.border}
+                      multiline
+                    />
+                  </View>
+                  {idx < PROMPTS.length - 1 && <View style={{ height: 16 }} />}
+                </View>
+              ))}
+
+              <Pressable
+                style={[styles.saveBtn, { backgroundColor: saved ? '#7AB878' : c.accent,
+                  shadowColor: c.accent, shadowOffset: {width:0,height:6}, shadowOpacity:0.28, shadowRadius:18, elevation:4 }]}
+                onPress={save}
+              >
+                <Text style={styles.saveBtnText}>{saved ? '✓  SAVED' : '✓  SAVE REFLECTION'}</Text>
+              </Pressable>
+            </View>
+          </View>
+
+          {/* Earlier section */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 28, marginBottom: 16 }}>
+            <Text style={[styles.sectionH, { color: c.text }]}>Earlier</Text>
+            <Text style={{ color: c.textMedium, fontFamily: 'Inter_500Medium', fontSize: 12.5 }}>This week</Text>
+          </View>
+
+          {PAST.map(entry => (
+            <View key={entry.day} style={[styles.pastCard, { backgroundColor: c.surface, ...card, marginBottom: 10 }]}>
+              <View style={styles.pastLeft}>
+                <Text style={[styles.pastMonth, { color: c.textMuted }]}>{entry.month}</Text>
+                <Text style={[styles.pastDay, { color: c.accentSoft }]}>{entry.day}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.pastTitle, { color: c.text }]}>{entry.title}</Text>
+                <Text style={[styles.pastExcerpt, { color: c.textMedium }]} numberOfLines={2}>{entry.excerpt}</Text>
+              </View>
+            </View>
+          ))}
+
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-function makeStyles(c, spacing, radius) {
-  return StyleSheet.create({
-    container: {
-      padding: spacing.lg,
-      paddingBottom: spacing.xl,
-    },
-    input: {
-      marginTop: spacing.xl,
-      minHeight: 280,
-      backgroundColor: c.surface,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      fontSize: 16,
-      lineHeight: 26,
-      fontFamily: 'Inter_400Regular',
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    saveBtn: {
-      marginTop: spacing.lg,
-      paddingVertical: spacing.md,
-      borderRadius: radius.pill,
-      alignItems: 'center',
-    },
-    saveBtnText: {
-      fontFamily: 'Inter_700Bold',
-      fontSize: 16,
-    },
-  });
+
+function MenuIcon({ color }) {
+  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
+  </Svg>;
 }
+
+function PlusIcon({ color }) {
+  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 5v14M5 12h14" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
+  </Svg>;
+}
+
+const styles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
+  hBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  hTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
+
+  formCard: { borderRadius: 26, overflow: 'hidden' },
+  topRow:   { flexDirection: 'row', height: 80 },
+  dateBadge:{ width: 62, alignItems: 'center', justifyContent: 'center', margin: 12, borderRadius: 12 },
+  dateMonth:{ fontFamily: 'Inter_700Bold', fontSize: 9.5, letterSpacing: 0.95 },
+  dateDay:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, lineHeight: 28 },
+  topImage: { flex: 1 },
+
+  formBody:  { padding: 20, paddingTop: 0 },
+  formTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 23, lineHeight: 30 },
+  formSub:   { fontFamily: 'Inter_400Regular', fontSize: 13, marginTop: 4, marginBottom: 20, lineHeight: 18 },
+
+  promptBlock:{ paddingBottom: 0 },
+  promptLabel:{ fontFamily: 'PlayfairDisplay_400Regular', fontSize: 15.5, fontStyle: 'italic', lineHeight: 21, flex: 1 },
+  input:      { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, minHeight: 32, color: '#443733' },
+
+  saveBtn:    { borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: 20 },
+  saveBtnText:{ color: '#FBF9F4', fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.4 },
+
+  sectionH: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
+
+  pastCard:  { flexDirection: 'row', borderRadius: 26, padding: 16, gap: 14 },
+  pastLeft:  { alignItems: 'center', width: 32 },
+  pastMonth: { fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 0.72 },
+  pastDay:   { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
+  pastTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14.5, lineHeight: 20 },
+  pastExcerpt:{ fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18, marginTop: 2 },
+});

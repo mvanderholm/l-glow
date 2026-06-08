@@ -1,0 +1,12 @@
+docs/
+scripts/
+node_modules/
+.expo/
+*.mp4
+*.mp3
+*.m4a
+*.pdf
+*.heic
+*.docx
+*.txt
+*.md

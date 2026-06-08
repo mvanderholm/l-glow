@@ -1,4 +1,4 @@
-# Lavender Glow Roadmap
+# L. Glow Roadmap
 
 Living document. Strike through items as shipped, add new items at the bottom. Reorder only after a conversation with Matt.
 
@@ -7,7 +7,7 @@ Living document. Strike through items as shipped, add new items at the bottom. R
 ## Shipped
 
 ~~**1. Persist the quiz result via AsyncStorage.**~~
-Save primary dosha + score breakdown to `@lavender-glow/primary_dosha`. Welcome screen reads it and shows returning-user state. Recommendations screen uses saved dosha. Done.
+Save primary dosha + score breakdown to `@lglow/primary_dosha`. Welcome screen reads it and shows returning-user state. Recommendations screen uses saved dosha. Done.
 
 ~~**2. Guard the recommendations screen.**~~
 If no saved dosha and no param, routes to `/quiz` with a friendly message. Hardcoded default removed. Done.
@@ -31,7 +31,16 @@ Route `app/learn.js` and `data/content/learn.js` with 15 concept entries across 
 Split is live. `data/content/` holds Thea-authored files (herbs, learn, movement, quiz, recommendations). `data/user/` holds AsyncStorage mechanics (storage.js). Done.
 
 ~~**8a. Web support + Vercel deployment.**~~
-Expo Router static export configured. `vercel.json` added. Download CTAs (App Store / Google Play) shown on web only. `Share` button hidden on web. 480px max-width centering for desktop. Repo live at github.com/mvanderholm/lavender-glow, deployed via Vercel.
+Expo Router static export configured. `vercel.json` added. Download CTAs (App Store / Google Play) shown on web only. `Share` button hidden on web. 480px max-width centering for desktop. Repo live at github.com/mvanderholm/l-glow, deployed via Vercel.
+
+~~**25. Replace logo mark with the O from the style guide.**~~
+`components/LogoMark.js` rebuilt with the O glyph — circle outline + inner 4-pointed star + small accent star above. Proportions derived from Thea's style guide image. App icons (`assets/icon.png`, `assets/adaptive-icon.png`) regenerated from the same glyph via `scripts/generate-icons.js`. Done.
+
+~~**Hamburger drawer.**~~
+`context/DrawerContext.js` + `components/HamburgerDrawer.js`. Slide-in from left, spring animation, backdrop tap-to-close. Wired to all 5 main screens. Account/settings items only: About Thea (→ /about), Dosha Quiz (→ /quiz), Reminders (soon), Help & guidance (soon). Navigation stays in bottom nav exclusively. Done.
+
+~~**TestFlight distribution configured.**~~
+`eas.json` updated with submit profile and `ascAppId`. iOS production build submitted to App Store Connect. Thea added as internal tester. Future builds: `eas build --platform ios --profile production` then `eas submit --platform ios --profile production --latest`. Done.
 
 ---
 
@@ -62,8 +71,8 @@ The check-in screen becomes time-aware: a morning check-in and an evening check-
 Show a notification count on the Check In bottom nav tab — how many check-ins remain today. Starts at 2 each day, counts down as they're completed (2 → 1 → 0). Badge disappears when both are done. No punishing state — just a gentle "you have something here."
 
 **Data structure change required:**
-Current check-in key: `@lavender-glow/checkins/YYYY-MM-DD` (one entry per day).
-New structure: two keyed entries per day — `@lavender-glow/checkins/YYYY-MM-DD/morning` and `.../evening`. Each entry tagged with `type: 'morning' | 'evening'` and `completedAt` timestamp.
+Current check-in key: `@lglow/checkins/YYYY-MM-DD` (one entry per day).
+New structure: two keyed entries per day — `@lglow/checkins/YYYY-MM-DD/morning` and `.../evening`. Each entry tagged with `type: 'morning' | 'evening'` and `completedAt` timestamp.
 
 **Vikriti dependency:**
 The morning + evening pair is the intended signal source for the vikriti visualization (see Longer Horizon). Morning gives baseline state; evening shows how the day moved things. Together they replace a single snapshot with a directional reading. Do not build the vikriti algorithm until both check-in types are live and question sets are locked with Thea.
@@ -223,6 +232,8 @@ Where to apply: hero banners on recommendations screen and learn screen; backgro
 
 Build order: identify current screens with placeholder or no imagery first, source or request photos, apply using the established View+Image pattern (not ImageBackground).
 
+*Partial — Home, Journey, and Journal screens have real photos. Tools and You screens still have placeholder imagery. Recommendations and Learn screens not yet touched.*
+
 ---
 
 ## Navigation expansion — four new top-level sections
@@ -326,8 +337,395 @@ Mark 1 recommendations are organized primarily by dosha and season. That structu
 
 ---
 
+**32. Mental Constitution Quiz — Guna assessment (Sattva / Rajas / Tamas).**
+Thea explicitly requested this in voice memo 08: *"This is really fun for the app — something we can definitely bring in when somebody is comfortable."* A second self-assessment quiz, distinct from the dosha quiz, that evaluates a user's current mental and spiritual state across 24 dimensions.
+
+The assessment covers: diet, drug/alcohol use, sensory impressions, sleep, sexual activity, sense control, speech, cleanliness, work motivation, anger, fear, desire, pride, depression, love, violent behavior, money attachment, contentment, forgiveness, concentration, memory, willpower, truthfulness/honesty, peace of mind, creativity, spiritual practice, and service orientation.
+
+Each question has three answers: left = Sattvic, middle = Rajasic, right = Tamasic. Score total to determine dominant guna. Result surfaces practical guidance on moving from Tamas → Rajas → Sattva (or Rajas → Sattva if already there).
+
+**Key design constraints from Thea:**
+- Gate this quiz behind some engagement — don't surface it to a user on their first day. A reasonable trigger: completed the dosha quiz + 7+ check-ins. Thea's framing: "when somebody is comfortable."
+- The result should never shame. Tamas is information, not failure. The whole point of principle #4 ("there is no good, there is no bad, there just is") applies directly here.
+- Thea also noted: "comparing and talking about your journey with other people is going to be important when the time is right." This is a future social/sharing feature, not a launch requirement.
+
+**Content dependency:** The 24 assessment dimensions and all three answer columns come from transcript 08 and are ready to scaffold. The result copy (what does your guna dominance mean, what does the path forward look like) must come from Thea before shipping.
+
+**Data:** Stores as a `guna_results` record alongside the dosha result — `sattva_score`, `rajas_score`, `tamas_score`, `dominant_guna`, `taken_at`. Schema already planned in `lglow.` MSSQL schema — add this table alongside the others.
+
+---
+
+## Visual & component polish
+
+**28. Revisit the dosha wheel — restore the three-percentage breakdown.**
+The current `DoshaWheel` component on the You screen shows the donut chart and a small legend (VATA / PITTA / KAPHA with percentage) but the three large individual percentage figures that appeared in the previous version are not present. Revisit the wheel's layout to make the three-dosha breakdown more readable and prominent — likely as three larger stat-style numbers below the chart, consistent with the card design system (surface background, 26px radius, shadow, no border).
+
+Design constraints: stays inside the "Your Constitution" card on the You screen. The retake quiz button stays. The PRAKRITI label and primary dosha name in the donut center stay. The change is purely to how the three breakdown percentages are displayed below the chart.
+
+---
+
+## Pre-launch requirements — must ship before public release
+
+**29. User authentication — login, logout, and account persistence.**
+Currently all user data lives on-device in AsyncStorage with no identity attached. Before go-live, users need to be able to create an account, log in, log out, and have their data follow them across devices and app reinstalls.
+
+**Decided architecture: Firebase Auth + Supabase data (see #30).**
+Firebase handles identity exclusively — login, logout, session management, JWT issuance. Supabase receives and verifies those Firebase JWTs for all data operations. This avoids the auth migration problem (Firebase Auth users can never have their passwords migrated) while getting Postgres for everything that matters for reporting.
+
+Scope:
+- Account creation — email + password to start; social login (Google, Apple) can follow
+- Login and logout flows with L. Glow design system screens (no Firebase default UI)
+- Session persistence — user stays logged in across app restarts via Firebase's onAuthStateChanged listener
+- Graceful unauthenticated state — app works fully offline/local before login, prompts to save progress when a user tries to preserve data
+- On first login after using the app locally, offer to migrate existing AsyncStorage data to the backend under their new account
+
+Design constraints: auth screens must match the L. Glow card/shadow/typography design system. No Firebase branding visible to users.
+
+**30. Backend data layer — user data storage and practitioner reporting.**
+Thea needs to be able to see her clients' data — check-in history, dosha results, journal entries, practice completions — and draw clinical insight from it ahead of sessions. This is a core part of her practitioner value proposition and the app's long-term job.
+
+**Decided architecture: Supabase (Postgres) with Firebase JWT verification.**
+All user-generated data is written to Supabase Postgres tables. Row-level security (RLS) policies use the Firebase `uid` from the verified JWT — users can only read/write their own rows. Thea's practitioner account is granted explicit access to consenting clients' rows via a `practitioner_clients` join table.
+
+Scope — two surfaces, sequenced:
+
+*Phase 1 — User data persistence (depends on #29):*
+- Core tables: `users`, `dosha_results`, `checkins`, `journal_entries`, `intentions`, `practice_completions`
+- All AsyncStorage writes proxied through a thin service layer that writes to both AsyncStorage (local cache) and Supabase (source of truth once authenticated)
+- Data types retained indefinitely — this is longitudinal health data
+
+*Phase 2 — Practitioner-facing reporting (Thea's view):*
+- Thea's account designated as `role: practitioner` in the `users` table
+- Per-client view: dosha result, check-in history and trends, vikriti drift over time, recent journal entries (if consented)
+- Start simple: a web-based dashboard or even a Supabase Studio view she can query directly before building a custom UI
+- Consent model: explicit opt-in per user, stored in `practitioner_clients` with `consented_at` timestamp
+
+⚠️ **Still needed before building Phase 2:**
+- Conversation with Thea about what she actually wants to see before a session — do not design the practitioner view without her input
+- Consent language and privacy policy — legal review required before any user data leaves the device
+
+**Build order:**
+1. Firebase Auth integration + L. Glow auth screens (#29)
+2. MSSQL `lglow` schema deployed (see #31 for schema and endpoints)
+3. Firebase Admin JWT middleware added to existing panda-mobile API
+4. Service layer that writes to MSSQL alongside AsyncStorage
+5. AsyncStorage migration flow for existing local users
+6. Thea conversation → practitioner view design
+7. Practitioner dashboard (Phase 2)
+8. Consent flow and privacy policy
+9. End-to-end QA on real devices
+
+---
+
+**31. API endpoint spec — lglow routes on the existing panda-mobile API.**
+
+All routes are prefixed `/lglow/`. Every route requires a valid Firebase JWT in the `Authorization: Bearer <token>` header. The middleware verifies the token, extracts `firebase_uid`, and resolves or creates the corresponding `lglow.Users` row before the handler runs. The resolved `user_id` (integer) is attached to the request context — handlers never deal with Firebase UIDs directly after the middleware layer.
+
+Base URL: same host as the panda-mobile API.
+Auth header: `Authorization: Bearer <firebase_id_token>`
+Content-Type: `application/json`
+All timestamps: ISO 8601 UTC.
+All error responses: `{ "error": "<message>" }` with appropriate HTTP status.
+
+---
+
+*Users*
+
+`POST /lglow/users/me`
+Upsert the authenticated user's profile. Called on first app launch after login and on display name / theme changes.
+```
+Request:  { displayName?: string, themePreference?: string }
+Response: { userId: int, firebaseUid: string, email: string,
+            displayName: string, role: string,
+            themePreference: string, createdAt: string }
+```
+
+`GET /lglow/users/me`
+Fetch the authenticated user's profile.
+```
+Response: { userId: int, firebaseUid: string, email: string,
+            displayName: string, role: string,
+            themePreference: string, createdAt: string }
+```
+
+---
+
+*Dosha Results*
+
+`POST /lglow/dosha`
+Save a quiz result. Marks all previous results `is_current = 0` before inserting the new one.
+```
+Request:  { vataScore: int, pittaScore: int, kaphaScore: int }
+Response: { resultId: int, primaryDosha: string,
+            vataScore: int, pittaScore: int, kaphaScore: int,
+            takenAt: string }
+```
+
+`GET /lglow/dosha/current`
+Fetch the user's current (most recent) dosha result.
+```
+Response: { resultId: int, primaryDosha: string,
+            vataScore: int, pittaScore: int, kaphaScore: int,
+            takenAt: string }
+         | 404 if no quiz taken
+```
+
+`GET /lglow/dosha/history`
+All quiz results for the user, newest first. Lets Thea see if someone's self-reported constitution has shifted.
+```
+Response: [{ resultId, primaryDosha, vataScore, pittaScore,
+             kaphaScore, isCurrent, takenAt }]
+```
+
+---
+
+*Check-ins*
+
+`POST /lglow/checkins`
+Save a check-in. Upserts on (user_id, checkin_date, checkin_type) — re-submitting the same day/type overwrites.
+```
+Request:  { checkinDate: string (YYYY-MM-DD), checkinType?: 'morning'|'evening',
+            physicalScore: int, mentalScore: int, emotionalScore: int,
+            hungerScore: int, tongueScore: int, note?: string }
+Response: { checkinId: int, checkinDate: string, checkinType: string,
+            physicalScore: int, mentalScore: int, emotionalScore: int,
+            hungerScore: int, tongueScore: int, note: string,
+            createdAt: string }
+```
+
+`GET /lglow/checkins?days=30`
+Recent check-ins, newest first. `days` defaults to 7, max 90.
+```
+Response: [{ checkinId, checkinDate, checkinType, physicalScore,
+             mentalScore, emotionalScore, hungerScore, tongueScore,
+             note, createdAt }]
+```
+
+`GET /lglow/checkins/:date`
+Single check-in by date (returns both morning and evening if both exist).
+```
+Response: [{ checkinId, checkinDate, checkinType, ... }]
+         | 404 if no check-in on that date
+```
+
+---
+
+*Journal Entries*
+
+`PUT /lglow/journal/:date`
+Upsert a journal entry for a given date. Partial saves are valid — any null field leaves the existing value unchanged.
+```
+Request:  { gratefulText?: string, showedText?: string, tomorrowText?: string }
+Response: { entryId: int, entryDate: string, gratefulText: string,
+            showedText: string, tomorrowText: string,
+            createdAt: string, updatedAt: string }
+```
+
+`GET /lglow/journal/:date`
+Fetch entry for a specific date.
+```
+Response: { entryId, entryDate, gratefulText, showedText,
+            tomorrowText, createdAt, updatedAt }
+         | 404 if no entry
+```
+
+`GET /lglow/journal?limit=20&offset=0`
+Paginated list of all entries, newest first. Returns date + first 100 chars of each field for the list view.
+```
+Response: { total: int, entries: [{ entryId, entryDate,
+            gratefulExcerpt, showedExcerpt, tomorrowExcerpt }] }
+```
+
+---
+
+*Intentions*
+
+`PUT /lglow/intentions/:date`
+Upsert today's intention. One per day.
+```
+Request:  { intentionText: string }
+Response: { intentionId: int, intentionDate: string,
+            intentionText: string, createdAt: string }
+```
+
+`GET /lglow/intentions/:date`
+Fetch intention for a date.
+```
+Response: { intentionId, intentionDate, intentionText, createdAt }
+         | 404 if none
+```
+
+---
+
+*Practice Completions*
+
+`POST /lglow/practices`
+Mark a practice complete for a given date. Upserts — idempotent.
+```
+Request:  { practiceDate: string, practiceKey: string }
+Response: { completionId: int, practiceDate: string,
+            practiceKey: string, completedAt: string }
+```
+
+`DELETE /lglow/practices`
+Unmark a practice (user unchecks it on Journey screen).
+```
+Request:  { practiceDate: string, practiceKey: string }
+Response: 204 No Content
+```
+
+`GET /lglow/practices/:date`
+All practice completions for a given date.
+```
+Response: [{ completionId, practiceDate, practiceKey, completedAt }]
+```
+
+---
+
+*Practitioner routes (role: practitioner required — middleware enforces)*
+
+`GET /lglow/practitioner/clients`
+All active consenting clients for the authenticated practitioner.
+```
+Response: [{ userId, displayName, email, primaryDosha,
+             lastCheckin, checkinCount30Days }]
+```
+
+`GET /lglow/practitioner/clients/:clientUserId/summary`
+Full pre-session briefing for one client.
+```
+Response: {
+  profile:   { userId, displayName, email, createdAt },
+  dosha:     { primaryDosha, vataScore, pittaScore, kaphaScore, takenAt },
+  checkins:  { last30Days: int, avgPhysical, avgMental, avgEmotional,
+               avgHunger, avgTongue, lastCheckinDate,
+               recent: [{ checkinDate, checkinType, physicalScore,
+                          mentalScore, emotionalScore, note }] },
+  intentions: [{ intentionDate, intentionText }],  -- last 7
+  journal:    [{ entryDate, gratefulExcerpt }]     -- last 5, if consented
+}
+```
+
+`POST /lglow/practitioner/clients/:clientUserId/consent`
+Record that a client has consented to share data with this practitioner.
+```
+Request:  {}  (consent is implied by the action, not a body field)
+Response: { relationshipId: int, consentedAt: string }
+```
+
+`DELETE /lglow/practitioner/clients/:clientUserId/consent`
+Revoke consent. Sets `revoked_at`, never deletes the row.
+```
+Response: 204 No Content
+```
+
+---
+
+*Sync (for AsyncStorage migration)*
+
+`POST /lglow/sync`
+Bulk-upload local AsyncStorage data when a user logs in for the first time. The API processes each item and skips any that conflict with existing rows (local data wins on same-day conflicts).
+```
+Request:  {
+  doshaResult?:   { vataScore, pittaScore, kaphaScore },
+  checkins?:      [{ checkinDate, checkinType, physicalScore,
+                     mentalScore, emotionalScore, hungerScore,
+                     tongueScore, note }],
+  journalEntries?: [{ entryDate, gratefulText, showedText, tomorrowText }],
+  intentions?:    [{ intentionDate, intentionText }],
+  practices?:     [{ practiceDate, practiceKey }]
+}
+Response: { synced: { dosha: bool, checkins: int, journal: int,
+                      intentions: int, practices: int },
+            skipped: int,
+            errors: [] }
+```
+
+---
+
+## Client intake form
+
+**33. Clinical intake form — full pre-session questionnaire.**
+Source: voice memo 12 (`docs/transcripts/12_intake_form.txt`). A multi-section clinical intake form accessible from the hamburger menu. This is the form a user fills out before working with Thea — not part of onboarding, not gated to first launch. Anyone can access it from the drawer at any time.
+
+**Entry point:** Hamburger menu → "My Intake Form" (or similar label — confirm wording with Thea). Routes to `app/intake.js`.
+
+**Sections (in order from the voice memo):**
+1. **Basic info** — name, address, city/state/zip, phone, email, date of birth, location, gender identity, emergency contact (name, relationship, phone), referral source
+2. **Scope of practice disclosure + consent** — Thea's welcome text, scope limitations (not a medical doctor, not a substitute for clinical care), confidentiality statement, client signature + date, coach signature + date
+3. **Presenting concerns** — what brought them here (free-form), duration, biggest current health challenges, duration of those challenges
+4. **History** — current healthcare providers (details + improvements noticed), past mental conditions / traumas / addictions / stress, family history of diagnosed diseases, childhood health description
+5. **Daily routine** — morning / afternoon / evening typical routine; ideal routine vs. actual
+6. **Sleep** — wake time + consistency, how they feel on waking (options), sleep quality (waking frequently, nightmares, ease of falling asleep, soundness), daytime napping, bedtime + consistency, evening routine 2–4 hours before bed, ideal sleep state
+7. **Work and life** — current work + enjoyment, weekly schedule by day (Mon–Sun), hobbies (current + wished-for + frequency), passions, spiritual practice, relationship with the divine/God/nature, cultural/ritual practices
+8. **Diet** — food frequency table (carbs, vegetables, meats, fruits, dairy, alcohol, coffee, tea, soda, sugar, tobacco, recreational drugs — options: never / few times/week / once/week / multiple times / daily / other), water quantity + temperature, cooking habits, disordered eating history, typical meals (breakfast/lunch/dinner — recent actual + is it typical + ideal), eating environment + distractions + pace, current herbs or medications
+9. **Appetite and elimination** — cravings by taste, snacking (frequency + what), morning hunger, pre-meal hunger (0–10 scale), post-meal symptoms (bloating, belching, acid reflux, nausea, sleepiness, gas, abdominal pain, sluggishness, fatigue, heartburn, heaviness, indigestion — check all that apply + frequency/intensity), elimination pattern (frequency + timing options), stool characteristics (consistency, sinking/floating, color, odor, straining, burning, mucus, completeness)
+10. **Movement** — travel frequency + description, commute frequency + duration, exercise type + frequency + duration + intensity (light/moderate/vigorous)
+11. **Relationships** *(18+ gate before this section)* — relationship status + quality, past intimate relationship description, age of first sexual activity, past and present sensual health, current sexual activity, satisfaction + what they'd change
+12. **Reproductive health — women only** *(18+ gate, shown conditionally based on gender identity)* — menstrual status (pre/peri/post-menopausal), cycle regularity, last cycle date, duration, flow (light/moderate/heavy), color, cramping/pain, peri/PMS symptoms (mood, acne, bloating, fatigue, etc.), menstrual products used; menopause symptoms if applicable; bioidentical hormones; contraception (current method, hormonal history, IUD, side effects); pregnancy history (number, miscarriages, abortions, fertility challenges, complications)
+13. **Mind and emotional health** — breathing/reflection prompt before questions; family mental illness history; symptom inventory (anxious, overwhelmed, self-destructive, resentment, anger, depressed, intense, melancholy, stubborn, lonely, irritated, fear/panic, high stress, lethargy, worry — with intensity + frequency + tied events); current stress management; substance addiction history (substance + duration)
+
+**18+ gate:** Not enforced at signup. A single acknowledgment screen appears before sections 11 and 12: "The next section includes questions about relationships and sexual health. These are optional — tap Pass on any question that doesn't feel right. Continue only if you are 18 or older." A "I'm under 18 / skip this section" option skips both sections entirely.
+
+**Data handling:**
+- Stored locally in AsyncStorage under `@lglow/intake` as a single JSON object (partial saves valid — resume where left off)
+- Must sync to backend when #29/#30 are live — Thea needs to read this before sessions. This is the primary data source for her practitioner view.
+- The signature/consent block requires a privacy policy to be in place before this screen ships publicly. Do not launch this feature without legal sign-off on the confidentiality statement.
+
+**Build order:**
+1. Data structure + `data/user/storage.js` intake key (can do now)
+2. Route `app/intake.js` — multi-step form with section navigation, save-on-exit, resume state
+3. Add "My Intake Form" to `components/HamburgerDrawer.js`
+4. Scope-of-practice disclosure screen (copy from voice memo, flagged for Thea's final wording review)
+5. All 13 sections as distinct step screens
+6. 18+ gate screen before sections 11–12
+7. Reproductive health conditional display logic (gender identity field from section 1 drives visibility)
+8. Signature/consent screen — requires privacy policy to exist first
+9. Backend sync when #29/#30 are live
+
+**Content dependency:** Section copy (question labels, options, explanatory text) must match Thea's voice — do not invent clinical language. The structure above maps directly from her voice memo. Run final wording past her before shipping.
+
+---
+
+## Thea's TestFlight feedback — Round 1
+
+Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what needs to become roadmap items:
+
+**Hard bugs (fix before next build):**
+- Home screen unreachable after quiz flow — bottom nav disappears, logo not tappable
+- Reminders screen navigation trap — force-close required to exit
+- Keyboard covers "write your own" intention input
+- Past journal entries not tappable / no full-entry view
+- Practices / rituals taps on You tab do nothing
+
+**Quiz / check-in (needs Thea's input before changing):**
+- Q3 "How is your digestion?" → reframe toward hunger/agni language
+- Q4 sleep options incomplete — needs "Other" + a review pass with Thea
+- 100% single-dosha quiz results are wrong — always a mix, needs algorithm fix
+- Broader quiz accuracy issue — 10 questions may not reliably capture prakriti (ties to roadmap item 18)
+
+**Copy / UX (lower urgency, needs Thea's sign-off on wording):**
+- "Welcome back, Vata" → "Welcome back, [name]" (requires name capture somewhere)
+- Lifestyle notes presentation too dense — break into bullets
+- "Just for Today" needs "choose one" instruction
+- Learn section overuses Thea's name — should center the practice, not her
+- About Thea bio — waiting on her rewrite
+- Credentials stacking under her name — fix ordering
+- Practices / rituals numbers on You tab need explanation or rethink
+- Saved favorites not discoverable — either wire it up or hide the section
+
+**Images (blocked on Thea):**
+- About Thea photo — she's getting a new one
+- Kapha insights card image looks off — she has a screenshot
+
+**Her content ask:** Interested in video for doshas, breathwork, recipes. Referenced "2B Magnetic" (TBM) app as style inspiration. Conversation needed before she starts recording.
+
+**What she liked:** Herb warm/cooling/heating tags, Monday Mythbusters, dosha wheel, journal section, 10-question quiz length.
+
+---
+
 ## Out of scope (staying that way unless explicitly reopened)
 
 - Monetization. The app's job is to build Thea's reputation and funnel to the center.
-- Multi-practitioner content. Lavender Glow is Thea.
+- Multi-practitioner content. L. Glow is Thea.
 - AI-generated clinical content. Everything clinical comes from Thea.

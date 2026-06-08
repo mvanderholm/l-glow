@@ -1,12 +1,12 @@
-# Lavender Glow — Voice & Philosophy Guide
+# L. Glow — Voice & Philosophy Guide
 
 *Draft v0.4, distilled from Thea's voice memos. For her review.*
 
 ---
 
-## What Lavender Glow actually is
+## What L. Glow actually is
 
-Lavender Glow is Thea's practice, in app form. Not a generic ayurveda app with a credentialed advisor — *her* worldview, *her* voice, *her* methodology, made available to users between sessions or in lieu of them. The name Lavender Glow is the brand for her practice.
+L. Glow is Thea's practice, in app form. Not a generic ayurveda app with a credentialed advisor — *her* worldview, *her* voice, *her* methodology, made available to users between sessions or in lieu of them. The name L. Glow is the brand for her practice.
 
 When in doubt about a content decision: would Thea say this? Would she say it this way? If no, cut it.
 
@@ -28,7 +28,7 @@ Thea is an RYT and an Ayurvedic practitioner, not one or the other, and the two 
 
 Her framing: yoga and Ayurveda are sister sciences. Both are rooted in Vedic tradition. Both were always used together — not one before the other. Ayurveda as she teaches it: the science of healing, body and mind together. Yoga: self-reflection and realization. The best path inward depends on a well-oiled, well-functioning body and mind — which is exactly why healing and practice can't be siloed.
 
-What she notices about Western wellness: it tends to categorize and bucket. A yoga app. A nutrition app. A meditation app. Lavender Glow is explicitly neither — it's the integration, because that's what the tradition always was.
+What she notices about Western wellness: it tends to categorize and bucket. A yoga app. A nutrition app. A meditation app. L. Glow is explicitly neither — it's the integration, because that's what the tradition always was.
 
 **Tone note:** This framing belongs in the "about" context — the About Thea screen, any onboarding copy that explains what the app is. Not in daily check-in or recommendation copy, where it's assumed, not explained.
 
@@ -334,7 +334,7 @@ Some of Thea's guidance is genuinely countercultural — small dinners, no const
 
 ## Open questions for round two (whenever convenient)
 
-- The feeling of the app — if Lavender Glow were a person, who would she be? (Educated guess: a version of Thea herself. Worth confirming.)
+- The feeling of the app — if L. Glow were a person, who would she be? (Educated guess: a version of Thea herself. Worth confirming.)
 - Movement: are there 3–5 signature sequences or postures she'd want the app to suggest per dosha? Even written descriptions, no video needed for mark 1.
 - Sleep and evening rituals — what does a Thea-approved wind-down look like?
 - ~~**What's "the other part"?**~~ Answered: ama and agni. The new voice memo covers this. See the *Ama and agni* section above. The gunas may still be a third piece worth asking about.
@@ -342,9 +342,9 @@ Some of Thea's guidance is genuinely countercultural — small dinners, no const
 
 ---
 
-## How Lavender Glow shows up publicly — a question for the two of you
+## How L. Glow shows up publicly — a question for the two of you
 
-There's a spectrum from "her name and face on the front door, the app is explicitly her practice" to "she's the credited clinical lead but the voice is brand-neutral." Drafting toward the first end feels right based on these transcripts — her voice is too distinctive to dilute, and her credentials plus the personal origin of the project give Lavender Glow a legitimacy a brand voice can't fake. But this is a real decision with implications for marketing, scope-of-practice, and Thea's personal exposure (strangers DM you when your name is on a wellness app, and not all of them are kind). Worth an explicit conversation between the two of you rather than drifting into it.
+There's a spectrum from "her name and face on the front door, the app is explicitly her practice" to "she's the credited clinical lead but the voice is brand-neutral." Drafting toward the first end feels right based on these transcripts — her voice is too distinctive to dilute, and her credentials plus the personal origin of the project give L. Glow a legitimacy a brand voice can't fake. But this is a real decision with implications for marketing, scope-of-practice, and Thea's personal exposure (strangers DM you when your name is on a wellness app, and not all of them are kind). Worth an explicit conversation between the two of you rather than drifting into it.
 
 ---
 

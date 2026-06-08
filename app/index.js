@@ -1,533 +1,582 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, Linking, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import { useWindowDimensions } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { useDrawer } from '../context/DrawerContext';
+import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
 import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention } from '../data/user/storage';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
-import LogoAlt from '../components/LogoAlt';
-import { BotanicalDivider, CornerSprig } from '../components/BotanicalAccent';
+import { playlistForDosha } from '../data/content/music';
+import Svg, { Path, Circle, G } from 'react-native-svg';
+
+const WEEK_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const SEASONS = [
+  null,'Late Winter','Late Winter','Early Spring','Spring','Spring',
+  'Late Spring','Summer','Summer','Late Summer','Early Autumn','Autumn','Late Autumn',
+];
+
+function todayLabel() {
+  const d = new Date();
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  let season;
+  if (m === 6 && day < 21) season = 'Late Spring';
+  else if (m <= 2 || m === 12) season = 'Late Winter';
+  else if (m === 3) season = 'Early Spring';
+  else if (m <= 5) season = 'Spring';
+  else if (m <= 8) season = 'Summer';
+  else if (m === 9) season = 'Early Autumn';
+  else season = 'Autumn';
+  return `${WEEK_DAYS[d.getDay()]} · ${season}`;
+}
 
 export default function Home() {
-  const { theme: { colors, spacing, radius, type } } = useTheme();
-  const season = currentSeason();
-  const styles = makeStyles(colors, spacing, radius);
-
+  const { theme: { colors: c, spacing, radius, type } } = useTheme();
+  const { open: openDrawer } = useDrawer();
   const [savedDosha, setSavedDosha] = useState(null);
-  const [userName, setUserName] = useState('Lindsey');
-  const [selectedRemedy] = useState({ name: 'amber candle, tea & dried flowers', emoji: '🕯️' });
-  const [selectedAffirmation] = useState({ text: 'I am rooted, but I flow.' });
+  const [userName] = useState('Lindsey');
 
   useEffect(() => {
-    loadDoshaResult().then(result => {
-      setSavedDosha(result ? result.dosha : false);
-    });
+    loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
   }, []);
 
   return (
-    <SafeAreaView edges={['bottom']} style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header with menu, logo, bell */}
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.headerButton}>
-            <Text style={styles.headerIcon}>☰</Text>
-          </Pressable>
-          <View style={styles.logo}>
-            <Text style={styles.logoText}>L. GL</Text>
-            <View style={styles.logoDot} />
-            <Text style={styles.logoText}>W</Text>
-          </View>
-          <Pressable style={styles.headerButton}>
-            <Text style={styles.headerIcon}>🔔</Text>
-          </Pressable>
+          <Pressable style={styles.headerBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+          <LogoLockup color={c.text} />
+          <Pressable style={styles.headerBtn}><BellIcon color={c.text} /></Pressable>
         </View>
 
-        {/* Greeting Card */}
-        <View style={styles.greetingCard}>
-          <Text style={[type.label, { color: colors.textMuted, marginBottom: spacing.sm }]}>
-            SATURDAY · {season.name.toUpperCase()}
-          </Text>
-          <Text style={[type.h1, { color: colors.text }]}>
-            Good morning,
-          </Text>
-          <Text style={[type.h1, { color: colors.text, marginBottom: spacing.md }]}>
-            {userName}
-          </Text>
-          <Text style={[type.muted, { color: colors.textMuted }]}>
-            Let's take care of you today.
-          </Text>
+        {/* Greeting */}
+        <View style={{ marginBottom: spacing.lg }}>
+          <Text style={[styles.overline, { color: c.textMuted }]}>{todayLabel()}</Text>
+          <Text style={[styles.greetLine, { color: c.textMedium }]}>Good morning,</Text>
+          <Text style={[styles.greetName, { color: c.text }]}>{userName}</Text>
+          <Text style={[styles.greetSub, { color: c.textMedium }]}>Let's see where you are today.</Text>
         </View>
 
-        {/* Remedy Recommendation Card */}
-        <View style={styles.remedyCard}>
-          <View style={styles.remedyImage}>
-            <Text style={styles.remedyEmoji}>{selectedRemedy.emoji}</Text>
+        {/* Hero remedy card */}
+        <View style={[styles.heroCard, { backgroundColor: c.surface, ...card }]}>
+          <Image source={require('../assets/checkin-tea.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        </View>
+
+        {/* CTA button */}
+        <CtaButton colors={c} />
+
+        {/* Affirmation card */}
+        <View style={[styles.affirmCard, { backgroundColor: c.surface, ...card }]}>
+          <View style={[styles.affirmImage, { backgroundColor: c.surfaceAlt, overflow: 'hidden' }]}>
+            <Image source={require('../assets/about-archway.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           </View>
-          <Text style={[type.body, { color: colors.text, marginTop: spacing.md }]}>
-            {selectedRemedy.name}
-          </Text>
-          <View style={styles.cardActions}>
-            <Pressable style={styles.actionBtn}>
-              <Text style={[type.label, { color: colors.accent, fontSize: 11 }]}>Replace</Text>
-            </Pressable>
-            <Pressable style={styles.actionBtn}>
-              <Text style={[type.label, { color: colors.accent, fontSize: 11 }]}>Remove</Text>
+          <View style={styles.affirmContent}>
+            <Text style={[styles.overline, { color: c.textMuted, marginBottom: 6 }]}>Daily Affirmation</Text>
+            <Text style={[styles.affirmText, { color: c.text }]}>I am rooted, but I flow.</Text>
+            <Pressable style={{ marginTop: 12 }}>
+              <LeafIcon color={c.accentSoft} size={16} />
             </Pressable>
           </View>
         </View>
 
-        {/* Start My Day Button */}
-        <Link href="/checkin" asChild>
-          <Pressable style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>Start my day</Text>
-          </Pressable>
-        </Link>
+        {/* Daily music suggestion */}
+        {savedDosha && <MusicCard dosha={savedDosha} colors={c} />}
 
-        {/* Daily Affirmation Card */}
-        <View style={styles.affirmationCard}>
-          <View style={styles.affirmationImageWrapper}>
-            <View style={styles.affirmationImagePlaceholder}>
-              <Text style={styles.affirmationEmoji}>🏛️</Text>
-            </View>
-          </View>
-          <View style={styles.affirmationContent}>
-            <Text style={[type.label, { color: colors.accent, marginBottom: spacing.xs }]}>
-              DAILY AFFIRMATION
-            </Text>
-            <Text style={[styles.affirmationText]}>
-              {selectedAffirmation.text}
-            </Text>
-            <Pressable style={{ marginTop: spacing.md }}>
-              <Text style={styles.refreshIcon}>🔄</Text>
-            </Pressable>
-          </View>
-        </View>
+        {/* Monday Mythbusters */}
+        <MythbusterCard colors={c} spacing={spacing} />
 
-        {/* Begin Here Section */}
-        <View style={styles.beginHereSection}>
-          <Text style={[type.h2, { color: colors.text, marginBottom: spacing.lg }]}>
-            Begin here
-          </Text>
-          <View style={styles.featureGrid}>
-            <Link href="/herbs" asChild>
-              <Pressable style={styles.featureCard}>
-                <Text style={styles.featureEmoji}>🌿</Text>
-                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Apothecary</Text>
-              </Pressable>
-            </Link>
-            <Link href="/breathwork" asChild>
-              <Pressable style={styles.featureCard}>
-                <Text style={styles.featureEmoji}>💨</Text>
-                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Breathwork</Text>
-              </Pressable>
-            </Link>
-            <Link href="/recipes" asChild>
-              <Pressable style={styles.featureCard}>
-                <Text style={styles.featureEmoji}>🍲</Text>
-                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Recipes</Text>
-              </Pressable>
-            </Link>
-            <Link href="/meditation" asChild>
-              <Pressable style={styles.featureCard}>
-                <Text style={styles.featureEmoji}>🧘</Text>
-                <Text style={[type.body, { color: colors.text, textAlign: 'center' }]}>Meditate</Text>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
+        {/* Begin here */}
+        <Text style={[styles.sectionTitle, { color: c.text, marginBottom: spacing.md }]}>Begin here</Text>
+        <BeginGrid colors={c} />
 
         {/* Footer */}
-        <View style={styles.footer}>
-          <Text style={[type.label, { color: colors.textMuted, fontSize: 20, marginBottom: spacing.sm }]}>❧</Text>
-          <Text style={[type.muted, { color: colors.textMuted, textAlign: 'center' }]}>
-            Wellness, rooted in you.
-          </Text>
+        <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
+          <Text style={{ color: c.accentSoft, fontSize: 15, marginBottom: 6 }}>❧</Text>
+          <Text style={[styles.footerText, { color: c.textMuted }]}>It changes.</Text>
         </View>
 
-        {/* Additional content for returning users */}
         {savedDosha === null ? null : savedDosha ? (
-          <ReturningUser dosha={savedDosha} />
-        ) : (
-          <NewUser />
-        )}
+          <ReturningUser dosha={savedDosha} colors={c} spacing={spacing} type={type} />
+        ) : null}
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-function ReturningUser({ dosha }) {
-  const { theme: { colors, spacing, radius, type } } = useTheme();
-  const styles = makeStyles(colors, spacing, radius);
-  const info = doshaInfo[dosha];
+function MusicCard({ dosha, colors: c }) {
+  const playlist = playlistForDosha(dosha);
+  if (!playlist) return null;
 
-  async function shareWithThea() {
-    const summary = await buildSessionSummary();
-    await Share.share({ message: summary });
+  return (
+    <View style={[styles.musicCard, { backgroundColor: c.surface }]}>
+      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 8 }]}>Today's sound</Text>
+      {playlist.name && (
+        <Text style={[styles.musicName, { color: c.text }]}>{playlist.name}</Text>
+      )}
+      <Text style={[styles.musicMood, { color: c.textMedium }]}>{playlist.mood}</Text>
+      {playlist.url ? (
+        <Pressable
+          style={({ pressed }) => [styles.musicBtn, { borderColor: c.border, opacity: pressed ? 0.7 : 1 }]}
+          onPress={() => Linking.openURL(playlist.url)}
+        >
+          <Text style={[styles.musicBtnText, { color: c.textMedium }]}>Open on Spotify  ↗</Text>
+        </Pressable>
+      ) : (
+        <Text style={[styles.musicMood, { color: c.textMuted, fontStyle: 'italic', marginTop: 6 }]}>
+          Playlist coming soon.
+        </Text>
+      )}
+    </View>
+  );
+}
+
+function MythbusterCard({ colors: c, spacing }) {
+  const myth = currentMythbuster();
+
+  if (myth) {
+    return (
+      <View style={[styles.mythCard, { backgroundColor: c.surface }]}>
+        <Text style={[styles.overline, { color: c.textMuted, marginBottom: 10 }]}>This week · Myth</Text>
+        <Text style={[styles.mythMyth, { color: c.text }]}>"{myth.myth}"</Text>
+        {myth.take && (
+          <Text style={[styles.mythBody, { color: c.textMedium, marginTop: 10 }]}>{myth.take}</Text>
+        )}
+        {myth.reframe && (
+          <View style={[styles.mythReframe, { backgroundColor: c.surfaceAlt, borderLeftColor: c.accentAlt }]}>
+            <Text style={[styles.overline, { color: c.textMuted, marginBottom: 4 }]}>The reframe</Text>
+            <Text style={[styles.mythBody, { color: c.text }]}>{myth.reframe}</Text>
+          </View>
+        )}
+      </View>
+    );
   }
 
   return (
-    <View style={styles.returningBlock}>
-      <Text style={type.label}>Welcome back</Text>
-      <Text style={[type.h2, { color: info.color, marginTop: spacing.xs }]}>
-        {info.name}
+    <View style={[styles.mythCard, { backgroundColor: c.surface }]}>
+      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 8 }]}>Monday Mythbusters</Text>
+      <Text style={[styles.mythBody, { color: c.textMedium, fontStyle: 'italic' }]}>
+        Every Monday, Thea takes apart one wellness belief that deserves a closer look. Check back then.
       </Text>
-
-      <IntentionCard dosha={dosha} />
-
-      <Link href={{ pathname: '/recommendations', params: { dosha } }} asChild>
-        <Pressable style={styles.primaryBtn}>
-          <Text style={styles.primaryBtnText}>Today's Guidance</Text>
-        </Pressable>
-      </Link>
-
-      <Link href="/checkin" asChild>
-        <Pressable style={styles.secondaryBtn}>
-          <Text style={styles.secondaryBtnText}>Daily Check-in</Text>
-        </Pressable>
-      </Link>
-
-      {Platform.OS !== 'web' && (
-        <Pressable style={styles.secondaryBtn} onPress={shareWithThea}>
-          <Text style={styles.secondaryBtnText}>Share summary with Thea</Text>
-        </Pressable>
-      )}
-
-      <Link href="/quiz" asChild>
-        <Pressable style={styles.ghostBtn}>
-          <Text style={styles.ghostBtnText}>Retake the quiz</Text>
-        </Pressable>
-      </Link>
     </View>
   );
 }
 
-function NewUser() {
-  const { theme: { colors, spacing, radius, type } } = useTheme();
-  const styles = makeStyles(colors, spacing, radius);
+function CtaButton({ colors: c }) {
+  const router = useRouter();
   return (
-    <View style={{ marginTop: spacing.xl }}>
-      <Link href="/quiz" asChild>
-        <Pressable style={styles.primaryBtn}>
-          <Text style={styles.primaryBtnText}>Take the Dosha Quiz</Text>
-        </Pressable>
-      </Link>
+    <Pressable
+      style={({ pressed }) => [styles.ctaBtn, { backgroundColor: c.accent, opacity: pressed ? 0.9 : 1 }]}
+      onPress={() => router.push('/checkin')}
+    >
+      <Text style={styles.ctaBtnText}>START MY DAY  ›</Text>
+    </Pressable>
+  );
+}
 
-      <Link href="/recommendations" asChild>
-        <Pressable style={styles.secondaryBtn}>
-          <Text style={styles.secondaryBtnText}>Today's Guidance</Text>
+const BEGIN_ITEMS = [
+  { href: '/herbs',      label: 'Apothecary', Icon: HerbsIcon,      colorKey: 'kapha'      },
+  { href: '/breathwork', label: 'Breathwork', Icon: BreathIcon,     colorKey: 'sage'       },
+  { href: '/recipes',    label: 'Recipes',    Icon: RecipesIcon,    colorKey: 'honeyAmber' },
+  { href: '/meditation', label: 'Meditate',   Icon: MeditationIcon, colorKey: 'vata'       },
+];
+
+function BeginGrid({ colors: c }) {
+  const router = useRouter();
+  return (
+    <View style={styles.beginGrid}>
+      {BEGIN_ITEMS.map(item => (
+        <Pressable
+          key={item.href}
+          style={({ pressed }) => [styles.beginCard, { backgroundColor: c.surface, ...card, opacity: pressed ? 0.8 : 1 }]}
+          onPress={() => router.push(item.href)}
+        >
+          <View style={[styles.beginIconWrap, { backgroundColor: c.surfaceAlt }]}>
+            <item.Icon color={c[item.colorKey]} size={20} />
+          </View>
+          <Text style={[styles.beginLabel, { color: c.textMedium }]}>{item.label}</Text>
         </Pressable>
-      </Link>
+      ))}
     </View>
   );
 }
 
-function IntentionCard({ dosha }) {
-  const { theme: { colors, spacing, radius, type } } = useTheme();
-  const styles = makeStyles(colors, spacing, radius);
+function ReturningUser({ dosha, colors: c, spacing, type }) {
+  const router = useRouter();
+  const info = doshaInfo[dosha];
+  const { theme: { radius } } = useTheme();
   const suggestions = intentionSuggestions(dosha);
   const [intention, setIntention] = useState(null);
   const [draft, setDraft] = useState('');
 
-  useEffect(() => {
-    loadTodayIntention().then(val => setIntention(val ?? ''));
-  }, []);
+  useEffect(() => { loadTodayIntention().then(v => setIntention(v ?? '')); }, []);
 
   async function choose(text) {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    await saveIntention(trimmed);
-    setIntention(trimmed);
+    const t = text.trim();
+    if (!t) return;
+    await saveIntention(t);
+    setIntention(t);
     setDraft('');
   }
 
   if (intention === null) return null;
 
   return (
-    <View style={styles.intentionCard}>
-      {intention ? (
-        <>
-          <Text style={type.label}>Just for today</Text>
-          <Text style={[type.body, { marginTop: spacing.sm }]}>I will {intention}</Text>
-          <Pressable onPress={() => setIntention('')} style={{ marginTop: spacing.sm, alignSelf: 'flex-start' }}>
-            <Text style={{ color: colors.textMuted, fontSize: 12 }}>change</Text>
-          </Pressable>
-        </>
-      ) : (
-        <>
-          <Text style={type.label}>Just for today, I will…</Text>
-          <View style={styles.intentionChipRow}>
-            {suggestions.map(s => (
-              <Pressable
-                key={s.id}
-                style={({ pressed }) => [styles.intentionChip, pressed && { opacity: 0.6 }]}
-                onPress={() => choose(s.text)}
-              >
-                <Text style={styles.intentionChipText}>{s.text}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <TextInput
-            style={styles.intentionInput}
-            placeholder="write your own…"
-            placeholderTextColor={colors.textMuted}
-            value={draft}
-            onChangeText={setDraft}
-            onSubmitEditing={() => choose(draft)}
-            returnKeyType="done"
-          />
-        </>
-      )}
+    <View style={{ marginTop: spacing.xl, paddingTop: spacing.xl, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
+      <Text style={[type.h2, { color: c.text }]}>Welcome back</Text>
+      <Text style={[type.h3, { color: info.color, marginTop: 4 }]}>{info.name}</Text>
+
+      <View style={[{ marginTop: spacing.lg, padding: spacing.lg, backgroundColor: c.surface, borderRadius: 26, ...card }]}>
+        {intention ? (
+          <>
+            <Text style={[type.label, { color: c.textMuted }]}>Just for today</Text>
+            <Text style={[type.body, { color: c.text, marginTop: 8 }]}>I will {intention}</Text>
+            <Pressable onPress={() => setIntention('')} style={{ marginTop: 8 }}>
+              <Text style={{ color: c.textMuted, fontSize: 12 }}>change</Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={[type.label, { color: c.textMuted }]}>Just for today, I will…</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+              {suggestions.map(s => (
+                <Pressable key={s.id} onPress={() => choose(s.text)}
+                  style={{ backgroundColor: c.surfaceAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }}>
+                  <Text style={{ color: c.accent, fontSize: 13, fontFamily: 'Inter_400Regular' }}>{s.text}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput
+              style={{ marginTop: 12, padding: 10, backgroundColor: c.surfaceAlt, borderRadius: 12, color: c.text, fontSize: 14, fontFamily: 'Inter_400Regular' }}
+              placeholder="write your own…"
+              placeholderTextColor={c.textMuted}
+              value={draft}
+              onChangeText={setDraft}
+              onSubmitEditing={() => choose(draft)}
+              returnKeyType="done"
+            />
+          </>
+        )}
+      </View>
+
+      <Pressable style={[{ backgroundColor: c.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg,
+        shadowColor: c.accent, shadowOffset: {width:0,height:6}, shadowOpacity:0.28, shadowRadius:18, elevation:4 }]}
+        onPress={() => router.push({ pathname: '/recommendations', params: { dosha } })}>
+        <Text style={{ color: '#FFF', fontFamily: 'Inter_600SemiBold', fontSize: 14, letterSpacing: 1 }}>TODAY'S GUIDANCE</Text>
+      </Pressable>
     </View>
   );
 }
 
-function makeStyles(colors, spacing, radius) {
-  return StyleSheet.create({
-    safeArea: { 
-      flex: 1, 
-      backgroundColor: colors.bg 
-    },
-    scrollContent: { 
-      paddingHorizontal: spacing.lg,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.xl,
-    },
-    
-    // Header
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: spacing.xl,
-      paddingHorizontal: spacing.xs,
-    },
-    headerButton: {
-      width: 40,
-      height: 40,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    headerIcon: {
-      fontSize: 24,
-    },
-    logo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: spacing.xs,
-    },
-    logoText: {
-      fontFamily: 'PlayfairDisplay_700Bold',
-      fontSize: 24,
-      color: colors.text,
-      letterSpacing: 2,
-    },
-    logoDot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.accent,
-    },
 
-    // Greeting Card
-    greetingCard: {
-      marginBottom: spacing.lg,
-    },
+// ── Inline SVG icons ───────────────────────────────────────────────────────
 
-    // Remedy Card
-    remedyCard: {
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: spacing.lg,
-      marginBottom: spacing.lg,
-      alignItems: 'center',
-    },
-    remedyImage: {
-      width: 80,
-      height: 80,
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.md,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    remedyEmoji: {
-      fontSize: 48,
-    },
-    cardActions: {
-      flexDirection: 'row',
-      gap: spacing.md,
-      marginTop: spacing.md,
-    },
-    actionBtn: {
-      paddingHorizontal: spacing.sm,
-      paddingVertical: spacing.xs,
-    },
-
-    // Primary Button
-    primaryBtn: {
-      backgroundColor: colors.accent,
-      paddingVertical: spacing.md,
-      borderRadius: radius.pill,
-      alignItems: 'center',
-      marginBottom: spacing.lg,
-    },
-    primaryBtnText: { 
-      color: '#FFFFFF', 
-      fontFamily: 'Inter_700Bold', 
-      fontSize: 16,
-      letterSpacing: 0.5,
-    },
-
-    // Affirmation Card
-    affirmationCard: {
-      flexDirection: 'row',
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: 'hidden',
-      marginBottom: spacing.lg,
-    },
-    affirmationImageWrapper: {
-      width: 100,
-      backgroundColor: colors.surfaceAlt,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    affirmationImagePlaceholder: {
-      width: 80,
-      height: 80,
-      backgroundColor: colors.border,
-      borderRadius: radius.md,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    affirmationEmoji: {
-      fontSize: 40,
-    },
-    affirmationContent: {
-      flex: 1,
-      padding: spacing.lg,
-      justifyContent: 'flex-start',
-    },
-    affirmationText: {
-      fontFamily: 'PlayfairDisplay_700Bold',
-      fontSize: 16,
-      lineHeight: 22,
-      color: colors.text,
-      fontStyle: 'italic',
-    },
-    refreshIcon: {
-      fontSize: 18,
-    },
-
-    // Begin Here Section
-    beginHereSection: {
-      marginBottom: spacing.xl,
-    },
-    featureGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: spacing.md,
-      justifyContent: 'space-between',
-    },
-    featureCard: {
-      width: '48%',
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-      padding: spacing.lg,
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: 120,
-    },
-    featureEmoji: {
-      fontSize: 40,
-      marginBottom: spacing.md,
-    },
-
-    // Footer
-    footer: {
-      alignItems: 'center',
-      marginBottom: spacing.xl,
-    },
-
-    // Returning User
-    returningBlock: {
-      marginTop: spacing.xl,
-      paddingTop: spacing.xl,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    secondaryBtn: {
-      marginTop: spacing.md,
-      backgroundColor: colors.surface,
-      paddingVertical: spacing.md,
-      borderRadius: radius.pill,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    secondaryBtnText: { 
-      color: colors.text, 
-      fontFamily: 'Inter_600SemiBold', 
-      fontSize: 16 
-    },
-    ghostBtn: {
-      marginTop: spacing.md,
-      paddingVertical: spacing.md,
-      alignItems: 'center',
-    },
-    ghostBtnText: { 
-      color: colors.textMuted, 
-      fontFamily: 'Inter_400Regular', 
-      fontSize: 14 
-    },
-
-    // Intention
-    intentionCard: {
-      marginTop: spacing.lg,
-      padding: spacing.lg,
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      borderLeftWidth: 3,
-      borderLeftColor: colors.accent,
-    },
-    intentionChipRow: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: spacing.sm,
-      marginTop: spacing.md,
-    },
-    intentionChip: {
-      backgroundColor: colors.surfaceAlt,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      borderRadius: radius.pill,
-      borderWidth: 1,
-      borderColor: colors.accent + '66',
-    },
-    intentionChipText: {
-      color: colors.accent,
-      fontSize: 14,
-    },
-    intentionInput: {
-      marginTop: spacing.md,
-      paddingHorizontal: spacing.md,
-      paddingVertical: spacing.sm,
-      backgroundColor: colors.surfaceAlt,
-      borderRadius: radius.md,
-      borderWidth: 1,
-      borderColor: colors.border,
-      color: colors.text,
-      fontSize: 14,
-    },
-  });
+function LogoLockup({ color }) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, color, letterSpacing: 3, includeFontPadding: false }}>L. GL</Text>
+      <LogoStar color={color} />
+      <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, color, letterSpacing: 3, includeFontPadding: false }}>W</Text>
+    </View>
+  );
 }
+
+function _starD(R) {
+  const r = R * 0.30;
+  const q = (r / Math.SQRT2).toFixed(3);
+  return `M 0,${-R} L ${q},${-q} L ${R},0 L ${q},${q} L 0,${R} L ${-q},${q} L ${-R},0 L ${-q},${-q} Z`;
+}
+
+function LogoStar({ color, size = 14 }) {
+  const R         = size / 2;
+  const sw        = R * 0.22;
+  const circR     = R - sw / 2;
+  const innerR    = R * 0.57;
+  const accentR   = R * 0.24;
+  const accentGap = R * 0.14;
+  const accentCY  = -(R + accentGap + accentR);
+  const extraTop  = accentGap + accentR * 2;
+  const svgH      = size + extraTop;
+  return (
+    <Svg
+      width={size}
+      height={svgH}
+      viewBox={`${-R} ${-(R + extraTop)} ${size} ${svgH}`}
+      style={{ marginTop: -(extraTop / 2) }}
+    >
+      <Circle cx="0" cy="0" r={circR} stroke={color} strokeWidth={sw} fill="none" />
+      <Path d={_starD(innerR)} fill={color} />
+      <G transform={`translate(0,${accentCY.toFixed(2)})`}>
+        <Path d={_starD(accentR)} fill={color} />
+      </G>
+    </Svg>
+  );
+}
+
+function MenuIcon({ color }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function BellIcon({ color }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M6 10a6 6 0 0 1 12 0c0 3 1.5 5 2 6H4c.5-1 2-3 2-6Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M10 20a2 2 0 0 0 4 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function LeafIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} />
+      <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function HerbsIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M12 21V10M9 13l3-3 3 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function BreathIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 8c3 0 5 3 5 3s2-3 5-3 5 3 5 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M3 14c2 0 4 2 4 2s2-2 5-2 5 2 5 2" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function RecipesIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3C10 3 7 5 7 8h10c0-3-3-5-5-5Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M7 8h10l-1.5 9H8.5L7 8Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function MeditationIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth={1.4} />
+      <Circle cx="12" cy="12" r="2" stroke={color} strokeWidth={1.4} />
+      <Path d="M12 4v2M12 18v2M4 12h2M18 12h2" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+// ── Styles ─────────────────────────────────────────────────────────────────
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    marginBottom: 4,
+  },
+  headerBtn: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  overline: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 11,
+    letterSpacing: 1.98,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  greetLine: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  greetName: {
+    fontFamily: 'PlayfairDisplay_600SemiBold',
+    fontSize: 40,
+    lineHeight: 41,
+    letterSpacing: 0.2,
+    marginBottom: 6,
+  },
+  greetSub: {
+    fontFamily: 'PlayfairDisplay_400Regular',
+    fontSize: 20,
+    fontStyle: 'italic',
+    lineHeight: 26,
+  },
+
+  heroCard: {
+    height: 190,
+    borderRadius: 26,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+
+  ctaBtn: {
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 22,
+    alignItems: 'center',
+    marginBottom: 16,
+    shadowColor: '#9A5151',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+    elevation: 4,
+  },
+  ctaBtnText: {
+    color: '#FBF9F4',
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13,
+    letterSpacing: 1.4,
+  },
+
+  affirmCard: {
+    flexDirection: 'row',
+    borderRadius: 26,
+    marginBottom: 28,
+    overflow: 'hidden',
+    height: 128,
+  },
+  affirmImage: {
+    width: 96,
+  },
+  affirmContent: {
+    flex: 1,
+    padding: 16,
+    justifyContent: 'flex-start',
+  },
+  affirmText: {
+    fontFamily: 'PlayfairDisplay_600SemiBold',
+    fontSize: 17,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+
+  sectionTitle: {
+    fontFamily: 'PlayfairDisplay_600SemiBold',
+    fontSize: 19,
+    lineHeight: 24,
+  },
+  beginGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  beginCard: {
+    flexBasis: '47.5%',
+    flexGrow: 1,
+    maxWidth: '50%',
+    borderRadius: 18,
+    padding: 16,
+    paddingBottom: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  beginIconWrap: {
+    width: 37,
+    height: 37,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  beginLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 12,
+    lineHeight: 16,
+  },
+
+  footerText: {
+    fontFamily: 'PlayfairDisplay_400Regular',
+    fontSize: 13.5,
+    fontStyle: 'italic',
+  },
+
+  musicCard: {
+    borderRadius: 26,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  musicName: {
+    fontFamily: 'PlayfairDisplay_600SemiBold',
+    fontSize: 17,
+    lineHeight: 22,
+    marginBottom: 4,
+  },
+  musicMood: {
+    fontFamily: 'PlayfairDisplay_400Regular',
+    fontSize: 15,
+    lineHeight: 22,
+    fontStyle: 'italic',
+  },
+  musicBtn: {
+    marginTop: 14,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 999,
+    borderWidth: 1,
+    alignSelf: 'flex-start',
+  },
+  musicBtnText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 13,
+  },
+
+  mythCard: {
+    borderRadius: 26,
+    padding: 20,
+    marginBottom: 28,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  mythMyth: {
+    fontFamily: 'PlayfairDisplay_600SemiBold',
+    fontSize: 18,
+    lineHeight: 26,
+    fontStyle: 'italic',
+  },
+  mythBody: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  mythReframe: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderLeftWidth: 3,
+  },
+});

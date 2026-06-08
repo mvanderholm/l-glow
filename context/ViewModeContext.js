@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const VIEW_MODE_KEY = '@lavender-glow/view-mode';
+const VIEW_MODE_KEY = '@lglow/view-mode';
 
 const ViewModeContext = createContext({
   viewMode: 'app',

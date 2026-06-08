@@ -1,10 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
-  PRIMARY_DOSHA: '@lavender-glow/primary_dosha',
-  DOSHA_SCORES: '@lavender-glow/dosha_scores',
-  CHECKIN_PREFIX: '@lavender-glow/checkins/',
-  INTENTION_PREFIX: '@lavender-glow/intentions/',
+  PRIMARY_DOSHA: '@lglow/primary_dosha',
+  DOSHA_SCORES: '@lglow/dosha_scores',
+  CHECKIN_PREFIX: '@lglow/checkins/',
+  INTENTION_PREFIX: '@lglow/intentions/',
 };
 
 // --- Dosha result ---
@@ -121,7 +121,7 @@ export async function buildSessionSummary() {
 
   lines.push('');
   lines.push('—');
-  lines.push('Shared from Lavender Glow');
+  lines.push('Shared from L. Glow');
 
   return lines.join('\n');
 }

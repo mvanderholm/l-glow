@@ -9,8 +9,8 @@ const dimensions = [
   { key: 'physical', label: 'Physical', desc: 'Energy, digestion, body' },
   { key: 'mental', label: 'Mental', desc: 'Focus, clarity, sharpness' },
   { key: 'emotional', label: 'Emotional', desc: 'Mood, calm, openness' },
-  { key: 'hunger', label: 'Morning hunger', desc: 'How strong is your appetite right now?', hint: { low: 'none at all', high: 'genuinely hungry' } },
-  { key: 'tongue', label: 'Tongue coating', desc: 'Check before eating or drinking anything.', hint: { low: 'clear', high: 'heavy coating' } },
+  { key: 'hunger', label: 'Morning hunger', desc: 'One of the cleanest signals of your digestive fire.', hint: { low: 'none at all', high: 'genuinely hungry' } },
+  { key: 'tongue', label: 'Tongue coating', desc: 'Check before eating or drinking anything. That coating is information.', hint: { low: 'clear', high: 'heavy coating' } },
 ];
 
 const scale = [1, 2, 3, 4, 5];
@@ -37,7 +37,7 @@ export default function CheckIn() {
           </Text>
           <Text style={[type.h1, { color: '#ECE8DF', marginTop: spacing.sm }]}>How are you, really?</Text>
           <Text style={[type.muted, { color: 'rgba(236,232,223,0.75)', marginTop: spacing.xs }]}>
-            The body keeps score. Five questions to read where you actually are.
+            The body holds the score. Five questions to read where you actually are.
           </Text>
         </View>
       </View>
@@ -71,7 +71,7 @@ export default function CheckIn() {
         <TextInput
           value={note}
           onChangeText={setNote}
-          placeholder="What's present for you today?"
+          placeholder="What are you carrying?"
           placeholderTextColor={colors.textMuted}
           multiline
           style={styles.input}

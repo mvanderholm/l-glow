@@ -30,7 +30,7 @@ export default function WebLayout({ children }) {
       <View style={styles.sidebar}>
         <View style={styles.sidebarTop}>
           <LogoMark size={40} compact />
-          <Text style={[type.h2, { marginTop: spacing.md }]}>Lavender Glow</Text>
+          <Text style={[type.h2, { marginTop: spacing.md }]}>L. Glow</Text>
           <Text style={[type.muted, { fontSize: 12, marginTop: 2 }]}>Ayurvedic companion</Text>
         </View>
 

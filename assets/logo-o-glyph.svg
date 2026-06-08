@@ -1,0 +1,25 @@
+<!-- L. Glow — O glyph icon, 1024×1024, transparent background
+     Proportions match LogoMark.js: sw=R*0.22, innerR=R*0.57, accentR=R*0.24, accentGap=R*0.14
+     R=360 → circle Ø720 ≈ 70% of canvas; accent star clears top edge with ~40px padding
+     Color: #4B3E3A (app text color) — swap before export if you need a different colorway -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+
+  <!-- Circle outline + inner 4-pointed star, centered at (512, 622) -->
+  <g transform="translate(512, 622)">
+
+    <!-- Circle outline: R=360, sw=80, drawR=320 -->
+    <circle cx="0" cy="0" r="320" fill="none" stroke="#4B3E3A" stroke-width="80"/>
+
+    <!-- Inner 4-pointed star: outerR=205, r=61.5, q=43.5 -->
+    <path d="M 0,-205 L 43.5,-43.5 L 205,0 L 43.5,43.5 L 0,205 L -43.5,43.5 L -205,0 L -43.5,-43.5 Z"
+          fill="#4B3E3A"/>
+
+  </g>
+
+  <!-- Accent star: outerR=86, r=25.8, q=18.2 — centered at (512, 126) -->
+  <g transform="translate(512, 126)">
+    <path d="M 0,-86 L 18.2,-18.2 L 86,0 L 18.2,18.2 L 0,86 L -18.2,18.2 L -86,0 L -18.2,-18.2 Z"
+          fill="#4B3E3A"/>
+  </g>
+
+</svg>

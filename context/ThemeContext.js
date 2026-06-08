@@ -2,8 +2,8 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themes } from '../theme';
 
-const THEME_KEY = '@lavender-glow/theme';
-const BRAND_KEY = '@lavender-glow/brand';
+const THEME_KEY = '@lglow/theme';
+const BRAND_KEY = '@lglow/brand';
 
 const ThemeContext = createContext({
   theme: themes.cream,

@@ -1,32 +1,42 @@
 {
   "expo": {
     "name": "L. Glow",
-    "slug": "l-glow",
+    "slug": "lavender-glow-mark1",
     "version": "0.1.0",
     "scheme": "l-glow",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ECE7DD"
+    },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      "expo-splash-screen"
     ],
     "web": {
       "favicon": "./assets/icon.png",
       "bundler": "metro",
       "output": "static",
-      "backgroundColor": "#C2AACB",
-      "themeColor": "#C2AACB"
+      "backgroundColor": "#ECE7DD",
+      "themeColor": "#ECE7DD"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lglow.app",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.lglow.app",
-      "navigationBarColor": "#0E0B08",
+      "navigationBarColor": "#ECE7DD",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#0E0B08"
+        "backgroundColor": "#ECE7DD"
       }
     },
     "extra": {

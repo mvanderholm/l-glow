@@ -2,12 +2,15 @@
 // All text marked [DRAFT] needs Thea's review and approval before shipping.
 // Photo placeholder is intentionally blank — swap in assets/thea.jpg when ready.
 
-import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { themes } from '../theme';
 import InstagramFeed from '../components/InstagramFeed';
 import { CornerSprig, LeafSprig, BotanicalDivider } from '../components/BotanicalAccent';
+import { INSTAGRAM_HANDLE } from '../data/instagram';
+import { SPOTIFY_PROFILE_URL } from '../data/content/music';
+import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 const SWATCHES = [
   { name: 'cream',    dot: '#8B7287' },
@@ -64,7 +67,7 @@ export default function About() {
             She completed her yoga teacher training at Lotus House of Yoga in 2019, which is where Ayurveda found her. One session was enough to know there was something there. She's been studying and practicing ever since, earning her certification in Ayurvedic Medicine through the Shakti School in 2025.
           </Text>
           <Text style={[type.body, styles.bioPara]}>
-            Lavender Glow is her practice in app form — a way to bring the core tools of Ayurveda into the daily lives of people between sessions, or in lieu of them. Her worldview, her methodology, her voice. The eventual physical center is coming. For now, this.
+            L. Glow is her practice in app form — a way to bring the core tools of Ayurveda into the daily lives of people between sessions, or in lieu of them. Her worldview, her methodology, her voice. The eventual physical center is coming. For now, this.
           </Text>
         </View>
 
@@ -147,10 +150,50 @@ export default function About() {
 
         <BotanicalDivider color={c.sage} borderColor={c.border} width={innerWidth} />
 
+        {/* Social links */}
+        <View style={styles.socialRow}>
+          <Pressable
+            style={[styles.socialBtn, { backgroundColor: c.surface, borderColor: c.border }]}
+            onPress={() => Linking.openURL(`https://instagram.com/${INSTAGRAM_HANDLE}`)}
+          >
+            <InstagramIcon color={c.textMuted} size={17} />
+            <Text style={[styles.socialBtnText, { color: c.text }]}>Instagram</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.socialBtn, { backgroundColor: c.surface, borderColor: c.border, opacity: SPOTIFY_PROFILE_URL ? 1 : 0.45 }]}
+            onPress={() => SPOTIFY_PROFILE_URL && Linking.openURL(SPOTIFY_PROFILE_URL)}
+            disabled={!SPOTIFY_PROFILE_URL}
+          >
+            <SpotifyIcon color={c.textMuted} size={17} />
+            <Text style={[styles.socialBtnText, { color: c.text }]}>Spotify</Text>
+          </Pressable>
+        </View>
+
         <InstagramFeed />
 
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function InstagramIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Rect x="2" y="2" width="20" height="20" rx="6" stroke={color} strokeWidth={1.5} />
+      <Circle cx="12" cy="12" r="4.5" stroke={color} strokeWidth={1.5} />
+      <Circle cx="17.5" cy="6.5" r="1.2" fill={color} />
+    </Svg>
+  );
+}
+
+function SpotifyIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth={1.5} />
+      <Path d="M7.5 16c2.8-1.1 5.5-1.3 9 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <Path d="M6.5 12.5c3.2-1.3 7-1.5 11 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <Path d="M7.5 9c3-1.4 6.5-1.6 9.5-.2" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
   );
 }
 
@@ -261,6 +304,27 @@ function makeStyles(c, spacing, radius) {
       fontSize: 13,
       fontWeight: '600',
       letterSpacing: 0.5,
+    },
+
+    socialRow: {
+      flexDirection: 'row',
+      gap: 12,
+      alignSelf: 'stretch',
+      marginBottom: spacing.xl,
+    },
+    socialBtn: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      paddingVertical: 13,
+      borderRadius: radius.pill,
+      borderWidth: 1,
+    },
+    socialBtnText: {
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 14,
     },
   });
 }

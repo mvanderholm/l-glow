@@ -1,12 +1,12 @@
-# Lavender Glow — Project Context for Claude Code
+# L. Glow — Project Context for Claude Code
 
-You are assisting on Lavender Glow, an ayurvedic companion app built with React Native and Expo. Read this file carefully at the start of every session. The principles and constraints here are load-bearing — they should shape every suggestion you make.
+You are assisting on L. Glow, an ayurvedic companion app built with React Native and Expo. Read this file carefully at the start of every session. The principles and constraints here are load-bearing — they should shape every suggestion you make.
 
 ---
 
-## What Lavender Glow is
+## What L. Glow is
 
-Lavender Glow is **Thea's ayurvedic practice, in app form**. Thea is a credentialed ayurvedic practitioner and Registered Yoga Teacher (RYT). The name Lavender Glow is the brand for her practice.
+L. Glow is **Thea's ayurvedic practice, in app form**. Thea is a credentialed ayurvedic practitioner and Registered Yoga Teacher (RYT). The name L. Glow is the brand for her practice.
 
 This is not a generic wellness app with a credentialed advisor. It is one specific practitioner's worldview, voice, and methodology, made available to users between (or in lieu of) sessions with her. When in doubt about any content decision: "would Thea say this, in this way?" If no, it doesn't belong in the app.
 

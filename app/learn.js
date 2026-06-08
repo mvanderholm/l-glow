@@ -102,7 +102,7 @@ function ConceptModal({ concept, onClose }) {
             )}
           </View>
 
-          {concept.matrix && (
+          {concept.body && concept.matrix && (
             <MatrixSection
               matrix={concept.matrix}
               colors={colors}

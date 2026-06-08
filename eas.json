@@ -1,19 +1,29 @@
 {
   "cli": {
-    "version": ">= 18.5.0"
+    "version": ">= 18.5.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "preview": {
+      "distribution": "internal",
       "android": {
         "buildType": "apk"
       },
-      "distribution": "internal"
+      "ios": {}
     },
     "production": {
+      "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
       },
-      "autoIncrement": true
+      "ios": {}
+    }
+  },
+  "submit": {
+    "production": {
+      "ios": {
+        "ascAppId": "6777852012"
+      }
     }
   }
 }

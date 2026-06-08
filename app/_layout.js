@@ -2,15 +2,17 @@ import { useEffect } from 'react';
 import { Platform, View, Text, Pressable } from 'react-native';
 import { useFonts } from 'expo-font';
 import { PlayfairDisplay_400Regular, PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
-import { Inter_400Regular, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { ViewModeProvider, useViewMode } from '../context/ViewModeContext';
+import { DrawerProvider } from '../context/DrawerContext';
 import LogoMark from '../components/LogoMark';
 import WebLayout from '../components/WebLayout';
 import BottomNav from '../components/BottomNav';
+import HamburgerDrawer from '../components/HamburgerDrawer';
 
 function HeaderLogo() {
   return <LogoMark size={36} compact />;
@@ -62,12 +64,11 @@ function AppNavigator() {
         headerRight: isWeb && !isWebMode ? () => <WebViewToggle /> : undefined,
       }}
     >
-      {/* index: show header on web app-view so the toggle is accessible */}
-      <Stack.Screen name="index"           options={{ headerShown: isWeb && !isWebMode }} />
-      <Stack.Screen name="journey"         options={{ headerShown: isWeb && !isWebMode }} />
-      <Stack.Screen name="tools"           options={{ headerShown: isWeb && !isWebMode }} />
-      <Stack.Screen name="journal" />
-      <Stack.Screen name="you"             options={{ headerShown: isWeb && !isWebMode }} />
+      <Stack.Screen name="index"           options={{ headerShown: false }} />
+      <Stack.Screen name="journey"         options={{ headerShown: false }} />
+      <Stack.Screen name="tools"           options={{ headerShown: false }} />
+      <Stack.Screen name="journal"         options={{ headerShown: false }} />
+      <Stack.Screen name="you"             options={{ headerShown: false }} />
       <Stack.Screen name="quiz" />
       <Stack.Screen name="result" />
       <Stack.Screen name="checkin"         options={{ headerShown: isWeb && !isWebMode }} />
@@ -85,6 +86,7 @@ function AppNavigator() {
 
   return (
     <>
+      <HamburgerDrawer />
       <StatusBar style={theme.statusBar} />
       {isWebMode ? (
         <View style={{ width: '100%', height: '100vh' }}>
@@ -114,6 +116,7 @@ export default function RootLayout() {
     PlayfairDisplay_600SemiBold,
     PlayfairDisplay_700Bold,
     Inter_400Regular,
+    Inter_500Medium,
     Inter_600SemiBold,
     Inter_700Bold,
   });
@@ -123,7 +126,9 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <ViewModeProvider>
-        <AppNavigator />
+        <DrawerProvider>
+          <AppNavigator />
+        </DrawerProvider>
       </ViewModeProvider>
     </ThemeProvider>
   );

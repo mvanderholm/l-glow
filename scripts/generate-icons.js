@@ -1,44 +1,29 @@
-// Generates icon.png (1024×1024, midnight bg) and adaptive-icon.png (1024×1024, transparent bg)
+// Generates icon.png (1024×1024, cream bg) and adaptive-icon.png (1024×1024, transparent bg)
+// Source: assets/logo-o-glyph.svg
 // Run with: node scripts/generate-icons.js
 
 const { Resvg } = require('@resvg/resvg-js');
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 
-const SAFFRON = '#E8A030';
-const MIDNIGHT = '#0E0B08';
-const SIZE = 1024;
+const assetsDir = path.join(__dirname, '..', 'assets');
+const svgBase   = fs.readFileSync(path.join(assetsDir, 'logo-o-glyph.svg'), 'utf-8');
 
-function buildSvg(transparent) {
-  const bg = transparent
-    ? `<rect width="${SIZE}" height="${SIZE}" fill="none"/>`
-    : `<rect width="${SIZE}" height="${SIZE}" fill="${MIDNIGHT}"/>`;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SIZE} ${SIZE}">
-  ${bg}
-  <text
-    x="${SIZE / 2}"
-    y="780"
-    font-family="Georgia, 'Times New Roman', serif"
-    font-size="660"
-    text-anchor="middle"
-    fill="${SAFFRON}">Ô</text>
-</svg>`;
+// Inject a solid rect immediately after the opening <svg> tag
+function addBackground(svg, color) {
+  return svg.replace(/(<svg[^>]*>)/, `$1\n  <rect width="1024" height="1024" fill="${color}"/>`);
 }
 
 function write(svgStr, outFile) {
-  const resvg = new Resvg(svgStr, {
-    fitTo: { mode: 'width', value: SIZE },
-    font: { loadSystemFonts: true },
-  });
-  const png = resvg.render().asPng();
+  const png = new Resvg(svgStr, { fitTo: { mode: 'width', value: 1024 } }).render().asPng();
   fs.writeFileSync(outFile, png);
-  console.log(`Written: ${outFile} (${png.length} bytes)`);
+  console.log(`Written: ${path.basename(outFile)} (${png.length} bytes)`);
 }
 
-const assetsDir = path.join(__dirname, '..', 'assets');
+// icon.png — cream background; iOS App Store rejects transparent icons
+write(addBackground(svgBase, '#FBF9F4'), path.join(assetsDir, 'icon.png'));
 
-write(buildSvg(false), path.join(assetsDir, 'icon.png'));
-write(buildSvg(true),  path.join(assetsDir, 'adaptive-icon.png'));
+// adaptive-icon.png — transparent; Android fills background from app.json backgroundColor
+write(svgBase, path.join(assetsDir, 'adaptive-icon.png'));
 
 console.log('Done.');
