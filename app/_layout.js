@@ -81,6 +81,7 @@ function AppNavigator() {
       <Stack.Screen name="breathwork" />
       <Stack.Screen name="meditation" />
       <Stack.Screen name="selfmassage" />
+      <Stack.Screen name="intake"     options={{ headerShown: false }} />
     </Stack>
   );
 

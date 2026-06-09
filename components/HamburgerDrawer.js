@@ -59,8 +59,9 @@ export default function HamburgerDrawer() {
 
             {/* Primary nav items */}
             <View style={styles.section}>
-              <DrawerItem icon={PersonIcon} label="About Thea"  onPress={() => navigate('/about')} c={c} />
-              <DrawerItem icon={LeafIcon}   label="Dosha Quiz"  onPress={() => navigate('/quiz')}  c={c} />
+              <DrawerItem icon={PersonIcon}   label="About Thea"      onPress={() => navigate('/about')}  c={c} />
+              <DrawerItem icon={LeafIcon}     label="Dosha Quiz"       onPress={() => navigate('/quiz')}   c={c} />
+              <DrawerItem icon={ClipboardIcon} label="My Intake Form"  onPress={() => navigate('/intake')} c={c} />
             </View>
 
             <View style={[styles.sep, { backgroundColor: c.border }]} />
@@ -146,6 +147,15 @@ function QuestionIcon({ color, size }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.4} />
       <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function ClipboardIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2Z" stroke={color} strokeWidth={1.4} />
+      <Path d="M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
     </Svg>
   );
 }
