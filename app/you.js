@@ -56,18 +56,41 @@ export default function You() {
         </View>
 
         {/* Dosha wheel — only shown after quiz is taken */}
-        {result && result.scores && (
-          <View style={[styles.wheelCard, { backgroundColor: c.surface, ...card }]}>
-            <Text style={[styles.wheelLabel, { color: c.textMuted }]}>Your Constitution</Text>
-            <DoshaWheel scores={result.scores} primary={result.dosha} size={180} />
-            <Pressable
-              style={[styles.retakeBtn, { borderColor: c.border }]}
-              onPress={() => router.push('/quiz')}
-            >
-              <Text style={[styles.retakeBtnText, { color: c.textMuted }]}>Retake quiz</Text>
-            </Pressable>
-          </View>
-        )}
+        {result && result.scores && (() => {
+          const total = (result.scores.vata + result.scores.pitta + result.scores.kapha) || 1;
+          const pcts = {
+            vata:  Math.round((result.scores.vata  / total) * 100),
+            pitta: Math.round((result.scores.pitta / total) * 100),
+            kapha: Math.round((result.scores.kapha / total) * 100),
+          };
+          return (
+            <View style={[styles.wheelCard, { backgroundColor: c.surface, ...card }]}>
+              <Text style={[styles.wheelLabel, { color: c.textMuted }]}>Your Constitution</Text>
+              <DoshaWheel scores={result.scores} primary={result.dosha} size={180} />
+
+              {/* Three-dosha percentage breakdown */}
+              <View style={styles.doshaBreakdown}>
+                {[
+                  { key: 'vata',  label: 'Vata'  },
+                  { key: 'pitta', label: 'Pitta' },
+                  { key: 'kapha', label: 'Kapha' },
+                ].map(({ key, label }) => (
+                  <View key={key} style={[styles.doshaStat, { backgroundColor: c.surfaceAlt }]}>
+                    <Text style={[styles.doshaStatPct, { color: DOSHA_COLORS[key] }]}>{pcts[key]}%</Text>
+                    <Text style={[styles.doshaStatName, { color: c.textMuted }]}>{label}</Text>
+                  </View>
+                ))}
+              </View>
+
+              <Pressable
+                style={[styles.retakeBtn, { borderColor: c.border }]}
+                onPress={() => router.push('/quiz')}
+              >
+                <Text style={[styles.retakeBtnText, { color: c.textMuted }]}>Retake quiz</Text>
+              </Pressable>
+            </View>
+          );
+        })()}
 
         {/* Stats */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
@@ -282,7 +305,11 @@ const styles = StyleSheet.create({
 
   wheelCard:     { borderRadius: 26, padding: 20, alignItems: 'center', marginBottom: 14 },
   wheelLabel:    { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.98, textTransform: 'uppercase', marginBottom: 20 },
-  retakeBtn:     { marginTop: 16, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 999, borderWidth: 1 },
+  doshaBreakdown:  { flexDirection: 'row', gap: 10, marginTop: 20, width: '100%' },
+  doshaStat:       { flex: 1, borderRadius: 18, paddingVertical: 14, alignItems: 'center', gap: 4 },
+  doshaStatPct:    { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 26, lineHeight: 30 },
+  doshaStatName:   { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase' },
+  retakeBtn:     { marginTop: 14, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 999, borderWidth: 1 },
   retakeBtnText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
 
   statCard:  { flex: 1, borderRadius: 26, padding: 15, alignItems: 'center', gap: 4 },
