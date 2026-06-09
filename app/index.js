@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { Link, useRouter } from 'expo-router';
@@ -7,7 +7,7 @@ import { useDrawer } from '../context/DrawerContext';
 import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, saveUserName } from '../data/user/storage';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { playlistForDosha } from '../data/content/music';
@@ -38,11 +38,25 @@ export default function Home() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { open: openDrawer } = useDrawer();
   const [savedDosha, setSavedDosha] = useState(null);
-  const [userName] = useState('Lindsey');
+  const [userName, setUserName] = useState(null);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
+  const [nameDraft, setNameDraft] = useState('');
 
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
+    loadUserName().then(n => {
+      if (n) setUserName(n);
+      else setShowNamePrompt(true);
+    });
   }, []);
+
+  async function submitName() {
+    const n = nameDraft.trim();
+    if (!n) return;
+    await saveUserName(n);
+    setUserName(n);
+    setShowNamePrompt(false);
+  }
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -63,7 +77,7 @@ export default function Home() {
         <View style={{ marginBottom: spacing.lg }}>
           <Text style={[styles.overline, { color: c.textMuted }]}>{todayLabel()}</Text>
           <Text style={[styles.greetLine, { color: c.textMedium }]}>Good morning,</Text>
-          <Text style={[styles.greetName, { color: c.text }]}>{userName}</Text>
+          <Text style={[styles.greetName, { color: c.text }]}>{userName ?? ''}</Text>
           <Text style={[styles.greetSub, { color: c.textMedium }]}>Let's see where you are today.</Text>
         </View>
 
@@ -110,6 +124,31 @@ export default function Home() {
         ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal visible={showNamePrompt} transparent animationType="fade">
+        <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', padding: 28 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <View style={{ backgroundColor: c.surface, borderRadius: 28, padding: 28 }}>
+            <Text style={[styles.greetLine, { color: c.textMuted, marginBottom: 4 }]}>Welcome to L. Glow.</Text>
+            <Text style={[styles.greetSub, { color: c.text, marginBottom: 20 }]}>What should we call you?</Text>
+            <TextInput
+              style={{ backgroundColor: c.surfaceAlt, borderRadius: 14, padding: 14, fontSize: 18, fontFamily: 'PlayfairDisplay_400Regular', color: c.text, marginBottom: 16 }}
+              placeholder="Your name…"
+              placeholderTextColor={c.textMuted}
+              value={nameDraft}
+              onChangeText={setNameDraft}
+              onSubmitEditing={submitName}
+              returnKeyType="done"
+              autoFocus
+            />
+            <Pressable
+              style={[styles.ctaBtn, { backgroundColor: nameDraft.trim() ? c.accent : c.border }]}
+              onPress={submitName}
+            >
+              <Text style={styles.ctaBtnText}>LET'S GO  ›</Text>
+            </Pressable>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -248,7 +287,8 @@ function ReturningUser({ dosha, colors: c, spacing, type }) {
         ) : (
           <>
             <Text style={[type.label, { color: c.textMuted }]}>Just for today, I will…</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 6, marginBottom: 2 }}>Choose one, or write your own.</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
               {suggestions.map(s => (
                 <Pressable key={s.id} onPress={() => choose(s.text)}
                   style={{ backgroundColor: c.surfaceAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }}>

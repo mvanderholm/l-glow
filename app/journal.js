@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Image, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -17,9 +17,9 @@ const PROMPTS = [
 ];
 
 const PAST = [
-  { month: 'MAY', day: 19, title: 'Morning pages',   excerpt: 'Woke before the sun. The garden was still. I felt the quiet hold me…' },
-  { month: 'MAY', day: 17, title: 'After abhyanga',  excerpt: 'Warm sesame oil, slow strokes toward the heart. My shoulders finally dropped…' },
-  { month: 'MAY', day: 14, title: 'A heavy day, softened', excerpt: 'Kapha season is asking me to move. A walk among the eucalyptus helped…' },
+  { month: 'MAY', day: 19, title: 'Morning pages',        excerpt: 'Woke before the sun. The garden was still. I felt the quiet hold me…',           body: 'Woke before the sun. The garden was still. I felt the quiet hold me in a way that the middle of the day never does. No agenda. Just the sound of birds and the smell of earth after rain. I am grateful for mornings that ask nothing of me.' },
+  { month: 'MAY', day: 17, title: 'After abhyanga',       excerpt: 'Warm sesame oil, slow strokes toward the heart. My shoulders finally dropped…',   body: 'Warm sesame oil, slow strokes toward the heart. My shoulders finally dropped — I did not realize how high I had been holding them. Twenty minutes. That is all it takes. I showed up for myself today by actually doing the thing instead of just thinking about doing the thing.' },
+  { month: 'MAY', day: 14, title: 'A heavy day, softened', excerpt: 'Kapha season is asking me to move. A walk among the eucalyptus helped…',        body: 'Kapha season is asking me to move and I have been resisting it. A walk among the eucalyptus helped. The air was cool and sharp. By the time I got back, the heaviness had lifted enough to breathe. Tomorrow I will try to move before noon instead of waiting until I feel like it.' },
 ];
 
 export default function Journal() {
@@ -28,6 +28,7 @@ export default function Journal() {
   const today = new Date();
   const [answers, setAnswers] = useState({ grateful: '', showed: '', tomorrow: '' });
   const [saved, setSaved] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
 
   useEffect(() => {
     AsyncStorage.getItem(KEY(today)).then(v => {
@@ -107,7 +108,11 @@ export default function Journal() {
           </View>
 
           {PAST.map(entry => (
-            <View key={entry.day} style={[styles.pastCard, { backgroundColor: c.surface, ...card, marginBottom: 10 }]}>
+            <Pressable
+              key={entry.day}
+              style={({ pressed }) => [styles.pastCard, { backgroundColor: c.surface, ...card, marginBottom: 10, opacity: pressed ? 0.75 : 1 }]}
+              onPress={() => setSelectedEntry(entry)}
+            >
               <View style={styles.pastLeft}>
                 <Text style={[styles.pastMonth, { color: c.textMuted }]}>{entry.month}</Text>
                 <Text style={[styles.pastDay, { color: c.accentSoft }]}>{entry.day}</Text>
@@ -116,11 +121,36 @@ export default function Journal() {
                 <Text style={[styles.pastTitle, { color: c.text }]}>{entry.title}</Text>
                 <Text style={[styles.pastExcerpt, { color: c.textMedium }]} numberOfLines={2}>{entry.excerpt}</Text>
               </View>
-            </View>
+            </Pressable>
           ))}
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {selectedEntry && (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setSelectedEntry(null)}>
+          <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }} onPress={() => setSelectedEntry(null)} />
+          <View style={[styles.entrySheet, { backgroundColor: c.surface }]}>
+            <View style={{ width: 40, height: 4, backgroundColor: c.border, borderRadius: 2, alignSelf: 'center', marginBottom: 20 }} />
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginBottom: 16 }}>
+                <View style={styles.pastLeft}>
+                  <Text style={[styles.pastMonth, { color: c.textMuted }]}>{selectedEntry.month}</Text>
+                  <Text style={[styles.pastDay, { color: c.accentSoft }]}>{selectedEntry.day}</Text>
+                </View>
+                <Text style={[styles.formTitle, { color: c.text, flex: 1 }]}>{selectedEntry.title}</Text>
+              </View>
+              <Text style={[styles.input, { color: c.textMedium, lineHeight: 26 }]}>{selectedEntry.body}</Text>
+            </ScrollView>
+            <Pressable
+              style={[styles.saveBtn, { backgroundColor: c.surfaceAlt, marginTop: 16, borderWidth: 1, borderColor: c.border }]}
+              onPress={() => setSelectedEntry(null)}
+            >
+              <Text style={[styles.saveBtnText, { color: c.text }]}>CLOSE</Text>
+            </Pressable>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 }
@@ -162,6 +192,8 @@ const styles = StyleSheet.create({
   saveBtnText:{ color: '#FBF9F4', fontFamily: 'Inter_700Bold', fontSize: 12, letterSpacing: 1.4 },
 
   sectionH: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
+
+  entrySheet: { borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 32, maxHeight: '72%' },
 
   pastCard:  { flexDirection: 'row', borderRadius: 26, padding: 16, gap: 14 },
   pastLeft:  { alignItems: 'center', width: 32 },

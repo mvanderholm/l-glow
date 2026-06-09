@@ -4,6 +4,25 @@ Living document. Strike through items as shipped, add new items at the bottom. R
 
 ---
 
+## Key decisions and constraints
+
+**Launch target: August 17th.**
+Thea named this explicitly (transcript 13). August 17th, 2024 was the date of her first Ayurveda consultation with her mentor — the date means something to her. All pre-launch requirements (#29, #30, #31) need to be sequenced against this horizon.
+
+**Pricing: $1.99–$2.99/month subscription.**
+Thea's number is $1.99; her friend independently said $2.99. Aura app (~$5.99) named as the nearest comp. Individual consultative sessions are a paid upsell layer on top of the subscription — not in the app initially, just a CTA to book with Thea directly.
+
+**Competitive positioning: holistic wellness, not fitness, not weight loss.**
+Aura app is the loosest comp — fitness-adjacent. L. Glow is more holistic. Do not lead with weight loss in marketing or copy. The frame is "weight balancing" — it applies to people who can't gain as much as to those who want to lose. The Ozempic counter-narrative (real wellness work vs. pharmaceutical shortcuts) is Thea's marketing energy and differentiator — worth threading into About Thea and any public-facing copy.
+
+**Quiet app — no auto-playing audio.**
+Thea explicitly wants L. Glow to be a quiet app (transcript 13). Users are often on their phone around other people and don't want sound playing unexpectedly. Any future audio or video content must be muted by default with a clear user-initiated unmute. The music card linking out to Spotify is the right pattern — no sound originates from the app itself.
+
+**Voice input — option, not default.**
+Thea personally prefers speaking answers over typing (for check-ins especially), but recognizes users are often around others. If voice input is added to the check-in flow, it must be opt-in, never the only path.
+
+---
+
 ## Shipped
 
 ~~**1. Persist the quiz result via AsyncStorage.**~~
@@ -95,6 +114,25 @@ Replace placeholder dosha intro copy in `data/content/quiz.js` with Thea's own l
 Full review of the quiz question set with Thea. Questions should map cleanly to her understanding of how the doshas present — current set is a reasonable scaffold but may not reflect her clinical framing. She should define what physical, mental, and behavioral signals she actually uses to identify someone's prakriti.
 
 Content dependency: Thea to review and rewrite/reorder questions. Do not change question set without her input — the quiz is the app's first clinical impression.
+
+**Field research — transcript 13 (Thea live-testing questions on a friend):**
+Thea walked a friend through a set of questions in real time and captured her reactions. This is the clearest signal yet on what the redesigned question set should look like. Questions she tested and the UX reactions:
+
+| Question | Options she used | User reaction |
+|---|---|---|
+| Body frame | Small/narrow · Medium/athletic · Large/broad | Worked cleanly |
+| Wrist circumference | Connect thumb + middle finger: overlap / connect / don't connect | Tactile, fun — strong question |
+| Weight patterns | Gain easily · Lose easily · Moderate/consistent · Struggle to gain | Answered fine |
+| Hair quality | Dry/coarse/curly · Fine/straight · Thick/full/luxurious | Needed "combination" — neither option fit |
+| Skin quality | Dry · Rough · Sensitive · Red · Thick · Soft · Moist | "Check all that apply" — multiple applied at once |
+| Eye quality | Small/active/dark… | Transcript cuts off |
+
+**UX signals from the live test:**
+- Every question needs a "none of these" escape — some people genuinely don't fit any option
+- Skin and possibly hair need multi-select ("check all that apply"), not single-select
+- Combination answers need to be representable — "oily but also dry" is a real clinical presentation, not a user error
+
+**Open question before building:** These questions are more physical/constitutional (body frame, wrist, hair, skin, eyes) than the current quiz which skews behavioral. Does the redesigned quiz replace the current one entirely, or do both exist? Thea's call — have the conversation before touching the question set.
 
 **5. Asana module — Thea's content.**
 Posture descriptions, timing, and benefit copy for each dosha's 3–5 postures in `data/content/movement.js`. Scaffold is built and wired — plug in her content when ready.

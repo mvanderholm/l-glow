@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import { loadDoshaResult } from '../data/user/storage';
+import { loadDoshaResult, loadUserName } from '../data/user/storage';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -21,8 +21,12 @@ export default function You() {
   const router = useRouter();
   const { open: openDrawer } = useDrawer();
   const [result, setResult] = useState(null);
+  const [userName, setUserName] = useState('');
 
-  useEffect(() => { loadDoshaResult().then(r => setResult(r || false)); }, []);
+  useEffect(() => {
+    loadDoshaResult().then(r => setResult(r || false));
+    loadUserName().then(n => { if (n) setUserName(n); });
+  }, []);
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -45,7 +49,7 @@ export default function You() {
               <PenIcon color="#FBF9F4" size={10} />
             </View>
           </View>
-          <Text style={[styles.name, { color: c.text }]}>Lindsey</Text>
+          <Text style={[styles.name, { color: c.text }]}>{userName || 'You'}</Text>
           <Text style={[styles.tagline, { color: c.textMedium }]}>Wellness is a return to you.</Text>
         </View>
 

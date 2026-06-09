@@ -17,9 +17,10 @@ export default function Quiz() {
     const next = [...answers, dosha];
     if (index + 1 >= quizQuestions.length) {
       const tally = next.reduce((acc, d) => ({ ...acc, [d]: (acc[d] || 0) + 1 }), {});
+      // Add a base of 1 per dosha — no one is ever 100% one thing
       router.replace({
         pathname: '/result',
-        params: { vata: tally.vata || 0, pitta: tally.pitta || 0, kapha: tally.kapha || 0 },
+        params: { vata: (tally.vata || 0) + 1, pitta: (tally.pitta || 0) + 1, kapha: (tally.kapha || 0) + 1 },
       });
     } else {
       setAnswers(next);

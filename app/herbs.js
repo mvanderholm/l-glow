@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, Modal } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { herbs } from '../data/content/herbs';
@@ -10,16 +10,49 @@ const POTENCY_COLOR = { warming: '#C97855', cooling: '#4A8FA8', neutral: '#7C735
 export default function Herbs() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const [selected, setSelected] = useState(null);
-  const herbList = Object.entries(herbs);
+  const [query, setQuery] = useState('');
+  const herbList = Object.entries(herbs).filter(([name, herb]) => {
+    if (!query.trim()) return true;
+    const q = query.toLowerCase();
+    return name.toLowerCase().includes(q) || (herb.latin || '').toLowerCase().includes(q);
+  });
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
         <Text style={type.label}>Apothecary</Text>
         <Text style={[type.h1, { marginTop: spacing.sm }]}>Herbs</Text>
-        <Text style={[type.muted, { marginTop: spacing.xs, marginBottom: spacing.xl }]}>
+        <Text style={[type.muted, { marginTop: spacing.xs, marginBottom: spacing.md }]}>
           Properties and uses. Content pending Thea's review — treat as a working draft.
         </Text>
+
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search herbs…"
+          placeholderTextColor={c.textMuted}
+          style={{
+            backgroundColor: c.surface,
+            borderRadius: radius.md,
+            borderWidth: 1,
+            borderColor: c.border,
+            paddingHorizontal: spacing.md,
+            paddingVertical: 10,
+            fontSize: 15,
+            color: c.text,
+            fontFamily: 'Inter_400Regular',
+            marginBottom: spacing.lg,
+          }}
+          clearButtonMode="while-editing"
+          autoCorrect={false}
+          autoCapitalize="none"
+        />
+
+        {herbList.length === 0 && (
+          <Text style={[type.muted, { textAlign: 'center', marginTop: spacing.xl }]}>
+            No herbs found for "{query}"
+          </Text>
+        )}
 
         {herbList.map(([name, herb]) => {
           const potencyColor = POTENCY_COLOR[herb.potency] || c.accentAlt;

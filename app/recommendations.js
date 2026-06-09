@@ -120,7 +120,9 @@ export default function Recommendations() {
         </Section>
 
         <Section title="Lifestyle Note" accent={colors.kapha}>
-          <Text style={type.body}>{rec.lifestyle}</Text>
+          {rec.lifestyle.split('. ').filter(s => s.trim()).map((sentence, i) => (
+            <Bullet key={i}>{sentence.replace(/\.$/, '')}</Bullet>
+          ))}
         </Section>
 
         <Section title="Daily Rhythms" accent={colors.accentAlt}>

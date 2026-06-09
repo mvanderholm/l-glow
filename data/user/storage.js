@@ -5,6 +5,7 @@ const KEYS = {
   DOSHA_SCORES: '@lglow/dosha_scores',
   CHECKIN_PREFIX: '@lglow/checkins/',
   INTENTION_PREFIX: '@lglow/intentions/',
+  USER_NAME: '@lglow/user_name',
 };
 
 // --- Dosha result ---
@@ -26,6 +27,16 @@ export async function loadDoshaResult() {
     dosha,
     scores: scoresRaw ? JSON.parse(scoresRaw) : null,
   };
+}
+
+// --- User name ---
+
+export async function saveUserName(name) {
+  await AsyncStorage.setItem(KEYS.USER_NAME, name.trim());
+}
+
+export async function loadUserName() {
+  return AsyncStorage.getItem(KEYS.USER_NAME);
 }
 
 // --- Daily check-ins ---
