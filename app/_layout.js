@@ -9,6 +9,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { ViewModeProvider, useViewMode } from '../context/ViewModeContext';
 import { DrawerProvider } from '../context/DrawerContext';
+import { AuthProvider } from '../context/AuthContext';
 import LogoMark from '../components/LogoMark';
 import WebLayout from '../components/WebLayout';
 import BottomNav from '../components/BottomNav';
@@ -82,6 +83,8 @@ function AppNavigator() {
       <Stack.Screen name="meditation" />
       <Stack.Screen name="selfmassage" />
       <Stack.Screen name="intake"     options={{ headerShown: false }} />
+      <Stack.Screen name="login"      options={{ headerShown: false }} />
+      <Stack.Screen name="signup"     options={{ headerShown: false }} />
     </Stack>
   );
 
@@ -127,9 +130,11 @@ export default function RootLayout() {
   return (
     <ThemeProvider>
       <ViewModeProvider>
-        <DrawerProvider>
-          <AppNavigator />
-        </DrawerProvider>
+        <AuthProvider>
+          <DrawerProvider>
+            <AppNavigator />
+          </DrawerProvider>
+        </AuthProvider>
       </ViewModeProvider>
     </ThemeProvider>
   );

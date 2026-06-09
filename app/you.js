@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import { loadDoshaResult, loadUserName } from '../data/user/storage';
+import { useAuth } from '../context/AuthContext';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -20,6 +21,7 @@ export default function You() {
   const { theme: { colors: c, spacing } } = useTheme();
   const router = useRouter();
   const { open: openDrawer } = useDrawer();
+  const { user, signOut } = useAuth();
   const [result, setResult] = useState(null);
   const [userName, setUserName] = useState('');
 
@@ -118,6 +120,56 @@ export default function You() {
           ))}
         </View>
 
+        {/* Account */}
+        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Account</Text>
+        <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
+          {user ? (
+            <>
+              <View style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
+                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                  <PersonIcon color={c.textMuted} size={15} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.settingsLabel, { color: c.text }]}>Signed in</Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }} numberOfLines={1}>{user.email}</Text>
+                </View>
+              </View>
+              <Pressable
+                style={styles.settingsRow}
+                onPress={signOut}
+              >
+                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                  <SignOutIcon color={c.textMuted} size={15} />
+                </View>
+                <Text style={[styles.settingsLabel, { color: c.text }]}>Sign out</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable
+                style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+                onPress={() => router.push('/login')}
+              >
+                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                  <PersonIcon color={c.textMuted} size={15} />
+                </View>
+                <Text style={[styles.settingsLabel, { color: c.text }]}>Sign in</Text>
+                <ChevronIcon color={c.textMuted} />
+              </Pressable>
+              <Pressable
+                style={styles.settingsRow}
+                onPress={() => router.push('/signup')}
+              >
+                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                  <PersonIcon color={c.accent} size={15} />
+                </View>
+                <Text style={[styles.settingsLabel, { color: c.accent }]}>Create account</Text>
+                <ChevronIcon color={c.accent} />
+              </Pressable>
+            </>
+          )}
+        </View>
+
         <View style={{ alignItems: 'center', marginTop: 32 }}>
           <Text style={{ color: c.accentSoft, fontSize: 15, marginBottom: 6 }}>❧</Text>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted }}>L. GLOW</Text>
@@ -201,6 +253,18 @@ function QuestionIcon({ color, size }) {
 function ChevronIcon({ color }) {
   return <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
     <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>;
+}
+function PersonIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.5} />
+    <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+  </Svg>;
+}
+function SignOutIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M16 17l5-5-5-5M21 12H9" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }
 
