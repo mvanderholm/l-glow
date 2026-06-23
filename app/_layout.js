@@ -61,6 +61,7 @@ function AppNavigator() {
         headerShadowVisible: false,
         headerTitle: HeaderLogo,
         headerTitleAlign: 'center',
+        headerBackTitleVisible: false,
         headerShown: !isWebMode,
         headerRight: isWeb && !isWebMode ? () => <WebViewToggle /> : undefined,
       }}
@@ -82,9 +83,13 @@ function AppNavigator() {
       <Stack.Screen name="breathwork" />
       <Stack.Screen name="meditation" />
       <Stack.Screen name="selfmassage" />
-      <Stack.Screen name="intake"     options={{ headerShown: false }} />
-      <Stack.Screen name="login"      options={{ headerShown: false }} />
-      <Stack.Screen name="signup"     options={{ headerShown: false }} />
+      <Stack.Screen name="intake"      options={{ headerShown: false }} />
+      <Stack.Screen name="guna-quiz"   options={{ headerShown: false }} />
+      <Stack.Screen name="guna-result" options={{ headerShown: false }} />
+      <Stack.Screen name="agni-quiz"   options={{ headerShown: false }} />
+      <Stack.Screen name="agni-result" options={{ headerShown: false }} />
+      <Stack.Screen name="login"       options={{ headerShown: false }} />
+      <Stack.Screen name="signup"      options={{ headerShown: false }} />
     </Stack>
   );
 

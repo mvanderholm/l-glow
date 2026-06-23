@@ -1,4 +1,4 @@
-# Lavender Glow — Mark 1
+# L. Glow — Mark 1
 
 A daily ayurvedic companion. React Native + Expo, cross-platform (iOS / Android / web).
 

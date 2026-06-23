@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect } from 'react';
-import { useLocalSearchParams, Link } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doshaInfo } from '../data/content/quiz';
 import { useTheme } from '../context/ThemeContext';
 import { saveDoshaResult } from '../data/user/storage';
@@ -9,6 +9,7 @@ import { BotanicalDivider } from '../components/BotanicalAccent';
 
 export default function Result() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
+  const router = useRouter();
   const { width: windowWidth } = useWindowDimensions();
   const innerWidth = (Platform.OS === 'web' ? Math.min(windowWidth, 480) : windowWidth) - spacing.lg * 2;
   const styles = makeStyles(colors, spacing, radius);
@@ -97,15 +98,51 @@ export default function Result() {
         <View style={styles.prakritCard}>
           <Text style={[type.label, { marginBottom: spacing.sm }]}>Prakriti & Vikriti</Text>
           <Text style={[type.body, { lineHeight: 26 }]}>
-            This result is your <Text style={{ fontFamily: 'Inter_700Bold' }}>prakriti</Text> — the constitution you were born with. Your home base. The daily check-in tracks <Text style={{ fontFamily: 'Inter_700Bold' }}>vikriti</Text> — where you actually are right now. The two are usually different. The whole point of practice is noticing the gap and gently moving back toward home.
+            This result is your <Text style={{ fontFamily: 'Inter_700Bold' }}>prakriti</Text> — the constitution you were born with. Your blueprint. The daily check-in tracks <Text style={{ fontFamily: 'Inter_700Bold' }}>vikriti</Text> — where you actually are right now. The two are usually different. The whole point of practice is noticing the gap and gently moving back toward it.
           </Text>
         </View>
 
-        <Link href={{ pathname: '/recommendations', params: { dosha: primary } }} asChild>
-          <Pressable style={styles.primaryBtn}>
-            <Text style={styles.primaryBtnText}>See Today's Guidance</Text>
-          </Pressable>
-        </Link>
+        <BotanicalDivider color={colors.sage} borderColor={colors.border} width={innerWidth} />
+
+        {/* Archetype — source: transcript 19. DRAFT, awaiting Thea's review. */}
+        <Text style={type.label}>Your pattern</Text>
+        <Text style={[type.display, { color: info.color, fontSize: 28, lineHeight: 34, marginTop: spacing.sm, marginBottom: spacing.md }]}>
+          {info.archetype.name}
+        </Text>
+
+        <View style={[styles.elementCard, { borderLeftColor: info.color }]}>
+          <Text style={[type.label, { color: colors.textMuted, marginBottom: spacing.sm }]}>When in balance</Text>
+          {info.archetype.balanced.map((t, i) => (
+            <Text key={i} style={[type.muted, { lineHeight: 22, marginBottom: 4 }]}>· {t}</Text>
+          ))}
+        </View>
+
+        <View style={[styles.elementCard, { borderLeftColor: colors.textMuted }]}>
+          <Text style={[type.label, { color: colors.textMuted, marginBottom: spacing.sm }]}>When off track</Text>
+          {info.archetype.imbalanced.map((t, i) => (
+            <Text key={i} style={[type.muted, { lineHeight: 22, marginBottom: 4 }]}>· {t}</Text>
+          ))}
+        </View>
+
+        <View style={[styles.elementCard, { borderLeftColor: info.color }]}>
+          <Text style={[type.body, { lineHeight: 24, marginBottom: spacing.sm }]}>{info.archetype.trap}</Text>
+          <Text style={[type.muted, { lineHeight: 22, fontStyle: 'italic' }]}>{info.archetype.truth}</Text>
+        </View>
+
+        <View style={[styles.reminderCard, { borderLeftColor: info.color }]}>
+          <Text style={[styles.reminderText, { color: colors.text }]}>"{info.archetype.reminder}"</Text>
+        </View>
+
+        <Text style={[type.muted, { textAlign: 'center', lineHeight: 22, marginTop: spacing.md, marginBottom: spacing.lg, paddingHorizontal: spacing.md }]}>
+          We are all three. The question isn't what dosha am I — it's what part of me is asking for attention right now.
+        </Text>
+
+        <Pressable
+          style={styles.primaryBtn}
+          onPress={() => router.replace({ pathname: '/recommendations', params: { dosha: primary } })}
+        >
+          <Text style={styles.primaryBtnText}>See Today's Guidance</Text>
+        </Pressable>
 
       </ScrollView>
     </SafeAreaView>
@@ -159,6 +196,20 @@ function makeStyles(colors, spacing, radius) {
       borderColor: colors.border,
       borderLeftWidth: 3,
       borderLeftColor: colors.olive,
+    },
+    reminderCard: {
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderLeftWidth: 3,
+    },
+    reminderText: {
+      fontFamily: 'PlayfairDisplay_400Regular',
+      fontStyle: 'italic',
+      fontSize: 18,
+      lineHeight: 28,
     },
     primaryBtn: {
       marginTop: spacing.xl,

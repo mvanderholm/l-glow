@@ -200,6 +200,167 @@ const SECTIONS = [
       { type: 'textarea', key: 'substanceHistory',    label: 'Any history of substance use or addiction you\'d like to share? (optional)' },
     ],
   },
+  {
+    id: 'prakriti',
+    title: 'Your Constitution',
+    description: 'Physical, functional, and psychological traits',
+    fields: [
+      { type: 'cta_disabled' },
+      { type: 'info', text: 'This section helps identify your original constitution — your prakriti. Answer based on how you naturally are, without outside influences. There are no right or wrong answers.\n\nSkip anything you\'re unsure about — you can always come back.' },
+
+      { type: 'divider', label: 'Physical structure' },
+      { type: 'prakriti_single', key: 'prak_body_frame', label: 'Body frame', options: [
+        { dosha: 'Vata', text: 'Thin — naturally, without outside influences' },
+        { dosha: 'Pitta', text: 'Medium and muscular' },
+        { dosha: 'Kapha', text: 'Stocky or stout' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_bone_structure', label: 'Bone structure', options: [
+        { dosha: 'Vata', text: 'Light, narrow — joints may be prominent' },
+        { dosha: 'Pitta', text: 'Moderate, medium build' },
+        { dosha: 'Kapha', text: 'Thick and heavy' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_body_weight', label: 'Body weight', options: [
+        { dosha: 'Vata', text: 'Light and variable' },
+        { dosha: 'Pitta', text: 'Moderate and muscular' },
+        { dosha: 'Kapha', text: 'Can tend toward heavier' },
+      ]},
+      { type: 'info', text: 'Wrist check: wrap your middle finger and thumb around your other wrist.' },
+      { type: 'prakriti_single', key: 'prak_wrist', label: 'Wrist circumference', options: [
+        { dosha: 'Vata', text: 'Middle finger and thumb overlap' },
+        { dosha: 'Pitta', text: 'Middle finger and thumb just touch' },
+        { dosha: 'Kapha', text: 'There\'s a gap between them' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_complexion', label: 'Complexion / skin', options: [
+        { dosha: 'Vata', text: 'Dry, rough, cool — can be grayish or thin' },
+        { dosha: 'Pitta', text: 'Rosy, oily, moderate thickness — can be ruddy' },
+        { dosha: 'Kapha', text: 'Pale, moist, cool, thick' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_hair', label: 'Hair', options: [
+        { dosha: 'Vata', text: 'Dry, coarse, curly, brittle' },
+        { dosha: 'Pitta', text: 'Fine, light-colored, oily — grays early' },
+        { dosha: 'Kapha', text: 'Thick, oily, luxurious, wavy' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_teeth', label: 'Teeth (before orthodontics)', options: [
+        { dosha: 'Vata', text: 'Irregular or crooked' },
+        { dosha: 'Pitta', text: 'Moderate — can be yellowish' },
+        { dosha: 'Kapha', text: 'Large, strong, white, healthy' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_eyes', label: 'Eyes', options: [
+        { dosha: 'Vata', text: 'Small' },
+        { dosha: 'Pitta', text: 'Medium, deep-set, sharp — often blue or green' },
+        { dosha: 'Kapha', text: 'Large with long lashes' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_nose', label: 'Nose', options: [
+        { dosha: 'Vata', text: 'Small and narrow' },
+        { dosha: 'Pitta', text: 'Medium' },
+        { dosha: 'Kapha', text: 'Large with a wide bridge' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_lips', label: 'Lips', options: [
+        { dosha: 'Vata', text: 'Thin, small, often chapped' },
+        { dosha: 'Pitta', text: 'Medium' },
+        { dosha: 'Kapha', text: 'Large and thick' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_chin', label: 'Chin', options: [
+        { dosha: 'Vata', text: 'Thin and angular' },
+        { dosha: 'Pitta', text: 'Tapered and angular' },
+        { dosha: 'Kapha', text: 'Doubled and round' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_neck', label: 'Neck', options: [
+        { dosha: 'Vata', text: 'Long and thin' },
+        { dosha: 'Pitta', text: 'Medium' },
+        { dosha: 'Kapha', text: 'Short and thick' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_fingers', label: 'Fingers and palms', options: [
+        { dosha: 'Vata', text: 'Thin, long, narrow' },
+        { dosha: 'Pitta', text: 'Medium or square' },
+        { dosha: 'Kapha', text: 'Thick, fleshy, short' },
+      ]},
+      { type: 'prakriti_single', key: 'prak_face', label: 'Face shape', options: [
+        { dosha: 'Vata', text: 'Oval or angular — thinner' },
+        { dosha: 'Pitta', text: 'Angular' },
+        { dosha: 'Kapha', text: 'Round' },
+      ]},
+
+      { type: 'divider', label: 'Physical function' },
+      { type: 'prakriti_multi', key: 'prak_appetite', label: 'Appetite', options: [
+        { dosha: 'Vata', text: 'Varied, scanty, or swings to extremes' },
+        { dosha: 'Pitta', text: 'Good and strong' },
+        { dosha: 'Kapha', text: 'Steady but consistently low' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_sweat', label: 'Sweat and body odor', options: [
+        { dosha: 'Vata', text: 'Little, slightly smelly' },
+        { dosha: 'Pitta', text: 'Profuse and strong' },
+        { dosha: 'Kapha', text: 'Pleasant or sweet-smelling' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_sleep', label: 'Sleep', options: [
+        { dosha: 'Vata', text: 'Light, interrupted, restless' },
+        { dosha: 'Pitta', text: 'Light to moderate — can wake and fall back asleep easily' },
+        { dosha: 'Kapha', text: 'Deep — difficult to wake up' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_digestion', label: 'Digestion and elimination', options: [
+        { dosha: 'Vata', text: 'Dry, hard, variable — tends toward gas and constipation' },
+        { dosha: 'Pitta', text: 'Soft, sometimes loose or burning — 1–3 times per day' },
+        { dosha: 'Kapha', text: 'Regular, solid, sometimes sluggish' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_body_temp', label: 'Body temperature', options: [
+        { dosha: 'Vata', text: 'I run cold' },
+        { dosha: 'Pitta', text: 'I run warm or hot' },
+        { dosha: 'Kapha', text: 'I run cool' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_menstruation', label: 'Menstruation (if applicable)', options: [
+        { dosha: 'Vata', text: 'Painful, crampy, irregular cycles' },
+        { dosha: 'Pitta', text: 'Heavy flow, fairly regular' },
+        { dosha: 'Kapha', text: 'Mild cramping, moderate flow' },
+      ]},
+
+      { type: 'divider', label: 'Psychological function' },
+      { type: 'prakriti_multi', key: 'prak_mind', label: 'Mind', options: [
+        { dosha: 'Vata', text: 'Restless, always active, scattered or timid' },
+        { dosha: 'Pitta', text: 'Adventurous and bold' },
+        { dosha: 'Kapha', text: 'Conservative and shy' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_stress', label: 'Under stress', options: [
+        { dosha: 'Vata', text: 'Anxious and variable' },
+        { dosha: 'Pitta', text: 'Focused and intense' },
+        { dosha: 'Kapha', text: 'Calm, stable, retreating' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_speech', label: 'Speech', options: [
+        { dosha: 'Vata', text: 'Rambling and very quick' },
+        { dosha: 'Pitta', text: 'Clear but can be argumentative' },
+        { dosha: 'Kapha', text: 'Steady, gentle, slow to change' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_memory', label: 'Memory', options: [
+        { dosha: 'Vata', text: 'Quick to understand, quick to forget' },
+        { dosha: 'Pitta', text: 'Sharp' },
+        { dosha: 'Kapha', text: 'Slow to take in, but won\'t forget' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_nature', label: 'Nature', options: [
+        { dosha: 'Vata', text: 'Independent' },
+        { dosha: 'Pitta', text: 'A natural leader' },
+        { dosha: 'Kapha', text: 'A natural supporter' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_moods', label: 'Moods', options: [
+        { dosha: 'Vata', text: 'Adaptable and playful' },
+        { dosha: 'Pitta', text: 'Courageous and passionate' },
+        { dosha: 'Kapha', text: 'Loving, stable, calm' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_negative_emotions', label: 'Negative emotions', options: [
+        { dosha: 'Vata', text: 'Fear' },
+        { dosha: 'Pitta', text: 'Anger' },
+        { dosha: 'Kapha', text: 'Attachment' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_focus', label: 'Focus', options: [
+        { dosha: 'Vata', text: 'Trouble staying focused' },
+        { dosha: 'Pitta', text: 'Detail-oriented' },
+        { dosha: 'Kapha', text: 'Big-picture' },
+      ]},
+      { type: 'prakriti_multi', key: 'prak_decisions', label: 'Decision-making', options: [
+        { dosha: 'Vata', text: 'Trouble making choices' },
+        { dosha: 'Pitta', text: 'Quick to decide' },
+        { dosha: 'Kapha', text: 'Slow to decide' },
+      ]},
+    ],
+  },
 ];
 
 // All keys with defaults
@@ -221,6 +382,14 @@ const EMPTY_INTAKE = {
   relationshipStatus: '', relationshipQuality: '', relationshipHistory: '', sensualHealth: '',
   menstrualStatus: '', cycleDetails: '', contraception: '', pregnancyHistory: '',
   familyMentalHistory: '', emotionalSymptoms: [], stressManagement: '', substanceHistory: '',
+  // Section 14 — Prakriti constitution
+  prak_body_frame: '', prak_bone_structure: '', prak_body_weight: '', prak_wrist: '',
+  prak_complexion: '', prak_hair: '', prak_teeth: '', prak_eyes: '', prak_nose: '',
+  prak_lips: '', prak_chin: '', prak_neck: '', prak_fingers: '', prak_face: '',
+  prak_appetite: [], prak_sweat: [], prak_sleep: [], prak_digestion: [],
+  prak_body_temp: [], prak_menstruation: [],
+  prak_mind: [], prak_stress: [], prak_speech: [], prak_memory: [], prak_nature: [],
+  prak_moods: [], prak_negative_emotions: [], prak_focus: [], prak_decisions: [],
 };
 
 // ── Storage helpers ────────────────────────────────────────────────────────
@@ -351,6 +520,93 @@ function Divider({ label, colors: c }) {
   );
 }
 
+const DOSHA_COLORS = c => ({ Vata: c.vata, Pitta: c.accent, Kapha: c.kapha });
+
+function PrakritiSingleField({ field, value, onChange, colors: c }) {
+  const dc = DOSHA_COLORS(c);
+  return (
+    <View style={fs.fieldWrap}>
+      <FieldLabel label={field.label} colors={c} />
+      <View style={{ gap: 6 }}>
+        {field.options.map(opt => {
+          const sel = value === opt.dosha;
+          const col = dc[opt.dosha] || c.accent;
+          return (
+            <Pressable
+              key={opt.dosha}
+              style={[fs.prakRow, { backgroundColor: sel ? col + '1A' : c.surfaceAlt, borderColor: sel ? col : c.border }]}
+              onPress={() => onChange(sel ? '' : opt.dosha)}
+            >
+              <View style={[fs.prakDot, { backgroundColor: sel ? col : c.border }]} />
+              <View style={{ flex: 1 }}>
+                <Text style={[fs.prakDosha, { color: sel ? col : c.textMuted }]}>{opt.dosha}</Text>
+                <Text style={[fs.prakDesc, { color: c.text }]}>{opt.text}</Text>
+              </View>
+              {sel && <CheckIcon color={col} />}
+            </Pressable>
+          );
+        })}
+        <Pressable
+          style={[fs.prakSkip, { borderColor: value === 'skip' ? c.accent : c.border }]}
+          onPress={() => onChange(value === 'skip' ? '' : 'skip')}
+        >
+          <Text style={[fs.prakSkipText, { color: value === 'skip' ? c.accent : c.textMuted }]}>
+            {value === 'skip' ? '✓ Skipped' : 'Skip / I don\'t know'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function PrakritiMultiField({ field, value = [], onChange, colors: c }) {
+  const dc = DOSHA_COLORS(c);
+  function toggle(dosha) {
+    onChange(value.includes(dosha) ? value.filter(v => v !== dosha) : [...value, dosha]);
+  }
+  return (
+    <View style={fs.fieldWrap}>
+      <FieldLabel label={field.label} colors={c} />
+      <View style={{ gap: 6 }}>
+        {field.options.map(opt => {
+          const sel = value.includes(opt.dosha);
+          const col = dc[opt.dosha] || c.accent;
+          return (
+            <Pressable
+              key={opt.dosha}
+              style={[fs.prakRow, { backgroundColor: sel ? col + '1A' : c.surfaceAlt, borderColor: sel ? col : c.border }]}
+              onPress={() => toggle(opt.dosha)}
+            >
+              <View style={[fs.prakCheck, { backgroundColor: sel ? col : 'transparent', borderColor: sel ? col : c.border }]}>
+                {sel && <CheckIcon color="#FBF9F4" />}
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[fs.prakDosha, { color: sel ? col : c.textMuted }]}>{opt.dosha}</Text>
+                <Text style={[fs.prakDesc, { color: c.text }]}>{opt.text}</Text>
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+      <Text style={[fs.prakHint, { color: c.textMuted }]}>Select all that apply</Text>
+    </View>
+  );
+}
+
+function CtaDisabledBlock({ colors: c }) {
+  return (
+    <View style={[fs.ctaCard, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+      <View style={[fs.ctaBadge, { backgroundColor: c.accent + '1A' }]}>
+        <Text style={[fs.ctaBadgeText, { color: c.accent }]}>1-on-1 sessions coming soon</Text>
+      </View>
+      <Text style={[fs.ctaTitle, { color: c.text }]}>Go through this with Thea</Text>
+      <Text style={[fs.ctaBody, { color: c.textMedium }]}>
+        Identifying your original constitution is easier with a trained eye. Thea can walk through this section with you in a session.
+      </Text>
+    </View>
+  );
+}
+
 function renderField(field, intake, update, colors) {
   const v = intake[field.key];
   const onChange = val => update(field.key, val);
@@ -361,9 +617,12 @@ function renderField(field, intake, update, colors) {
     case 'radio':    return <RadioField   key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
     case 'multi':    return <MultiSelect  key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
     case 'check':    return <CheckField   key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
-    case 'info':     return <InfoBlock    key={field.text?.slice(0, 20)} field={field} colors={colors} />;
-    case 'divider':  return <Divider      key={field.label} label={field.label} colors={colors} />;
-    default:         return null;
+    case 'info':            return <InfoBlock          key={field.text?.slice(0, 20)} field={field} colors={colors} />;
+    case 'divider':         return <Divider            key={field.label} label={field.label} colors={colors} />;
+    case 'prakriti_single': return <PrakritiSingleField key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
+    case 'prakriti_multi':  return <PrakritiMultiField  key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
+    case 'cta_disabled':    return <CtaDisabledBlock    key="cta_disabled" colors={colors} />;
+    default:                return null;
   }
 }
 
@@ -637,4 +896,21 @@ const fs = StyleSheet.create({
   gateBtnText:  { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 14, letterSpacing: 0.5 },
   gateSkipBtn:  { borderRadius: 999, paddingVertical: 13, alignItems: 'center', borderWidth: 1 },
   gateSkipText: { fontFamily: 'Inter_400Regular', fontSize: 14 },
+
+  // Prakriti fields
+  prakRow:       { flexDirection: 'row', alignItems: 'flex-start', borderRadius: 12, borderWidth: 1, padding: 12, gap: 12 },
+  prakDot:       { width: 8, height: 8, borderRadius: 4, marginTop: 5, flexShrink: 0 },
+  prakCheck:     { width: 18, height: 18, borderRadius: 4, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+  prakDosha:     { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', marginBottom: 2 },
+  prakDesc:      { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 19 },
+  prakSkip:      { borderRadius: 999, borderWidth: 1, paddingVertical: 7, paddingHorizontal: 14, alignSelf: 'flex-start', marginTop: 4 },
+  prakSkipText:  { fontFamily: 'Inter_400Regular', fontSize: 12.5 },
+  prakHint:      { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 6 },
+
+  // Disabled coaching CTA
+  ctaCard:      { borderRadius: 16, borderWidth: 1, padding: 16, marginBottom: 20 },
+  ctaBadge:     { alignSelf: 'flex-start', borderRadius: 999, paddingVertical: 4, paddingHorizontal: 10, marginBottom: 10 },
+  ctaBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.5 },
+  ctaTitle:     { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 17, lineHeight: 22, marginBottom: 6 },
+  ctaBody:      { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 },
 });

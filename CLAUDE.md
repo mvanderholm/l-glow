@@ -121,6 +121,14 @@ She may eventually mark up content files or the voice guide directly. Treat her 
 
 ---
 
+## Roadmap hygiene
+
+**Always update `docs/roadmap.md` when shipping.** When a feature or fix is committed, immediately strike through the corresponding roadmap item (using `~~text~~`) and add a one-line done note. If an item is partially done (scaffold built, content pending), update the description in place rather than striking through — make the remaining gap explicit. Do not wait to be asked. The roadmap is the source of truth for what's been built; if it's stale, it misleads future sessions.
+
+At the start of any session where you're reviewing open work, cross-check the roadmap against the git log and key files to catch any items that shipped but weren't struck through.
+
+---
+
 ## Safety and scope
 
 - This app is wellness guidance, not medical advice. Never write copy that diagnoses, prescribes for specific conditions, or contradicts "see a doctor" guidance for serious symptoms.

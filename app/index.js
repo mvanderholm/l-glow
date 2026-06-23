@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
@@ -41,6 +41,7 @@ export default function Home() {
   const [userName, setUserName] = useState(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [nameDraft, setNameDraft] = useState('');
+  const scrollRef = useRef(null);
 
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
@@ -62,6 +63,7 @@ export default function Home() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -120,7 +122,7 @@ export default function Home() {
         </View>
 
         {savedDosha === null ? null : savedDosha ? (
-          <ReturningUser dosha={savedDosha} colors={c} spacing={spacing} type={type} />
+          <ReturningUser dosha={savedDosha} colors={c} spacing={spacing} type={type} scrollRef={scrollRef} />
         ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
@@ -250,7 +252,7 @@ function BeginGrid({ colors: c }) {
   );
 }
 
-function ReturningUser({ dosha, colors: c, spacing, type }) {
+function ReturningUser({ dosha, colors: c, spacing, type, scrollRef }) {
   const router = useRouter();
   const info = doshaInfo[dosha];
   const { theme: { radius } } = useTheme();
@@ -304,6 +306,7 @@ function ReturningUser({ dosha, colors: c, spacing, type }) {
               onChangeText={setDraft}
               onSubmitEditing={() => choose(draft)}
               returnKeyType="done"
+              onFocus={() => setTimeout(() => scrollRef?.current?.scrollToEnd({ animated: true }), 100)}
             />
           </>
         )}

@@ -134,6 +134,40 @@ Thea walked a friend through a set of questions in real time and captured her re
 
 **Open question before building:** These questions are more physical/constitutional (body frame, wrist, hair, skin, eyes) than the current quiz which skews behavioral. Does the redesigned quiz replace the current one entirely, or do both exist? Thea's call — have the conversation before touching the question set.
 
+**Transcript 15 — dosha quiz voice memo (June 2026):**
+Thea described all three constitutional types in detail and named the specific question areas she wants. Key decisions from this memo:
+
+**Sequencing principle: easy questions first, subjective questions last.**
+Get people into the rhythm of answering before the introspective stuff arrives.
+
+**Question areas (in order):**
+
+*Physical/obvious — fast to answer, obvious to the person:*
+- Body frame
+- Natural weight tendency
+- Skin (multi-select — "check all that apply")
+- Hair (multi-select)
+- Teeth — with "think back to before braces" framing
+- Eyes
+
+*Physiological — moderate subjectivity:*
+- Appetite
+- Digestion / elimination
+- Sleep
+- Hands and feet temperature
+
+*Subjective/psychological — save for last once user is in the flow:*
+- Physical energy style
+- Mind / thinking style
+- Memory
+- Emotional stress response
+
+**Framing:** Prompt users to "think back to when you were younger — as far back as you can" before the physical questions. Before braces, before hair products, before stress changed things.
+
+**Attribution note:** Thea referenced Frawley & Lad as source material for her clinical descriptions. Quiz options must be in Thea's own voice — not reproduced from that text.
+
+**Draft question set:** See `data/content/quiz-draft.js` — 14 questions, flagged as DRAFT throughout. Awaits Thea's review before any live quiz replacement.
+
 **5. Asana module — Thea's content.**
 Posture descriptions, timing, and benefit copy for each dosha's 3–5 postures in `data/content/movement.js`. Scaffold is built and wired — plug in her content when ready.
 
@@ -151,16 +185,22 @@ Work order:
 Concept list (prioritized):
 
 *Tier 1 — essentials*
+- ~~What is Ayurveda? (new entry)~~ — body filled, source: transcript 20 (062126_01), June 2026
 - Doshas (adapt from transcript #4 — first entry)
 - Prakriti and vikriti
-- Pancha mahabhutas / five elements
-- Agni — digestive fire
+- ~~Pancha mahabhutas / five elements~~ — body filled, source: transcript 25 (062126_07), June 2026
+- ~~Agni — digestive fire~~ — body expanded with four Agni types + Agni/Ama cycle, source: transcript 21 (062126_02), June 2026
 - Ama — toxic sludge
+- ~~Food as Medicine (new entry)~~ — 8-factor food framework, source: transcript 21 (062126_03), June 2026
+
+~~**⚠️ Sequencing note from Thea (transcript 25):** Reorder Learn to: What Is Ayurveda → Five Elements → Doshas → Prakriti/Vikriti.~~ Done — `data/content/learn.js` rewritten with correct order, June 2026.
+
+~~**⚠️ "Blueprint" copy change (Thea, transcript 20):** Change "home base" to "blueprint" across all app copy.~~ Done — updated in `data/content/learn.js` (doshas, prakriti-vikriti) and `app/result.js`. Full sweep confirmed clean, June 2026.
 
 *Tier 2 — deepening*
 - The six tastes / shad rasa
-- The gunas (qualitative: hot/cold, light/heavy, dry/oily)
-- The three gunas (mental: sattva, rajas, tamas)
+- ~~The gunas (qualitative: hot/cold, light/heavy, dry/oily)~~ — body filled, source: transcript 16, June 2026
+- ~~The three gunas (mental: sattva, rajas, tamas)~~ — body filled, source: transcript 15, June 2026
 - Ojas — vital essence
 - Dinacharya and ritucharya
 
@@ -220,6 +260,22 @@ Anchors Thea named: wake before 6am, phone down after 9pm, in bed before 10pm, f
 
 Content dependency: Thea to author routine suggestions per dosha.
 
+**10a. Instagram feed — wire up Thea's account.**
+`components/InstagramFeed.js` and `data/instagram.js` are fully built. Handle is set to `l.glowliving`. The only missing piece is a Meta access token.
+
+**Steps (Thea):**
+1. Make `l.glowliving` a **Creator** account (Instagram → Settings → Account → Switch to Professional Account)
+2. Go to **developers.facebook.com** → Create App → Consumer → Add **Instagram** product
+3. Connect Thea's account, complete the OAuth flow, get a short-lived token with `instagram_basic` scope
+4. Exchange for a long-lived token (60 days): `GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret={app_secret}&access_token={short_token}`
+5. Test it: `GET https://graph.instagram.com/me/media?fields=id,media_type,media_url,permalink&access_token={token}` — should return her posts as JSON
+6. Paste the token into `data/instagram.js` → `INSTAGRAM_ACCESS_TOKEN`
+7. Set a **50-day calendar reminder** to refresh: `GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token={token}`
+
+⚠️ Token lives in `data/instagram.js` for now (repo is private). When the backend (#30/#31) is wired up, move it to an EAS secret / environment variable so it's not in source.
+
+⚠️ If the test in step 5 returns an endpoint error, the `graph.instagram.com/me/media` URL in `data/instagram.js` may need updating — Meta changed this endpoint in late 2024. Flag it and Claude Code will fix the fetch call.
+
 **10. Music / vibration daily suggestion.**
 A daily song or playlist recommendation tuned to dosha and check-in state. Light version: one song link. Heavier version: Thea's curated Spotify playlists exposed per dosha/season/energetic state.
 
@@ -228,14 +284,38 @@ Design constraints: friend-texting-a-song tone, not clinical. Thea owns curation
 ⚠️ **Open question before building:** How does Thea want to organize her playlists? By dosha, season, energetic state, or combination? Five-minute conversation that prevents a data-structure refactor later — ask before scaffolding.
 
 ~~**20. Daily Affirmations screen.**~~
-Scaffold complete. `app/affirmations.js` live under You tab — single affirmation, date-seeded daily pick, "another one →" to cycle through pool. `data/content/affirmations.js` has 13 placeholder entries (4 universal + 3 per dosha); schema supports `season` and `state` fields for future vikriti routing. Currently prakriti-based — swap to vikriti once check-in signal is reliable (#19). Matt to source and expand the content bank. Done.
+Scaffold complete. `app/affirmations.js` live under You tab — single affirmation, date-seeded daily pick, "another one →" to cycle through pool. `data/content/affirmations.js` has 13 placeholder entries (4 universal + 3 per dosha); schema supports `season` and `state` fields for future vikriti routing. Currently prakriti-based — swap to vikriti once check-in signal is reliable (#19). Thea to source and expand the content bank. Done.
 
-**11. Monday Mythbusters.**
-Weekly content slot (proposed: Mondays) where Thea busts one received wellness belief. 1–2 paragraphs, her voice, on the home or recommendations screen.
+~~**11. Monday Mythbusters — scaffold.**~~
+`data/content/mythbusters.js` and `MythbusterCard` live on home screen. Data shape: title (the myth), Thea's take, reframe, publish date. Card shows a placeholder when no current myth is live. Scaffold done — awaiting Thea's content entries.
 
-Tone: recognition and relief, not correction or shame. First myth named: fat-free food (the 90s era, what it wired into a generation).
+~~**11a. Agni Mythbusters content — loaded.**~~
+All 12 myths loaded into `data/content/mythbusters.js` as weekly drip entries (Option A). `series: 'agni'` field added to all entries. `agniEditionClose` exported separately (Thea's closing truth bomb). `weekStart` dates run Aug 17–Nov 2, 2026 — launch week through week 12. Done, June 2026.
 
-Data shape: title (the myth, plainly stated), Thea's take, practical reframe, publish date. Do not invent entries — scaffold and wait for her content.
+⚠️ **Decision still open:** Option B (full edition screen) and Option C (weekly + "read full edition" link) remain available but require a new route. No action needed for the weekly drip to work. Raise with Thea when ready.
+
+**11c. L. Glôw Food Guide — Thea's content, INCOMPLETE — needs follow-up.**
+Thea has authored a substantial food guide covering: the medicine-vs-poison food rule, dosha-specific food lists (Vata/Pitta/Kapha medicine and poison foods with examples), same-food-different-effect breakdowns (yogurt, coffee, beans, smoothies, salad), seasonal food guidance by dosha (Spring/Summer/Fall/Winter), life cycle food medicine (Childhood/Adulthood/Elder), women's cycle food medicine (Menstruation/Follicular/Ovulation/Luteal/Postpartum/Perimenopause), and practical "What do I eat?" examples.
+
+⚠️ **INCOMPLETE — content cuts off mid-sentence** in the "Practical What Do I Eat?" section at "Kapha: lentils, greens, s". The lunch examples for Kapha and everything after are missing.
+
+**Follow-up for Matt:** Ask Thea for the rest of the "Practical What Do I Eat?" section and confirm whether there are additional sections beyond it (e.g., dinner examples, snack examples, or a closing section).
+
+**Note:** This is not mythbusters-style content — it's a comprehensive food reference. It likely belongs in the Learn section (as a multi-part Agni/Diet entry or its own top-level concept), the recommendations screen, or a dedicated Food Guide screen. Placement and format decisions needed before building the data structure. This content is also richer than the current Learn entry shape — it would need dosha-split fields, seasonal fields, and life-stage fields to be queryable rather than just displayed as prose.
+
+**11b. General Mythbusters set — ready to load, data structure change needed.**
+A second set of 9 myths in Thea's voice, broader in scope than the Agni edition — covers water intake, hunger vs. appetite, cravings, weight, cold drinks, and eating timing. Confirmed by Thea: her own words and framing, inspired by (but not verbatim from) source material.
+
+This set is structurally richer than the Agni edition and richer than the current `myth/take/reframe` shape in `data/content/mythbusters.js`. It includes:
+- Dosha-specific breakdowns per myth (Vata / Pitta / Kapha, with medicine vs. poison framing)
+- Embedded app prompts and check-in questions
+- A suggested "challenge" card (Ice Water Test)
+
+**Data structure decision needed before loading:** The current schema won't hold this. Options:
+- Extend the schema with an optional `doshaBreakdown` field (Vata/Pitta/Kapha each with `medicine` and `poison` arrays) and an optional `appPrompt` string — myths that don't have dosha breakdowns leave those fields null.
+- Or keep the two editions in separate data files if they're meant to be different content types.
+
+Same placement question as 11a applies — weekly drip, special edition screen, or both. Thea may want these as separate themed editions (Agni vs. Water/Hydration) or one unified Mythbusters pool.
 
 ---
 
@@ -286,7 +366,7 @@ Confirmed sections (May 2026):
 
 *Practices (2-column grid):*
 - **Recipes** — `app/recipes.js` — placeholder. Dosha-wise meals and kitchen preparations. Content dependency: Thea to author recipes one at a time, each tagged with dosha, season, and preparation notes.
-- **Herbs** — `app/herbs.js` — live with existing `data/content/herbs.js` data. Content flagged as draft, pending Thea's review of summaries and use instructions.
+- **Herbs** — `app/herbs.js` — live with existing `data/content/herbs.js` data. Content flagged as draft, pending Thea's review of summaries and use instructions. **See item 36 below — Thea has produced a full A–Z database that supersedes this draft entirely.**
 - **Breathwork** — `app/breathwork.js` — placeholder. Pranayama matched to dosha and state. Content dependency: Thea to author techniques per dosha.
 - **Meditation** — `app/meditation.js` — placeholder. Dosha-specific stillness practices. Content dependency: Thea.
 - **Self Massage** — `app/selfmassage.js` — placeholder. Abhyanga protocols by dosha — oils, strokes, timing. Content dependency: Thea.
@@ -375,7 +455,10 @@ Mark 1 recommendations are organized primarily by dosha and season. That structu
 
 ---
 
-**32. Mental Constitution Quiz — Guna assessment (Sattva / Rajas / Tamas).**
+~~**32. Mental Constitution Quiz — Guna assessment (Sattva / Rajas / Tamas) — scaffold.**~~
+`app/guna-quiz.js`, `app/guna-result.js`, and `data/content/gunaQuiz.js` built and live. Gated behind dosha quiz + 7 check-ins on the You screen. Quiz flow and result screen complete. Questions replaced with Thea's 15 questions from transcript 16. Result copy built — see 32-content.
+
+~~**32-content. Guna result copy.**~~ Built June 2026 from transcript 18 — full copy in `data/content/gunaQuiz.js`; `app/guna-result.js` rebuilt with summary, gifts, watchFor, pathForward, reflection, practices, and lGlowNote. DRAFT, awaiting Thea's review.
 Thea explicitly requested this in voice memo 08: *"This is really fun for the app — something we can definitely bring in when somebody is comfortable."* A second self-assessment quiz, distinct from the dosha quiz, that evaluates a user's current mental and spiritual state across 24 dimensions.
 
 The assessment covers: diet, drug/alcohol use, sensory impressions, sleep, sexual activity, sense control, speech, cleanliness, work motivation, anger, fear, desire, pride, depression, love, violent behavior, money attachment, contentment, forgiveness, concentration, memory, willpower, truthfulness/honesty, peace of mind, creativity, spiritual practice, and service orientation.
@@ -395,20 +478,21 @@ Each question has three answers: left = Sattvic, middle = Rajasic, right = Tamas
 
 ## Visual & component polish
 
-**28. Revisit the dosha wheel — restore the three-percentage breakdown.**
-The current `DoshaWheel` component on the You screen shows the donut chart and a small legend (VATA / PITTA / KAPHA with percentage) but the three large individual percentage figures that appeared in the previous version are not present. Revisit the wheel's layout to make the three-dosha breakdown more readable and prominent — likely as three larger stat-style numbers below the chart, consistent with the card design system (surface background, 26px radius, shadow, no border).
+~~**28. Revisit the dosha wheel — restore the three-percentage breakdown.**~~
+Three large stat-style percentage cards (Vata / Pitta / Kapha) now render below the donut chart inside the "Your Constitution" card on the You screen. Done.
 
-Design constraints: stays inside the "Your Constitution" card on the You screen. The retake quiz button stays. The PRAKRITI label and primary dosha name in the donut center stay. The change is purely to how the three breakdown percentages are displayed below the chart.
+~~**35. Dosha archetype content — transcript 19.**~~
+Personality archetype added to `doshaInfo` in `data/content/quiz.js` for each dosha: name (The Wanderer / The Warrior / The Keeper), balanced traits, imbalanced traits, the trap, the truth, and a reminder line. New archetype section added to `app/result.js` with the closing "We are all three" line. Archetype reminder lines added to `data/content/affirmations.js` (v-4, p-4, k-4). DRAFT — awaiting Thea's review.
 
 ---
 
 ## Pre-launch requirements — must ship before public release
 
 **29. User authentication — login, logout, and account persistence.**
-Currently all user data lives on-device in AsyncStorage with no identity attached. Before go-live, users need to be able to create an account, log in, log out, and have their data follow them across devices and app reinstalls.
+~~Auth UI done~~ — login, signup, magic-link (passwordless), and Firebase session persistence all live. `context/AuthContext.js` wired through the app; You tab shows signed-in state and sign-out. Remaining: backend sync (AsyncStorage → ColdFusion API on first login) and the migration flow for existing local users. Depends on #30/#31.
 
-**Decided architecture: Firebase Auth + Supabase data (see #30).**
-Firebase handles identity exclusively — login, logout, session management, JWT issuance. Supabase receives and verifies those Firebase JWTs for all data operations. This avoids the auth migration problem (Firebase Auth users can never have their passwords migrated) while getting Postgres for everything that matters for reporting.
+**Decided architecture: Firebase Auth + ColdFusion CFCs + MSSQL (see #30).**
+Firebase handles identity exclusively — login, logout, session management, JWT issuance. The existing panda-mobile ColdFusion API handles all data operations, with Firebase JWT verification in CF. MSSQL is the database. Planned upgrade to Supabase once the app is generating revenue — the API contract (#31) is written to be database-agnostic so the app layer won't change.
 
 Scope:
 - Account creation — email + password to start; social login (Google, Apple) can follow
@@ -422,32 +506,32 @@ Design constraints: auth screens must match the L. Glow card/shadow/typography d
 **30. Backend data layer — user data storage and practitioner reporting.**
 Thea needs to be able to see her clients' data — check-in history, dosha results, journal entries, practice completions — and draw clinical insight from it ahead of sessions. This is a core part of her practitioner value proposition and the app's long-term job.
 
-**Decided architecture: Supabase (Postgres) with Firebase JWT verification.**
-All user-generated data is written to Supabase Postgres tables. Row-level security (RLS) policies use the Firebase `uid` from the verified JWT — users can only read/write their own rows. Thea's practitioner account is granted explicit access to consenting clients' rows via a `practitioner_clients` join table.
+**Decided architecture: ColdFusion CFCs + MSSQL, Firebase JWT verified in CF.**
+All user-generated data is written to MSSQL via ColdFusion CFC endpoints on the existing panda-mobile server. JWT verification is handled in CF against Google's JWKS endpoint. User isolation is enforced in CFC business logic. Upgrade path to Supabase is planned once the app generates revenue; the API contract (#31) is database-agnostic so no app-side changes will be needed.
 
 Scope — two surfaces, sequenced:
 
 *Phase 1 — User data persistence (depends on #29):*
 - Core tables: `users`, `dosha_results`, `checkins`, `journal_entries`, `intentions`, `practice_completions`
-- All AsyncStorage writes proxied through a thin service layer that writes to both AsyncStorage (local cache) and Supabase (source of truth once authenticated)
-- Data types retained indefinitely — this is longitudinal health data
+- All AsyncStorage writes proxied through a thin service layer that writes to both AsyncStorage (local cache) and the CF API (source of truth once authenticated)
+- Data retained indefinitely — this is longitudinal health data
 
 *Phase 2 — Practitioner-facing reporting (Thea's view):*
 - Thea's account designated as `role: practitioner` in the `users` table
 - Per-client view: dosha result, check-in history and trends, vikriti drift over time, recent journal entries (if consented)
-- Start simple: a web-based dashboard or even a Supabase Studio view she can query directly before building a custom UI
+- Start simple: a direct MSSQL/CF page she can access before building a polished UI
 - Consent model: explicit opt-in per user, stored in `practitioner_clients` with `consented_at` timestamp
 
 ⚠️ **Still needed before building Phase 2:**
 - Conversation with Thea about what she actually wants to see before a session — do not design the practitioner view without her input
-- Consent language and privacy policy — legal review required before any user data leaves the device
+- Consent language and privacy policy — Thea to provide; legal review required before any user data leaves the device
 
 **Build order:**
-1. Firebase Auth integration + L. Glow auth screens (#29)
-2. MSSQL `lglow` schema deployed (see #31 for schema and endpoints)
-3. Firebase Admin JWT middleware added to existing panda-mobile API
-4. Service layer that writes to MSSQL alongside AsyncStorage
-5. AsyncStorage migration flow for existing local users
+1. ~~Firebase Auth integration + L. Glow auth screens (#29)~~ done
+2. MSSQL `lglow` schema deployed (see #31 for tables)
+3. ColdFusion CFC stubs for each `/lglow/` route with Firebase JWT verification
+4. Service layer in the app that writes to the CF API alongside AsyncStorage
+5. AsyncStorage migration flow for existing local users on first login
 6. Thea conversation → practitioner view design
 7. Practitioner dashboard (Phase 2)
 8. Consent flow and privacy policy
@@ -683,7 +767,8 @@ Response: { synced: { dosha: bool, checkins: int, journal: int,
 
 ## Client intake form
 
-**33. Clinical intake form — full pre-session questionnaire.**
+~~**33. Clinical intake form — full pre-session questionnaire.**~~
+*Sections 1–14 built and live. Two items remain blocked: (a) signature/consent screen requires a privacy policy to exist first; (b) backend sync depends on #29/#30. Ship those when unblocked.*
 Source: voice memo 12 (`docs/transcripts/12_intake_form.txt`). A multi-section clinical intake form accessible from the hamburger menu. This is the form a user fills out before working with Thea — not part of onboarding, not gated to first launch. Anyone can access it from the drawer at any time.
 
 **Entry point:** Hamburger menu → "My Intake Form" (or similar label — confirm wording with Thea). Routes to `app/intake.js`.
@@ -702,26 +787,52 @@ Source: voice memo 12 (`docs/transcripts/12_intake_form.txt`). A multi-section c
 11. **Relationships** *(18+ gate before this section)* — relationship status + quality, past intimate relationship description, age of first sexual activity, past and present sensual health, current sexual activity, satisfaction + what they'd change
 12. **Reproductive health — women only** *(18+ gate, shown conditionally based on gender identity)* — menstrual status (pre/peri/post-menopausal), cycle regularity, last cycle date, duration, flow (light/moderate/heavy), color, cramping/pain, peri/PMS symptoms (mood, acne, bloating, fatigue, etc.), menstrual products used; menopause symptoms if applicable; bioidentical hormones; contraception (current method, hormonal history, IUD, side effects); pregnancy history (number, miscarriages, abortions, fertility challenges, complications)
 13. **Mind and emotional health** — breathing/reflection prompt before questions; family mental illness history; symptom inventory (anxious, overwhelmed, self-destructive, resentment, anger, depressed, intense, melancholy, stubborn, lonely, irritated, fear/panic, high stress, lethargy, worry — with intensity + frequency + tied events); current stress management; substance addiction history (substance + duration)
+14. **Prakriti constitution assessment** *(source: transcript 14)* — three sub-sections assessing original constitution. Ideally completed with Thea in a 1:1 session; surface the coaching session CTA (see #34) at the top of this section.
+    - **Physical structure** — body frame, bone structure, body weight, complexion/skin, hair, teeth, eyes, nose, lips, chin, neck, fingers/palms, face shape. Single-select per trait (Vata / Pitta / Kapha). Add the wrist circumference test (overlap / touch / gap). Add face shape reference images and optional photo upload.
+    - **Physical function** — appetite, sweat/body odor, sleep, digestion/elimination, body temperature, menstruation. Multi-select ("check all that apply").
+    - **Psychological function** — mind state, stress response, speech, memory, nature, moods, negative emotions, focus, decision-making. Multi-select required — fear, anger, and attachment can all be present simultaneously.
+    - Every question in all three sub-sections needs a "skip / I don't know" escape.
+    - Intro copy (Thea's language): *"Discovering your original constitution is not about judging or labeling. There is no right or wrong answer. It is giving us an idea of what balance and harmony look like in your unique body, mind, and spirit."* — flag for Thea's final wording review.
+
+Full section details and question tables: `docs/notes-transcript-14.md`
 
 **18+ gate:** Not enforced at signup. A single acknowledgment screen appears before sections 11 and 12: "The next section includes questions about relationships and sexual health. These are optional — tap Pass on any question that doesn't feel right. Continue only if you are 18 or older." A "I'm under 18 / skip this section" option skips both sections entirely.
 
 **Data handling:**
 - Stored locally in AsyncStorage under `@lglow/intake` as a single JSON object (partial saves valid — resume where left off)
 - Must sync to backend when #29/#30 are live — Thea needs to read this before sessions. This is the primary data source for her practitioner view.
-- The signature/consent block requires a privacy policy to be in place before this screen ships publicly. Do not launch this feature without legal sign-off on the confidentiality statement.
+- The signature/consent block requires a privacy policy to be in place before this screen ships publicly. Thea to provide; do not launch this feature without legal sign-off on the confidentiality statement.
 
 **Build order:**
 1. Data structure + `data/user/storage.js` intake key (can do now)
 2. Route `app/intake.js` — multi-step form with section navigation, save-on-exit, resume state
 3. Add "My Intake Form" to `components/HamburgerDrawer.js`
 4. Scope-of-practice disclosure screen (copy from voice memo, flagged for Thea's final wording review)
-5. All 13 sections as distinct step screens
+5. All 14 sections as distinct step screens
 6. 18+ gate screen before sections 11–12
 7. Reproductive health conditional display logic (gender identity field from section 1 drives visibility)
-8. Signature/consent screen — requires privacy policy to exist first
-9. Backend sync when #29/#30 are live
+8. Section 14 Prakriti assessment — single-select for physical structure, multi-select for physical function and psychological function; wrist test; face reference images + optional photo upload; coaching session CTA at section top (see #34)
+9. Signature/consent screen — requires privacy policy to exist first
+10. Backend sync when #29/#30 are live
 
-**Content dependency:** Section copy (question labels, options, explanatory text) must match Thea's voice — do not invent clinical language. The structure above maps directly from her voice memo. Run final wording past her before shipping.
+**Content dependency:** Section copy (question labels, options, explanatory text) must match Thea's voice — do not invent clinical language. The structure above maps directly from her voice memos. Run final wording past her before shipping.
+
+---
+
+**34. "Book a session with Thea" CTA — coaching session upsell.**
+*Disabled placeholder card built and live at the top of the Prakriti section (section 14 of the intake form). Shows "1-on-1 sessions coming soon" badge. To activate: replace `CtaDisabledBlock` in `app/intake.js` with a pressable card calling `Linking.openURL(bookingUrl)` once Thea has a booking URL.*
+Source: transcript 14. Thea explicitly wants to offer 1:1 coaching sessions as a paid upsell through the app, and specifically names the Prakriti constitution assessment (intake form section 14) as the primary trigger.
+
+> "Ideally, we go through this in the first coaching session, so I definitely in the app want to offer that as an extra side service. And if not, that's okay too."
+
+The CTA is non-pressuring — it surfaces at the top of the Prakriti section of the intake form and possibly elsewhere (recommendations screen, about Thea screen). Tone: "want to go through this with Thea directly? Book a session." Not a gate, not a nag.
+
+**Open questions before building:**
+- Where does the CTA link? Direct booking via Calendly, email, or something else? Thea needs to decide her scheduling infrastructure.
+- Are there other surfaces where this should appear (home screen for new users, recommendations screen)?
+- Pricing and packaging for the session — not part of the app initially, just a link-out to wherever she manages bookings.
+
+**Build order:** Wire up once the booking URL exists. Until then, the CTA can render as a placeholder or be hidden entirely — do not ship a dead link.
 
 ---
 
@@ -730,11 +841,12 @@ Source: voice memo 12 (`docs/transcripts/12_intake_form.txt`). A multi-section c
 Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what needs to become roadmap items:
 
 **Hard bugs (fix before next build):**
-- Home screen unreachable after quiz flow — bottom nav disappears, logo not tappable
-- Reminders screen navigation trap — force-close required to exit
-- Keyboard covers "write your own" intention input
-- Past journal entries not tappable / no full-entry view
-- Practices / rituals taps on You tab do nothing
+- ~~iOS back button not tappable on all secondary screens~~ — fixed. `Pressable` in `headerTitle` was intercepting native UIKit touches. `LogoMark` made static; `headerBackTitleVisible: false` added to remove "index" label.
+- ~~Home screen unreachable after quiz flow — bottom nav disappears, logo not tappable~~ — fixed. BottomNav rendered outside Stack in `_layout.js` (can't disappear); logo Pressable removed this session.
+- ~~Reminders screen navigation trap — force-close required to exit~~ — fixed. Reminders row has `soon: true`; no screen to navigate to.
+- ~~Keyboard covers "write your own" intention input~~ — fixed. `KeyboardAvoidingView` + `keyboardShouldPersistTaps` in `4fde8cc`.
+- ~~Past journal entries not tappable / no full-entry view~~ — fixed. Tappable cards with slide-up Modal in `4fde8cc`.
+- ~~Practices / rituals taps on You tab do nothing~~ — resolved. Section removed; replaced with settings/stats layout.
 
 **Quiz / check-in (needs Thea's input before changing):**
 - Q3 "How is your digestion?" → reframe toward hunger/agni language
@@ -746,11 +858,11 @@ Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what ne
 - "Welcome back, Vata" → "Welcome back, [name]" (requires name capture somewhere)
 - Lifestyle notes presentation too dense — break into bullets
 - "Just for Today" needs "choose one" instruction
-- Learn section overuses Thea's name — should center the practice, not her
+- ~~Learn section overuses Thea's name — should center the practice, not her~~ — subtitle and placeholder strings rewritten; attribution footer kept.
 - About Thea bio — waiting on her rewrite
-- Credentials stacking under her name — fix ordering
+- ~~Credentials stacking under her name — fix ordering~~ — reordered to Ayurvedic Medicine · RYT · Certified Wellness Coach.
 - Practices / rituals numbers on You tab need explanation or rethink
-- Saved favorites not discoverable — either wire it up or hide the section
+- ~~Saved favorites not discoverable — either wire it up or hide the section~~ — removed from Settings list; no defined feature yet.
 
 **Images (blocked on Thea):**
 - About Thea photo — she's getting a new one
@@ -759,6 +871,75 @@ Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what ne
 **Her content ask:** Interested in video for doshas, breathwork, recipes. Referenced "2B Magnetic" (TBM) app as style inspiration. Conversation needed before she starts recording.
 
 **What she liked:** Herb warm/cooling/heating tags, Monday Mythbusters, dosha wheel, journal section, 10-question quiz length.
+
+---
+
+---
+
+## Agni Assessment — new feature (Thea's explicit request)
+
+**37. Agni Assessment — personalized digestive fire evaluation.**
+Source: transcript 21 (062126_02), June 2026. Thea explicitly named this as a feature she wants in the app: *"Agni should become one of the core pillars of the app because it gives people a simple answer to the question of why do I feel this way? This really meets people exactly where they're at without immediately pushing them into doshas and Sanskrit."*
+
+Proposed shape:
+- A short self-assessment (7–10 questions) identifying which of the four Agni types the user is currently expressing: Sama (balanced), Vishama (irregular/Vata), Tikshna (intense/Pitta), or Manda (slow/Kapha)
+- Questions drawn from the signs Thea named: bloating, brain fog, energy consistency, appetite regularity, heaviness after meals, elimination, emotional processing
+- A personalized result screen: which Agni type, what it means, what supports it, and what to avoid
+- Agni result feeds into food, herb, lifestyle, and movement recommendations — this is the entry point Thea envisions for users who aren't ready for the dosha quiz yet
+
+**Content dependency:** Question set and result copy must come from Thea. The four Agni types and their descriptions are already in `data/content/learn.js` — result copy can build from that.
+
+**Build order:**
+1. Confirm question set with Thea ← **next step**
+2. ~~Data structure: `@lglow/agni_result` in AsyncStorage — `agni_type`, `taken_at`~~ — done, `saveAgniResult`/`loadAgniResult` in `data/user/storage.js`, June 2026
+3. ~~Build quiz screen (can reuse guna-quiz.js pattern)~~ — done, `app/agni-quiz.js`, June 2026
+4. ~~Build result screen~~ — done, `app/agni-result.js`, June 2026. Result copy DRAFT from transcript 21 — Thea to review before launch. Questions are structural scaffolding — Thea must rewrite all before launch.
+5. Wire Agni result into recommendations as a secondary signal alongside dosha
+
+---
+
+## Vata / Pitta / Kapha Food Recommendations — content ready
+
+**38. Dosha food lists — Thea's content approved, ready to load.**
+Source: transcripts 22–24 (062126_04, 05, 06), June 2026. Thea has recorded detailed food recommendations for all three doshas with Best / Good / Not Beneficial / Avoid breakdowns across: grains, legumes, vegetables, fruits, nuts, oils, spices, animal products, and sweeteners. Authorship confirmed — her own words formed from multiple sources.
+
+This content feeds into:
+- Item 36 (Herb + Food Database) — the dosha-specific medicine/poison breakdowns per food
+- The recommendations screen — food section per dosha
+- The food guide content (item 11c) — the practical examples section
+
+⚠️ **Not yet loaded into any data file.** Awaits the food database data structure decision (item 36 placement question) before loading. Do not load into the existing `data/content/herbs.js` — that schema is too narrow. This content belongs in the new food database schema once designed.
+
+---
+
+## Herb + Food Database — major new feature
+
+**36. L. Glôw Herb + Food Impact Database — content complete, build needed.**
+Source: `docs/LGlow_Herb_Food_Impact_Database_v2_filled.docx`. Thea has produced a complete A–Z herb and food database, hundreds of entries from Agrimony to Yerba Santa. This is the most substantial content asset produced to date and supersedes the draft `data/content/herbs.js` entirely.
+
+**What the document contains:**
+- A-Z entries, each with: name, type, Latin name, taste, energy, vipaka, dosha impact notation (VK- P+ style), integer dosha scores, actions array, medicine_when array, poison_when array, and an L. Glôw translation phrase
+- A complete developer JSON data model — ready to implement
+- App UX recommendations: card layout order (Snapshot → Medicine When → Poison When → Taste → Energy → Vipaka → Actions → Best Seasons → L. Glôw Tip), symptom-based search ("bloating", "anxiety", "PMS", "brain fog")
+- Extended CMS field checklist: adds best_season, best_constitution, avoid_when, pairs_well_with, safety_flags, source_notes, review_status
+- Safety and compliance copy guidance: practitioner guidance badges, pregnancy/medication flags, global disclaimer
+
+**This is a different feature from the current herbs screen.** The current screen shows a small list of draft herb summaries. This database enables a searchable, filterable herb + food encyclopedia — users can search by name or symptom, expand cards, and see dosha-specific medicine/poison guidance.
+
+**⚠️ Decision needed before building:**
+- Does this live as an expanded Herbs section under Tools, or does it become its own top-level screen (e.g., "Encyclopedia" or "Herb + Food Guide")?
+- The document includes foods alongside herbs — confirm with Thea whether foods and herbs share one searchable database or live in separate sections.
+
+**Build order once placement is decided:**
+1. Migrate `data/content/herbs.js` to the new schema (name, type, latin_name, taste, energy, vipaka, dosha_impact, actions, medicine_when, poison_when, lglow_translation, safety_flags, source_status)
+2. Parse the document into structured JS data entries
+3. Build searchable/filterable list UI — search by name and by symptom keyword
+4. Build expandable card UI per the document's recommended field order
+5. Add practitioner guidance badges for flagged entries
+6. Add global safety disclaimer per compliance copy in the document
+7. Wire into Tools → Herbs route (or new route if placement decision changes)
+
+**Content status:** v2 fields are filled. Document notes that Medicine When / Poison When are "L. Glôw interpretation fields — educational wellness cues, not diagnosis or dosing instructions." Source status field tracks whether each entry came from book photos, L. Glôw interpretation, or needs review.
 
 ---
 

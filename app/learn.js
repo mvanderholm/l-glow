@@ -22,7 +22,7 @@ export default function Learn() {
         <Text style={type.label}>The Tradition</Text>
         <Text style={[type.h1, { marginTop: spacing.sm }]}>Learn</Text>
         <Text style={[type.muted, { marginTop: spacing.xs }]}>
-          Classical ayurvedic concepts, taught in Thea's voice. New entries added as she records them.
+          Classical ayurvedic concepts, explored in depth. New entries added as they're recorded.
         </Text>
 
         {tiers.map(tier => {
@@ -93,7 +93,7 @@ function ConceptModal({ concept, onClose }) {
             ) : (
               <View style={styles.pendingBlock}>
                 <Text style={[type.muted, { textAlign: 'center' }]}>
-                  Thea is working on this one.
+                  This one's still being recorded.
                 </Text>
                 <Text style={[type.muted, { textAlign: 'center', fontSize: 12, marginTop: spacing.xs }]}>
                   Check back soon.
@@ -121,6 +121,13 @@ function ConceptModal({ concept, onClose }) {
   );
 }
 
+function hasAnyMatrixContent(matrix) {
+  if (!matrix) return false;
+  return Object.values(matrix).some(
+    dim => dim && Object.values(dim).some(cell => !!cell)
+  );
+}
+
 function MatrixSection({ matrix, colors, spacing, radius, type }) {
   const DIMS = [
     { key: 'physical',  label: 'Physical' },
@@ -136,6 +143,32 @@ function MatrixSection({ matrix, colors, spacing, radius, type }) {
   ];
   const [activeDim, setActiveDim] = useState('physical');
   const dimData = matrix[activeDim] || {};
+
+  // If no cells have content yet, show a teaser instead of four identical empty tabs
+  if (!hasAnyMatrixContent(matrix)) {
+    return (
+      <View style={{ marginTop: spacing.xl }}>
+        <Text style={type.label}>How it applies</Text>
+        <View style={{
+          marginTop: spacing.md,
+          padding: spacing.lg,
+          backgroundColor: colors.surfaceAlt,
+          borderRadius: radius.md,
+          borderWidth: 1,
+          borderColor: colors.border,
+          alignItems: 'center',
+          gap: spacing.xs,
+        }}>
+          <Text style={[type.muted, { textAlign: 'center' }]}>
+            Physical · Mental · Emotional · Spiritual
+          </Text>
+          <Text style={[type.muted, { textAlign: 'center', fontSize: 12 }]}>
+            The practice matrix for this concept is still being built out.
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={{ marginTop: spacing.xl }}>

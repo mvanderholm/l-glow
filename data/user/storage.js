@@ -1,8 +1,12 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEYS = {
-  PRIMARY_DOSHA: '@lglow/primary_dosha',
-  DOSHA_SCORES: '@lglow/dosha_scores',
+  PRIMARY_DOSHA:  '@lglow/primary_dosha',
+  DOSHA_SCORES:   '@lglow/dosha_scores',
+  GUNA_DOMINANT:  '@lglow/guna_dominant',
+  GUNA_SCORES:    '@lglow/guna_scores',
+  AGNI_TYPE:      '@lglow/agni_type',
+  AGNI_COUNTS:    '@lglow/agni_counts',
   CHECKIN_PREFIX: '@lglow/checkins/',
   INTENTION_PREFIX: '@lglow/intentions/',
   USER_NAME: '@lglow/user_name',
@@ -26,6 +30,48 @@ export async function loadDoshaResult() {
   return {
     dosha,
     scores: scoresRaw ? JSON.parse(scoresRaw) : null,
+  };
+}
+
+// --- Guna result ---
+
+export async function saveGunaResult(dominant, scores) {
+  await AsyncStorage.multiSet([
+    [KEYS.GUNA_DOMINANT, dominant],
+    [KEYS.GUNA_SCORES, JSON.stringify(scores)],
+  ]);
+}
+
+export async function loadGunaResult() {
+  const [[, dominant], [, scoresRaw]] = await AsyncStorage.multiGet([
+    KEYS.GUNA_DOMINANT,
+    KEYS.GUNA_SCORES,
+  ]);
+  if (!dominant) return null;
+  return {
+    dominant,
+    scores: scoresRaw ? JSON.parse(scoresRaw) : null,
+  };
+}
+
+// --- Agni result ---
+
+export async function saveAgniResult(agniType, counts) {
+  await AsyncStorage.multiSet([
+    [KEYS.AGNI_TYPE,   agniType],
+    [KEYS.AGNI_COUNTS, JSON.stringify(counts)],
+  ]);
+}
+
+export async function loadAgniResult() {
+  const [[, agniType], [, countsRaw]] = await AsyncStorage.multiGet([
+    KEYS.AGNI_TYPE,
+    KEYS.AGNI_COUNTS,
+  ]);
+  if (!agniType) return null;
+  return {
+    agniType,
+    counts: countsRaw ? JSON.parse(countsRaw) : null,
   };
 }
 

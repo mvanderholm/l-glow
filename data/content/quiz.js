@@ -114,6 +114,25 @@ export const doshaInfo = {
         faith:         'Erratic and variable.',
       },
     },
+    // Source: transcript 19 (061926_03). DRAFT — awaiting Thea's review.
+    archetype: {
+      name: 'The Wanderer',
+      balanced: [
+        'Creative, visionary, and inspired',
+        'Intuitive, curious, and deeply spiritual',
+        'Innovative and free — sees possibilities before anyone else',
+        'Dreams up businesses, writes books, starts movements',
+      ],
+      imbalanced: [
+        'Anxiety, overthinking, and doom scrolling',
+        'Starting everything, finishing nothing',
+        'Feeling disconnected and living in tomorrow',
+        'Never fully present',
+      ],
+      trap: 'If I think about it more, I\'ll finally feel safe. But safety never comes from more information.',
+      truth: 'Vata isn\'t looking for more information. Vata is looking for grounding.',
+      reminder: 'You don\'t need another plan. What you need is a safe place to land.',
+    },
   },
   pitta: {
     name: 'Pitta',
@@ -163,6 +182,24 @@ export const doshaInfo = {
         faith:         'Strong and determined.',
       },
     },
+    archetype: {
+      name: 'The Warrior',
+      balanced: [
+        'Driven, focused, and confident',
+        'Courageous, disciplined, and powerful',
+        'Strategic — transforms things and gets them done',
+        'The builder, the leader, the one everyone relies on',
+      ],
+      imbalanced: [
+        'Irritable, frustrated, and controlling',
+        'Perfectionism and resentment',
+        'Judgment and burnout',
+        'Satisfaction that never arrives',
+      ],
+      trap: 'If I work harder, fix more, achieve more, then I\'ll finally be enough. But the finish line keeps moving.',
+      truth: 'Pitta isn\'t looking for success. Pitta is looking for peace.',
+      reminder: 'You were never meant to carry the whole world. Put something down.',
+    },
   },
   kapha: {
     name: 'Kapha',
@@ -211,6 +248,24 @@ export const doshaInfo = {
         negativeEmotion: 'Attachment and possessiveness',
         faith:         'Steady and slow to change.',
       },
+    },
+    archetype: {
+      name: 'The Keeper',
+      balanced: [
+        'Loyal, grounded, and deeply patient',
+        'Nurturing, compassionate, and steady',
+        'Creates home wherever they go',
+        'The one everyone calls when life falls apart',
+      ],
+      imbalanced: [
+        'Exhaustion from giving too much',
+        'Holding on long past the time to let go',
+        'Putting everyone else first, feeling invisible',
+        'Lack of motivation and fear of change',
+      ],
+      trap: 'If I keep giving, eventually someone will give back. But they often don\'t.',
+      truth: 'Kapha isn\'t looking for love. Kapha already is love.',
+      reminder: 'You don\'t have to earn your worth by carrying everyone else.',
     },
   },
 };

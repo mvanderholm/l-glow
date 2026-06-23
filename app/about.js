@@ -54,7 +54,7 @@ export default function About() {
           Thea
         </Text>
         <Text style={[type.label, { textAlign: 'center', marginTop: spacing.xs }]}>
-          Certified Wellness Coach · Ayurvedic Medicine · RYT
+          Ayurvedic Medicine · RYT · Certified Wellness Coach
         </Text>
 
         {/* Bio */}

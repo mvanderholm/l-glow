@@ -4,16 +4,40 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import { loadDoshaResult, loadUserName } from '../data/user/storage';
+import { loadDoshaResult, loadGunaResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
+function computeStats(checkins) {
+  const total = checkins.length;
+
+  // Check-ins in the last 7 days (rolling window)
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffStr = cutoff.toISOString().slice(0, 10);
+  const thisWeek = checkins.filter(c => c.date >= cutoffStr).length;
+
+  // Consecutive day streak going backwards from today (or yesterday if today not yet done)
+  const dates = new Set(checkins.map(c => c.date));
+  const today = new Date().toISOString().slice(0, 10);
+  const cursor = new Date();
+  if (!dates.has(today)) cursor.setDate(cursor.getDate() - 1); // grace: don't break streak if today isn't done yet
+  let streak = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = cursor.toISOString().slice(0, 10);
+    if (!dates.has(d)) break;
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return { streak, total, thisWeek };
+}
+
 const SETTINGS = [
   { label: 'Reminders',           Icon: BellIcon,     soon: true  },
   { label: 'My dosha & intake',   Icon: LeafIcon,     soon: false },
-  { label: 'Saved & favourites',  Icon: HeartIcon,    soon: true  },
   { label: 'Help & guidance',     Icon: QuestionIcon, soon: true  },
 ];
 
@@ -22,12 +46,20 @@ export default function You() {
   const router = useRouter();
   const { open: openDrawer } = useDrawer();
   const { user, signOut } = useAuth();
-  const [result, setResult] = useState(null);
-  const [userName, setUserName] = useState('');
+  const [result, setResult]         = useState(null);
+  const [gunaResult, setGunaResult] = useState(null);
+  const [checkinCount, setCheckinCount] = useState(0);
+  const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
+  const [userName, setUserName]     = useState('');
 
   useEffect(() => {
     loadDoshaResult().then(r => setResult(r || false));
+    loadGunaResult().then(r => setGunaResult(r));
     loadUserName().then(n => { if (n) setUserName(n); });
+    loadRecentCheckins(365).then(list => {
+      setCheckinCount(list.length); // for guna gate
+      setStats(computeStats(list));
+    });
   }, []);
 
   return (
@@ -95,9 +127,9 @@ export default function You() {
         {/* Stats */}
         <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
           {[
-            { Icon: SunIcon,    value: '12', label: 'Day streak'  },
-            { Icon: LotusIcon,  value: '84', label: 'Practices'   },
-            { Icon: LeafIcon,   value: '0',  label: 'In ritual'   },
+            { Icon: SunIcon,   value: stats.streak,   label: 'Day streak' },
+            { Icon: LotusIcon, value: stats.total,    label: 'Check-ins'  },
+            { Icon: LeafIcon,  value: stats.thisWeek, label: 'This week'  },
           ].map(s => (
             <View key={s.label} style={[styles.statCard, { backgroundColor: c.surface, ...card }]}>
               <s.Icon color={c.textMuted} size={18} />
@@ -107,41 +139,61 @@ export default function You() {
           ))}
         </View>
 
-        {/* Progress */}
-        <View style={[styles.progressCard, { backgroundColor: c.surface, ...card, marginBottom: 28 }]}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={[styles.progressTitle, { color: c.text }]}>Your progress</Text>
-            <Text style={{ color: c.textMuted, fontFamily: 'Inter_400Regular', fontSize: 12 }}>This month</Text>
-          </View>
-          <Text style={[styles.progressPct, { color: c.accent }]}>
-            78%{'  '}
-            <Text style={[styles.progressOf, { color: c.textMedium }]}>of your rituals kept</Text>
-          </Text>
-          <View style={[styles.track, { backgroundColor: c.border, marginTop: 10 }]}>
-            <View style={[styles.fill, { backgroundColor: c.accent, width: '78%' }]} />
-          </View>
-          <Text style={[styles.progressNote, { color: c.textMedium }]}>You're showing up for you. Keep going.</Text>
-        </View>
-
         {/* Settings */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Settings</Text>
-        <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
-          {SETTINGS.map((item, idx) => (
-            <Pressable
-              key={item.label}
-              style={[styles.settingsRow, idx < SETTINGS.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-              onPress={() => { if (!item.soon && item.label === 'My dosha & intake') router.push('/quiz'); }}
-            >
-              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                <item.Icon color={c.textMuted} size={15} />
-              </View>
-              <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text }]}>{item.label}</Text>
-              {item.soon
-                ? <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
-                : <ChevronIcon color={c.textMuted} />}
-            </Pressable>
-          ))}
-        </View>
+        {(() => {
+          // Gate: dosha quiz taken + 7+ check-ins unlocks guna assessment
+          const gunaUnlocked = !!(result && result.dosha && checkinCount >= 7);
+          // All visible settings rows
+          const rows = [
+            ...SETTINGS,
+            ...(gunaUnlocked ? [{ label: 'Guna Assessment', Icon: GunaIcon, soon: false, guna: true }] : []),
+          ];
+          return (
+            <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
+              {rows.map((item, idx) => (
+                <Pressable
+                  key={item.label}
+                  style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+                  onPress={() => {
+                    if (item.soon) return;
+                    if (item.label === 'My dosha & intake') router.push('/quiz');
+                    if (item.guna) {
+                      if (gunaResult) {
+                        router.push({
+                          pathname: '/guna-result',
+                          params: {
+                            dominant: gunaResult.dominant,
+                            sattva: gunaResult.scores?.sattva ?? 0,
+                            rajas:  gunaResult.scores?.rajas  ?? 0,
+                            tamas:  gunaResult.scores?.tamas  ?? 0,
+                          },
+                        });
+                      } else {
+                        router.push('/guna-quiz');
+                      }
+                    }
+                  }}
+                >
+                  <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                    <item.Icon color={c.textMuted} size={15} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text, flex: 0 }]}>{item.label}</Text>
+                    {item.guna && gunaResult && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                        {gunaResult.dominant.charAt(0).toUpperCase() + gunaResult.dominant.slice(1)} dominant
+                      </Text>
+                    )}
+                  </View>
+                  {item.soon
+                    ? <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
+                    : <ChevronIcon color={c.textMuted} />}
+                </Pressable>
+              ))}
+            </View>
+          );
+        })()}
 
         {/* Account */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Account</Text>
@@ -262,11 +314,6 @@ function BellIcon({ color, size }) {
     <Path d="M10 20a2 2 0 0 0 4 0" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
-function HeartIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-  </Svg>;
-}
 function QuestionIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.4} />
@@ -282,6 +329,12 @@ function PersonIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.5} />
     <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+  </Svg>;
+}
+function GunaIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
   </Svg>;
 }
 function SignOutIcon({ color, size }) {
