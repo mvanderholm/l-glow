@@ -15,6 +15,10 @@ const TOOLS = [
   { href: '/journal',    title: 'Journaling',    desc: 'Reflect & release',         Icon: PenIcon,        dark: false },
 ];
 
+const ASSESSMENTS = [
+  { href: '/tongue-check', title: 'Tongue Check', desc: 'An Ayurvedic morning read — what your tongue is telling you.', Icon: TongueIcon },
+];
+
 const EDUCATION = [
   { href: '/learn', title: 'Learn', desc: 'Ayurveda in Thea\'s voice — essentials through advanced.', Icon: BookIcon },
   { href: '/about', title: 'About Thea', desc: 'Her story, credentials, and the worldview underneath the app.', Icon: PersonIcon },
@@ -66,6 +70,25 @@ export default function Tools() {
             );
           })}
         </View>
+
+        {/* Self-assessments section */}
+        <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Self-assessments</Text>
+        {ASSESSMENTS.map(item => (
+          <Pressable
+            key={item.href}
+            style={({ pressed }) => [styles.eduCard, { backgroundColor: c.surface, opacity: pressed ? 0.85 : 1, ...card }]}
+            onPress={() => router.push(item.href)}
+          >
+            <View style={[styles.eduIconCircle, { backgroundColor: c.surfaceAlt }]}>
+              <item.Icon color={c.textMuted} size={20} />
+            </View>
+            <View style={styles.eduBody}>
+              <Text style={[styles.eduTitle, { color: c.text }]}>{item.title}</Text>
+              <Text style={[styles.eduDesc, { color: c.textMuted }]}>{item.desc}</Text>
+            </View>
+            <ChevronIcon color={c.textMuted} />
+          </Pressable>
+        ))}
 
         {/* Education section */}
         <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Education</Text>
@@ -152,6 +175,13 @@ function PenIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke={color} strokeWidth={1.4} />
     <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+  </Svg>;
+}
+
+function TongueIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3C8.5 3 6 6 6 9.5v5a6 6 0 0 0 12 0v-5C18 6 15.5 3 12 3Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+    <Path d="M12 3v9" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
   </Svg>;
 }
 

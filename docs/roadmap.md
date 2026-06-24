@@ -71,8 +71,8 @@ Current copy ("Discover your dosha, check in with body and mind…") is scaffold
 **2. Rewrite daily check-in copy in Thea's voice.**
 Same constraint — wait for voice guide approval.
 
-**3. Add the morning hunger question to the daily check-in.**
-One new question: "How's your morning hunger today?" Five levels from "no appetite" to "ravenous." Persisted alongside check-in values. Gentle framing — information about digestive fire, not a judgment.
+~~**3. Add the morning hunger question to the daily check-in.**~~
+~~One new question: "How's your morning hunger today?" Five levels from "no appetite" to "ravenous." Persisted alongside check-in values. Gentle framing — information about digestive fire, not a judgment."~~ Done — `hunger` dimension live in `app/checkin.js` alongside `tongue` coating score. Both already wired into `buildSessionSummary()`.
 
 **19. Revisit daily check-in questions.**
 Full review of the current check-in question set with Thea. Questions should reflect her methodology and voice more precisely — current set is a scaffold. She should define what signals are diagnostically useful for tracking vikriti day-to-day.
@@ -940,6 +940,59 @@ Source: `docs/LGlow_Herb_Food_Impact_Database_v2_filled.docx`. Thea has produced
 7. Wire into Tools → Herbs route (or new route if placement decision changes)
 
 **Content status:** v2 fields are filled. Document notes that Medicine When / Poison When are "L. Glôw interpretation fields — educational wellness cues, not diagnosis or dosing instructions." Source status field tracks whether each entry came from book photos, L. Glôw interpretation, or needs review.
+
+---
+
+## Tongue & Pulse Check-in — new feature
+
+**39. Tongue & Pulse self-assessment — ayurvedic body literacy tool.**
+Source: transcript 27 (062426_01), June 2026. Thea's explicit request for a self-assessment feature that teaches users to read their own body signals in the ayurvedic tradition.
+
+> *"I think it's something I want to bring to the app for people to have an opportunity to check themselves out."*
+
+**Tongue assessment content — complete, ready to adapt.**
+Thea recorded full tongue guidance covering:
+- **Shape** → narrow/thin = Vata, pointed/flame-like = Pitta, round/full = Kapha
+- **Size** → small/thin = Vata, medium = Pitta, thick/large = Kapha
+- **Color** → grayish/brown = Vata buildup; bright/deep red = Pitta heat; pale pink = Kapha heaviness
+- **Coating (Ama level)** → none = nirama (clear); grayish-brown = sama-Vata; yellow/green = sama-Pitta; white = sama-Kapha; thickness on a 3-level scale
+- **Other clues** → cracks (Vata dryness), scalloped edges (malabsorption), tremors (Vata nervous system), red tip/edges (Pitta heat), frothiness/bubbles (Vata/Kapha imbalance), raised bumps (note location, consult practitioner)
+- **Tongue map** → tip = head/heart/emotional heat; middle = stomach/liver/gallbladder; back = small + large intestine/elimination; sides = liver/gallbladder; center line = spine/nervous system
+
+**Pulse assessment content — NOT YET RECORDED.**
+Thea said "we're going to pause on that one, I'll send that over" at the end of the recording. Pulse content coming in a future memo. Tongue and pulse are likely two separate screens/sections within the same feature.
+
+Note: Thea said she is "not as practiced in the pulse" — may be less confident recording that one. Check in with her before expecting it.
+
+**Disclaimer — Thea drafted it herself, ready to use.**
+She recorded a full disclaimer in her own voice (transcript 27, lines 9–54). Key elements:
+- Frame: "learning a new language — the language of the body"
+- What it is: a self-awareness practice, an educational tool, a way to notice patterns over time, a conversation starter with qualified healthcare providers
+- What it is not: a medical diagnosis, a disease screening tool, emergency advice
+- Inline result language she specified: "this pattern is often associated with..." / "Ayurveda may interpret this as..." / "this may sometimes reflect..." — never "you have X" or "this means Y"
+- **"These are clues, not conclusions."** — Thea's exact phrase, goes at the top of every tongue and pulse result page
+- No disease names in results: no diabetes, cancer, thyroid, IBS, depression
+- Red flag copy: if experiencing persistent/worsening/severe symptoms, chest pain, neurological symptoms, mental health concerns → seek licensed medical care
+
+**Check-in frequency:**
+- Tongue: can be daily if wanted; morning is ideal (before food, coffee, tongue scraping, brushing, supplements)
+- Pulse: seasonal (Thea is less practiced here)
+- Before either: take a few deep breaths. "The body reads differently when we are settled vs. rushing."
+
+**Note on data layer:** `tongueScore` already exists in the checkin API spec (item #31). The tongue assessment result can feed into the daily check-in as an integer score — the plumbing is partially anticipated.
+
+**Where it lives:** Likely under Tools alongside the other self-assessment practices. Possibly its own route (`app/tongue.js`, `app/pulse.js`) or combined as `app/body-check.js`. Placement decision needed before building.
+
+**Build order:**
+1. ~~Thea reviews and approves tongue content adaptation (DRAFT — adapt from transcript 27)~~ — adapted, DRAFT flag in place
+2. ~~Decide placement: standalone Tool, or integrated into the daily check-in flow~~ — Self-assessments section under Tools
+3. ~~Build disclaimer screen (copy from transcript 27, flagged for Thea's final wording review)~~ — done, intro phase in `app/tongue-check.js`
+4. ~~Build tongue assessment screen — guided visual self-check, one observation at a time~~ — done, `app/tongue-check.js`, June 2026
+5. ~~Build tongue result screen — dosha/Ama reading with "clues not conclusions" framing throughout~~ — done, `app/tongue-result.js`, June 2026
+6. ~~Wire `tongueScore` into the daily check-in data structure~~ — already live in `app/checkin.js` (tongue coating 1–5 scale)
+7. Pulse content — wait for Thea's recording before building pulse screen
+
+**Content dependency:** Tongue content is DRAFT, Thea to review. Pulse blocked until Thea records it.
 
 ---
 
