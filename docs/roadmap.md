@@ -216,24 +216,24 @@ Do not fabricate entries to fill gaps faster. Empty is correct until Thea has au
 Each Learn concept gets a structured 4×4 matrix mapping how that concept applies across all four dimensions of life. This deepens every entry from a single body of text into a full reference.
 
 Columns (dimensions): **Physical · Mental · Emotional · Spiritual**
-Rows (domains): **Lifestyle · Diet · Exercises · Herbs**
+Rows (domains): **Lifestyle · Nourishment · Movement · Herbs**
 
 So each concept has 16 cells. Example for Agni:
 - Physical / Lifestyle: morning routine practices that stoke digestive fire
-- Physical / Diet: foods and eating habits that support agni
-- Physical / Exercises: movement that strengthens digestive capacity
+- Physical / Nourishment: foods and eating habits that support agni
+- Physical / Movement: movement that strengthens digestive capacity
 - Physical / Herbs: herbs that kindle agni
 - Mental / Lifestyle: practices that maintain mental clarity (mental agni)
-- Mental / Diet: how and when you consume information
+- Mental / Nourishment: how and when you consume information
 - … and so on across all 16 cells
 
 **Data structure change required** — `data/content/learn.js` entries will need a `matrix` field:
 ```js
 matrix: {
-  physical:   { lifestyle: '...', diet: '...', exercises: '...', herbs: '...' },
-  mental:     { lifestyle: '...', diet: '...', exercises: '...', herbs: '...' },
-  emotional:  { lifestyle: '...', diet: '...', exercises: '...', herbs: '...' },
-  spiritual:  { lifestyle: '...', diet: '...', exercises: '...', herbs: '...' },
+  physical:   { lifestyle: '...', nourishment: '...', movement: '...', herbs: '...' },
+  mental:     { lifestyle: '...', nourishment: '...', movement: '...', herbs: '...' },
+  emotional:  { lifestyle: '...', nourishment: '...', movement: '...', herbs: '...' },
+  spiritual:  { lifestyle: '...', nourishment: '...', movement: '...', herbs: '...' },
 }
 ```
 
@@ -276,12 +276,18 @@ Content dependency: Thea to author routine suggestions per dosha.
 
 ⚠️ If the test in step 5 returns an endpoint error, the `graph.instagram.com/me/media` URL in `data/instagram.js` may need updating — Meta changed this endpoint in late 2024. Flag it and Claude Code will fix the fetch call.
 
-**10. Music / vibration daily suggestion.**
-A daily song or playlist recommendation tuned to dosha and check-in state. Light version: one song link. Heavier version: Thea's curated Spotify playlists exposed per dosha/season/energetic state.
+**10. Sound Library — music, vibration, nervous system regulation.**
+Source: transcript 28 (062526_01), June 2026. Thea's vision has expanded beyond a daily song suggestion into a full Sound Library: a curated space where users can find the right sound for where they are right now.
 
-Design constraints: friend-texting-a-song tone, not clinical. Thea owns curation. Spotify link-outs fine for mark 1.
+**Library categories Thea named:** morning energy · focus · sleep · grounding · meditation · yoga · anxiety · confidence · heartbreak · manifestation · frequency playlists.
 
-⚠️ **Open question before building:** How does Thea want to organize her playlists? By dosha, season, energetic state, or combination? Five-minute conversation that prevents a data-structure refactor later — ask before scaffolding.
+**Post-check-in integration:** After a check-in, the recommendation flow surfaces a sound suggestion alongside the herb/food/lifestyle guidance. "Ground your fire. Here's your herb. Here's your playlist." Sound becomes part of the daily healing arc, not a separate destination.
+
+**Spotify integration:** Thea wants to connect directly to Spotify (she is already building playlists there). Link-outs from the app to her curated playlists are the right pattern — no audio plays in-app (quiet app constraint, see key decisions).
+
+Design constraints: friend-texting-a-song tone, not clinical. Thea owns all curation. Spotify link-outs only — no in-app audio.
+
+⚠️ **Open question before building:** How does Thea want to organize her Spotify playlists — by dosha, by mood/energy state, by category above, or a combination? Ask before scaffolding the data structure. A five-minute conversation prevents a refactor.
 
 ~~**20. Daily Affirmations screen.**~~
 Scaffold complete. `app/affirmations.js` live under You tab — single affirmation, date-seeded daily pick, "another one →" to cycle through pool. `data/content/affirmations.js` has 13 placeholder entries (4 universal + 3 per dosha); schema supports `season` and `state` fields for future vikriti routing. Currently prakriti-based — swap to vikriti once check-in signal is reliable (#19). Thea to source and expand the content bank. Done.
@@ -302,6 +308,63 @@ Thea has authored a substantial food guide covering: the medicine-vs-poison food
 **Follow-up for Matt:** Ask Thea for the rest of the "Practical What Do I Eat?" section and confirm whether there are additional sections beyond it (e.g., dinner examples, snack examples, or a closing section).
 
 **Note:** This is not mythbusters-style content — it's a comprehensive food reference. It likely belongs in the Learn section (as a multi-part Agni/Diet entry or its own top-level concept), the recommendations screen, or a dedicated Food Guide screen. Placement and format decisions needed before building the data structure. This content is also richer than the current Learn entry shape — it would need dosha-split fields, seasonal fields, and life-stage fields to be queryable rather than just displayed as prose.
+
+**40. Freedom with Food — signature content area.**
+Source: transcript 28 (062526_01), June 2026. Thea named this as a defining differentiator for L. Glow — the content area that sets it apart from every other wellness app. Her framing: "I think this is probably like just a signature area when I think about my audience — people born in the 80s and 90s — changing that course of what we were fed growing up."
+
+**Working title:** "Freedom with Food" (Thea's own phrase, though she noted it feels slightly scary in a good way).
+
+**Topics Thea outlined:**
+- The fear of food
+- Good vs. bad food framing — where it came from, why it's wrong
+- Emotional eating and stress eating
+- Restriction and binge cycles
+- Body image and shame
+- Why diets fail
+- The 80/20 rule — no perfectionism
+- Intuitive eating through an ayurvedic lens
+- Food and culture — communal eating as healing
+- How kids learn food beliefs from us
+- Healing generational food patterns
+- Creating peaceful meals with family
+- Eating through celebrations without guilt
+- Food as connection, not punishment
+
+**Framing:** This is NOT about weight loss, macros, calories, or restriction. The ayurvedic lens is: like increases like, opposites bring balance — applied to the emotional relationship with food, not just the physical.
+
+⚠️ **Content dependency:** All topic bodies must come from Thea — this is especially sensitive territory given disordered eating risks (see safety section in CLAUDE.md). Do not draft copy for this section without her explicit guidance. Scaffold the data structure and section layout only.
+
+**Placement:** Lives under the Nourishment pillar in mark 2 nav. Likely a dedicated sub-section or series of articles, not a single screen.
+
+---
+
+**41. Weight Balancing — metabolic health through personalized care.**
+Source: transcript 28 (062526_01), June 2026. Weight balancing (not weight loss) is a known acquisition hook — many users will find the app because they want to "lose weight." The framing reorients them: "they'll come because they want to lose weight, but they'll stay because they feel better."
+
+**Core message:** Your body isn't broken. It's communicating.
+
+**Topics Thea outlined:**
+- Understanding your metabolism through agni (digestive fire)
+- Ama — what accumulates when digestion is off
+- Stress and cortisol's role in weight
+- Sleep's impact on metabolic function
+- Hormones and inflammation
+- Movement as metabolic support
+- Nourishment (not restriction) as the path
+- Herbs and foods that support balanced weight
+- Mindset — progress without obsession
+- Ways to measure success without a scale
+- Breaking the yo-yo cycle
+- Making it a lifestyle, not a program
+- Real success stories (future — requires Thea's clients to consent)
+
+**Framing:** Never "weight loss." Always "weight balancing" — because it applies equally to people who can't gain as much as to those who want to release. See key decisions section: this positioning is already established.
+
+⚠️ **Content dependency:** Thea to author all topic bodies. The ayurvedic framing of weight as a metabolic/agni question (not a calorie question) is hers to articulate.
+
+**Placement:** Lives under the Nourishment pillar in mark 2 nav alongside Freedom with Food.
+
+---
 
 **11b. General Mythbusters set — ready to load, data structure change needed.**
 A second set of 9 myths in Thea's voice, broader in scope than the Agni edition — covers water intake, hunger vs. appetite, cravings, weight, cold drinks, and eating timing. Confirmed by Thea: her own words and framing, inspired by (but not verbatim from) source material.
@@ -423,20 +486,34 @@ Hold until real users have at least a week of data. A simple trend of morning hu
 
 ## App architecture — Thea's stated framework
 
-*From voice memo, April 2026. Thea's explicit description of how she sees the app's content organized. Not a current build target — a north star for how the recommendation engine scales.*
+*From voice memo, April 2026 + transcript 28, June 2026.*
+
+**Two complementary frameworks — don't conflate them:**
+
+**Framework 1 — The four user-facing content pillars (navigation architecture):**
+Source: transcript 28. How users navigate and discover content. The mark 2 nav is built around these:
+- **Lifestyle** — how you live: daily rhythms, morning/evening rituals, sleep, stress, relationships, home environment, digital wellness
+- **Movement** — how you move: yoga/asana, breathwork, meditation, self-massage, walking/rest/recovery; tuned by dosha, season, cycle, age
+- **Herbs** — nature's support: herbs, teas, spices, remedies, supplements; medicine vs. poison; home apothecary
+- **Nourishment** — how you feed body and mind: food, recipes, mindful eating, Freedom with Food, Weight Balancing, seasonal guidance
+
+Sound (music/vibration/nervous system regulation) and the L. Glow Guide (AI personalization) sit alongside these as cross-cutting experiences rather than a fifth pillar.
+
+**Framework 2 — The 4×4 recommendation routing matrix (content depth):**
+How recommendations are routed once content is rich enough. Not visible navigation — the engine underneath.
 
 **The 4×4 framework:**
 
 Four pillars: **Physical · Emotional · Mental · Spiritual**
-Each pillar has four sub-domains: **Diet · Herbs · Exercise · Lifestyle**
+Each pillar has four sub-domains: **Nourishment · Herbs · Movement · Lifestyle**
 
 16 cells total. Her words: *"That is really the basic of the app."*
 
 Examples she gave:
-- Physical / Diet: food combining, time of day, doshas
-- Emotional / Diet: your relationship to the food while eating it — do you love it, are you present?
+- Physical / Nourishment: food combining, time of day, doshas
+- Emotional / Nourishment: your relationship to the food while eating it — do you love it, are you present?
 - Physical / Herbs: supplementing what food alone can't provide
-- Physical / Exercise: rest and postures vs. sweat and movement
+- Physical / Movement: rest and postures vs. sweat and movement
 - Physical / Lifestyle: sleep before 10, phone down before bed, wake before 6
 
 **What this means for architecture:**
@@ -445,6 +522,10 @@ Mark 1 recommendations are organized primarily by dosha and season. That structu
 ---
 
 ## Longer horizon — for when the center gets closer
+
+- **L. Glow Guide — AI-personalized support.** Thea's vision: "one of one guides and personal plans" based on the user's dosha/constitution. The north star form of the app's recommendation engine — not a static food list or generic tips, but a living, personalized guide that adapts to who the user is right now. Requires: rich check-in history, locked content pillars, and likely a backend capable of storing and querying user state over time. Phase 3 or beyond — name it now so future architecture decisions don't close the door on it.
+
+- **Community space.** Thea explicitly named this as phase 2/3: "comparing and talking about your journey with other people is going to be important when the time is right." Not for launch. Flag any architecture decision that would make a social layer harder to add later.
 
 - **Vikriti visualization driven by daily check-in.** A second color swatch alongside the Prakriti one, showing the user's current dosha state (vikriti) as derived from their check-in responses over time. The visual gap between the two swatches makes the concept of prakriti vs. vikriti tangible — you can see how far you've drifted and which direction. Requires: (a) check-in questions revised to reliably signal dosha state (#19), (b) an algorithm to compute a running vikriti estimate from check-in data, (c) enough data from real users to validate the signal. Do not build the algorithm until the question set is locked.
 - Practitioner-side tools: Thea views a client's check-in history before a session.

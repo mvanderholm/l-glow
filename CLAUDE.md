@@ -26,6 +26,16 @@ The app is the first foray toward a physical ayurvedic healing center Thea will 
 
 ---
 
+## The design north star
+
+Every feature in L. Glow should be able to answer this question: **"What does my body need today?"**
+
+If a feature can't connect back to that question — either by helping the user find the answer, or by delivering part of the answer — it doesn't belong in the app. Use this as a filter for scope decisions and as a gut-check when a feature starts to feel like a collection of tools rather than a coherent experience.
+
+*Source: Thea's session framework, transcript 28, June 2026.*
+
+---
+
 ## Tone rules
 
 - Warm, funny, a little irreverent. A friend on a walk, not a guru on a cushion.
