@@ -6,12 +6,14 @@ import LogoMark from './LogoMark';
 
 const NAV_LINKS = [
   { label: 'Home',              href: '/' },
-  { label: 'Journey',           href: '/journey' },
-  { label: 'Tools',             href: '/tools' },
+  { label: 'Lifestyle',         href: '/lifestyle' },
+  { label: 'Movement',          href: '/movement' },
+  { label: 'Check In',          href: '/checkin' },
+  { label: 'Herbs',             href: '/herbs' },
+  { label: 'Nourishment',       href: '/nourishment' },
   { label: 'Learn',             href: '/learn',            indent: true },
   { label: 'Journal',           href: '/journal',          indent: true },
   { label: 'About Thea',        href: '/about',            indent: true },
-  { label: 'Check In',          href: '/checkin' },
   { label: 'You',               href: '/you' },
   { label: 'Dosha Quiz',        href: '/quiz',             indent: true },
   { label: 'Today\'s Guidance', href: '/recommendations',  indent: true },

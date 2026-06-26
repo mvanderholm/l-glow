@@ -67,13 +67,17 @@ function AppNavigator() {
       }}
     >
       <Stack.Screen name="index"           options={{ headerShown: false }} />
+      <Stack.Screen name="lifestyle"       options={{ headerShown: false }} />
+      <Stack.Screen name="movement"        options={{ headerShown: false }} />
+      <Stack.Screen name="nourishment"     options={{ headerShown: false }} />
+      <Stack.Screen name="checkin"         options={{ headerShown: false }} />
+      {/* legacy screens — still reachable, not in bottom nav */}
       <Stack.Screen name="journey"         options={{ headerShown: false }} />
       <Stack.Screen name="tools"           options={{ headerShown: false }} />
       <Stack.Screen name="journal"         options={{ headerShown: false }} />
       <Stack.Screen name="you"             options={{ headerShown: false }} />
       <Stack.Screen name="quiz" />
       <Stack.Screen name="result" />
-      <Stack.Screen name="checkin"         options={{ headerShown: isWeb && !isWebMode }} />
       <Stack.Screen name="recommendations" />
       <Stack.Screen name="about" />
       <Stack.Screen name="learn" />

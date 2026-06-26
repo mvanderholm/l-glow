@@ -5,14 +5,14 @@ import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 
 const TABS = [
-  { name: 'Home',    href: '/',        icon: HomeIcon },
-  { name: 'Journey', href: '/journey', icon: JourneyIcon },
-  { name: 'Tools',   href: '/tools',   icon: ToolsIcon },
-  { name: 'Journal', href: '/journal', icon: JournalIcon },
-  { name: 'You',     href: '/you',     icon: YouIcon },
+  { name: 'Lifestyle',   href: '/lifestyle',   icon: LifestyleIcon },
+  { name: 'Movement',    href: '/movement',    icon: MovementIcon },
+  { name: 'Check In',   href: '/checkin',     icon: CheckInIcon },
+  { name: 'Herbs',       href: '/herbs',       icon: HerbsIcon },
+  { name: 'Nourishment', href: '/nourishment', icon: NourishIcon },
 ];
 
-const PRIMARY_ROUTES = new Set(['/', '/journey', '/tools', '/journal', '/you']);
+const PRIMARY_ROUTES = new Set(['/lifestyle', '/movement', '/checkin', '/herbs', '/nourishment']);
 
 export default function BottomNav() {
   const { theme: { colors: c } } = useTheme();
@@ -66,50 +66,48 @@ export default function BottomNav() {
 
 // ── SVG Icons ──────────────────────────────────────────────────────────────
 
-function HomeIcon({ color, size }) {
+function LifestyleIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 11.5 12 4l9 7.5V21a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9.5Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
-      <Path d="M9 22V14h6v8" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <Circle cx="12" cy="12" r="4" stroke={color} strokeWidth={1.5} />
+      <Path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     </Svg>
   );
 }
 
-function JourneyIcon({ color, size }) {
+function MovementIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 8c3 0 5 3 5 3s2-3 5-3 5 3 5 3" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <Path d="M3 14c2 0 4 2 4 2s2-2 5-2 5 2 5 2" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+function CheckInIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.5} />
-      <Circle cx="12" cy="12" r="2" fill={color} />
-      <Path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <Path d="M8 12l3 3 5-5" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
 
-function ToolsIcon({ color, size }) {
+function HerbsIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="3"    y="3"    width="7.5" height="7.5" rx="1.5" stroke={color} strokeWidth={1.5} />
-      <Rect x="13.5" y="3"    width="7.5" height="7.5" rx="1.5" stroke={color} strokeWidth={1.5} />
-      <Rect x="3"    y="13.5" width="7.5" height="7.5" rx="1.5" stroke={color} strokeWidth={1.5} />
-      <Rect x="13.5" y="13.5" width="7.5" height="7.5" rx="1.5" stroke={color} strokeWidth={1.5} />
+      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     </Svg>
   );
 }
 
-function JournalIcon({ color, size }) {
+function NourishIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M7 4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5v15a1.5 1.5 0 0 1-1.5 1.5h-7A1.5 1.5 0 0 1 7 19.5v-15Z" stroke={color} strokeWidth={1.5} />
-      <Path d="M10 7h4M10 11h4M10 15h2" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function YouIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.5} />
-      <Path d="M4 20c0-3.866 3.582-7 8-7s8 3.134 8 7" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+      <Path d="M12 3C10 3 7 5 7 8h10c0-3-3-5-5-5Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M7 8h10l-1.5 9H8.5L7 8Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M9 13h6" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     </Svg>
   );
 }

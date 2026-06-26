@@ -460,20 +460,21 @@ A personal goals section on the You screen — things the user is working toward
 ~~**22. Prakriti visualization in "You" tab.**~~
 `components/DoshaWheel.js` — SVG donut chart with three colored segments proportional to dosha scores. Primary dosha name + percentage centered in the donut. Three-column legend below (name + %). Wired into You tab. Component is reusable — can also replace the bar chart on the result screen when ready. Done.
 
-**Confirmed nav structure (May 2026):**
+~~**Mark 2 nav restructure — four content pillars.**~~
+Bottom nav rebuilt around Thea's four content pillars (transcript 28). Done, June 2026.
 
-| Tab | What lives there |
-|-----|-----------------|
-| Home | Home screen — unchanged |
-| Journey | TBD — requires Thea's framing on what "progress" means |
-| Tools | Recipes · Herbs · Breathwork · Meditation · Self Massage · Journal · Learn · About Thea |
-| Check In | Daily check-in flow (`/checkin`) |
-| You | Dosha Quiz · Today's Guidance (Recommendations) · Prakriti wheel |
+| Tab | Route | What lives there |
+|-----|-------|-----------------|
+| Lifestyle | `/lifestyle` | Daily check-in · Tongue check · Journal · Affirmations · (coming: Morning Ritual, Evening Wind-down, Daily Routine, Sleep Guidance) |
+| Movement | `/movement` | Breathwork · Meditation · Self Massage · Tongue Check · (coming: Asana, Pulse Reading) |
+| Check In | `/checkin` | Daily check-in flow |
+| Herbs | `/herbs` | Herb library · (coming: Herb + Food database #36) |
+| Nourishment | `/nourishment` | Recipes · (coming: Food Guide #11c, Freedom with Food #40, Weight Balancing #41, Herb + Food Guide #36) |
 
-*Journal lives under Tools only — not a top-level tab. The former Journal tab is repurposed as "Check In", routing directly to `/checkin`. Nav restructure touches `app/_layout.js`, `components/BottomNav.js`, and `components/WebLayout.js`.*
+Home (`/`), Journey (`/journey`), You (`/you`), Journal (`/journal`), Tools (`/tools`) — all still reachable from the hamburger drawer. Bottom nav no longer shows them.
 
 ~~**24. Rename Journal tab to Check In.**~~
-Repurpose the bottom nav's Journal tab: rename it "Check In" and route it to `/checkin`. Journal remains accessible under Tools. Change touches `components/BottomNav.js`, `components/WebLayout.js`, and `app/_layout.js`. Done.
+Done — Check In is now its own pillar tab at `/checkin`.
 
 ---
 

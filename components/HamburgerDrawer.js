@@ -59,7 +59,22 @@ export default function HamburgerDrawer() {
 
             {/* Primary nav items */}
             <View style={styles.section}>
-              <DrawerItem icon={PersonIcon}   label="About Thea"      onPress={() => navigate('/about')}  c={c} />
+              <DrawerItem icon={HomeIcon}     label="Home"             onPress={() => navigate('/')}       c={c} />
+              <DrawerItem icon={YouIcon}      label="Your Profile"     onPress={() => navigate('/you')}    c={c} />
+              <DrawerItem icon={JourneyIcon}  label="My Journey"       onPress={() => navigate('/journey')} c={c} />
+            </View>
+
+            <View style={[styles.sep, { backgroundColor: c.border }]} />
+
+            <View style={styles.section}>
+              <DrawerItem icon={BookIcon}     label="Learn"            onPress={() => navigate('/learn')}  c={c} />
+              <DrawerItem icon={PenIcon}      label="Journal"          onPress={() => navigate('/journal')} c={c} />
+              <DrawerItem icon={PersonIcon}   label="About Thea"       onPress={() => navigate('/about')}  c={c} />
+            </View>
+
+            <View style={[styles.sep, { backgroundColor: c.border }]} />
+
+            <View style={styles.section}>
               <DrawerItem icon={LeafIcon}     label="Dosha Quiz"       onPress={() => navigate('/quiz')}   c={c} />
               <DrawerItem icon={ClipboardIcon} label="My Intake Form"  onPress={() => navigate('/intake')} c={c} />
             </View>
@@ -68,7 +83,7 @@ export default function HamburgerDrawer() {
 
             {/* Placeholder items */}
             <View style={styles.section}>
-              <DrawerItem icon={BellIcon}     label="Reminders"     onPress={close} c={c} soon />
+              <DrawerItem icon={BellIcon}     label="Reminders"      onPress={close} c={c} soon />
               <DrawerItem icon={QuestionIcon} label="Help & guidance" onPress={close} c={c} soon />
             </View>
 
@@ -147,6 +162,47 @@ function QuestionIcon({ color, size }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.4} />
       <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function HomeIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 11.5 12 4l9 7.5V21a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-9.5Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+      <Path d="M9 22V14h6v8" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function YouIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.5} />
+      <Path d="M4 20c0-3.866 3.582-7 8-7s8 3.134 8 7" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function JourneyIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.5} />
+      <Circle cx="12" cy="12" r="2" fill={color} />
+      <Path d="M12 3v2.5M12 18.5V21M3 12h2.5M18.5 12H21" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function BookIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function PenIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke={color} strokeWidth={1.4} />
+      <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
     </Svg>
   );
 }
