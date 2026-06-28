@@ -13,6 +13,7 @@ const TABS = [
 ];
 
 const PRIMARY_ROUTES = new Set(['/lifestyle', '/movement', '/checkin', '/herbs', '/nourishment']);
+const HIDDEN_ROUTES  = new Set(['/welcome', '/login', '/signup']);
 
 export default function BottomNav() {
   const { theme: { colors: c } } = useTheme();
@@ -20,6 +21,8 @@ export default function BottomNav() {
   const pathname = usePathname();
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
+
+  if (HIDDEN_ROUTES.has(pathname)) return null;
 
   return (
     <View style={[styles.wrapper, { paddingBottom: bottomPad, backgroundColor: c.bg }]}>

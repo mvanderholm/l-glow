@@ -9,7 +9,8 @@ const KEYS = {
   AGNI_COUNTS:    '@lglow/agni_counts',
   CHECKIN_PREFIX: '@lglow/checkins/',
   INTENTION_PREFIX: '@lglow/intentions/',
-  USER_NAME: '@lglow/user_name',
+  USER_NAME:      '@lglow/user_name',
+  ONBOARDED:      '@lglow/onboarded',
 };
 
 // --- Dosha result ---
@@ -73,6 +74,16 @@ export async function loadAgniResult() {
     agniType,
     counts: countsRaw ? JSON.parse(countsRaw) : null,
   };
+}
+
+// --- Onboarding flag ---
+
+export async function loadOnboarded() {
+  return AsyncStorage.getItem(KEYS.ONBOARDED);
+}
+
+export async function saveOnboarded() {
+  await AsyncStorage.setItem(KEYS.ONBOARDED, 'true');
 }
 
 // --- User name ---

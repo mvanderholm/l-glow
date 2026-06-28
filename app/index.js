@@ -7,7 +7,7 @@ import { useDrawer } from '../context/DrawerContext';
 import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, saveUserName } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, saveUserName, loadOnboarded } from '../data/user/storage';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { playlistForDosha } from '../data/content/music';
@@ -46,8 +46,12 @@ export default function Home() {
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
     loadUserName().then(n => {
-      if (n) setUserName(n);
-      else setShowNamePrompt(true);
+      if (n) { setUserName(n); return; }
+      // New user — send to welcome screen instead of showing name prompt in-place
+      loadOnboarded().then(flag => {
+        if (flag) setShowNamePrompt(true);
+        else router.replace('/welcome');
+      });
     });
   }, []);
 

@@ -52,6 +52,9 @@ Split is live. `data/content/` holds Thea-authored files (herbs, learn, movement
 ~~**8a. Web support + Vercel deployment.**~~
 Expo Router static export configured. `vercel.json` added. Download CTAs (App Store / Google Play) shown on web only. `Share` button hidden on web. 480px max-width centering for desktop. Repo live at github.com/mvanderholm/l-glow, deployed via Vercel.
 
+~~**8b. Welcome / marketing landing page.**~~
+`app/welcome.js` — standalone landing page at `lglow.vercel.app/welcome`. TBM-inspired narrative arc: dark hero image → differentiation beat → how it works (3 steps) → Dosha Quiz card as primary entry point → About Thea → 4 pillars preview → final CTA → "It changes." footer. All copy [DRAFT] — Thea to review and rewrite before this page is the public front door. Photo placeholder in About section — swap in `assets/thea.jpg` when ready.
+
 ~~**25. Replace logo mark with the O from the style guide.**~~
 `components/LogoMark.js` rebuilt with the O glyph — circle outline + inner 4-pointed star + small accent star above. Proportions derived from Thea's style guide image. App icons (`assets/icon.png`, `assets/adaptive-icon.png`) regenerated from the same glyph via `scripts/generate-icons.js`. Done.
 
