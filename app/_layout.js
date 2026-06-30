@@ -71,6 +71,8 @@ function AppNavigator() {
       <Stack.Screen name="movement"        options={{ headerShown: false }} />
       <Stack.Screen name="nourishment"     options={{ headerShown: false }} />
       <Stack.Screen name="checkin"         options={{ headerShown: false }} />
+      <Stack.Screen name="today"           options={{ headerShown: false }} />
+      <Stack.Screen name="herbs"           options={{ headerShown: false }} />
       {/* legacy screens — still reachable, not in bottom nav */}
       <Stack.Screen name="journey"         options={{ headerShown: false }} />
       <Stack.Screen name="tools"           options={{ headerShown: false }} />
@@ -82,7 +84,6 @@ function AppNavigator() {
       <Stack.Screen name="about" />
       <Stack.Screen name="learn" />
       <Stack.Screen name="affirmations" />
-      <Stack.Screen name="herbs" />
       <Stack.Screen name="recipes" />
       <Stack.Screen name="breathwork" />
       <Stack.Screen name="meditation" />

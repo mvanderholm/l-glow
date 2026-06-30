@@ -1,14 +1,16 @@
-import { View, Text, Pressable, ScrollView, Modal, TextInput } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, TextInput, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { herbs } from '../data/content/herbs';
 import { useTheme } from '../context/ThemeContext';
+import { useDrawer } from '../context/DrawerContext';
 
 const DOSHA_COLORS = { vata: '#8B6A7A', pitta: '#E8A030', kapha: '#4A8FA8' };
 const POTENCY_COLOR = { warming: '#C97855', cooling: '#4A8FA8', neutral: '#7C7357' };
 
 export default function Herbs() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
+  const { open: openDrawer } = useDrawer();
   const [selected, setSelected] = useState(null);
   const [query, setQuery] = useState('');
   const herbList = Object.entries(herbs).filter(([name, herb]) => {
@@ -18,12 +20,15 @@ export default function Herbs() {
   });
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
-        <Text style={type.label}>Apothecary</Text>
-        <Text style={[type.h1, { marginTop: spacing.sm }]}>Herbs</Text>
-        <Text style={[type.muted, { marginTop: spacing.xs, marginBottom: spacing.md }]}>
-          Properties and uses. Content pending Thea's review — treat as a working draft.
+    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
+      <View style={[herbStyles.header, { paddingHorizontal: 20 }]}>
+        <Pressable style={herbStyles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        <Text style={[herbStyles.hTitle, { color: c.text }]}>Herbs</Text>
+        <View style={herbStyles.hBtn} />
+      </View>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <Text style={[type.muted, { marginBottom: spacing.md, fontStyle: 'italic' }]}>
+          Properties and uses. Content pending Thea's review.
         </Text>
 
         <TextInput
@@ -206,3 +211,17 @@ function HerbModal({ herb, onClose }) {
     </Modal>
   );
 }
+
+function MenuIcon({ color }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
+    </Svg>
+  );
+}
+
+const herbStyles = StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
+  hBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  hTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
+});

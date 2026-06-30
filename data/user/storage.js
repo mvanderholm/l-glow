@@ -157,7 +157,7 @@ export async function buildSessionSummary() {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
 
-  lines.push('LAVENDER GLOW · Session Summary');
+  lines.push('L. GLOW · Session Summary');
   lines.push(generated);
   lines.push('');
 

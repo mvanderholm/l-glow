@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
-import { Link, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { card } from '../theme/index';
@@ -37,6 +37,7 @@ function todayLabel() {
 export default function Home() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { open: openDrawer } = useDrawer();
+  const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
   const [userName, setUserName] = useState(null);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
