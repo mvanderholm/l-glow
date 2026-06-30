@@ -4,6 +4,11 @@ Living document. Strike through items as shipped, add new items at the bottom. R
 
 ---
 
+~~**"Here's today" post-check-in screen.**~~
+`app/today.js` — four pillar cards (Nourishment, Herbs, Movement, Lifestyle) shown after check-in completes. Cards are date-seeded picks from the dosha's recommendations data. Check-in score dots shown when a check-in exists for today. Blueprint badge taps to result screen. "See full guidance" links to `/recommendations` (kept as reference). `loadTodayCheckin()` added to `data/user/storage.js`. Check-in routes to `/today` via `router.replace`. Done June 2026. Phase 2: route card content by check-in scores rather than static dosha data — blocked on locked question set (#19) and richer content (Thea).
+
+---
+
 ## Key decisions and constraints
 
 **Launch target: August 17th.**

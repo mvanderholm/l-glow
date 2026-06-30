@@ -86,7 +86,7 @@ export default function CheckIn() {
           } catch (err) {
             console.error('Failed to save check-in:', err);
           }
-          router.push('/recommendations');
+          router.replace('/today');
         }}
       >
         <Text style={styles.primaryBtnText}>Save & See Guidance</Text>

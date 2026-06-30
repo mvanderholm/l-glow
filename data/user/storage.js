@@ -111,6 +111,11 @@ export async function saveCheckin(values, note) {
   await AsyncStorage.setItem(todayKey(), JSON.stringify(entry));
 }
 
+export async function loadTodayCheckin() {
+  const raw = await AsyncStorage.getItem(todayKey());
+  return raw ? JSON.parse(raw) : null;
+}
+
 export async function loadRecentCheckins(days = 7) {
   const keys = [];
   for (let i = 0; i < days; i++) {
