@@ -1,5 +1,3 @@
-// CONTENT NOTE: Bio copy and credentials below are structural placeholders.
-// All text marked [DRAFT] needs Thea's review and approval before shipping.
 // Photo placeholder is intentionally blank — swap in assets/thea.jpg when ready.
 
 import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Image, Linking } from 'react-native';
@@ -58,17 +56,71 @@ export default function About() {
         </Text>
 
         {/* Bio */}
-        {/* [DRAFT — distilled from Thea's voice memo. Her review required before shipping.] */}
         <View style={styles.bioBlock}>
-          <Text style={[type.body, styles.bioPara]}>
-            She came to yoga in 2017 the way most people do — sideways, via necessity. A Sunday run destroyed her hips, a friend said just come to class, and she walked in absolutely certain it wasn't her thing. She was wrong. It was the first time she'd understood her body through balance rather than force, and she hasn't looked back.
+          <Text style={[type.body, styles.bioEmphasis]}>
+            Hi, I'm Thea.
           </Text>
           <Text style={[type.body, styles.bioPara]}>
-            She completed her yoga teacher training at Lotus House of Yoga in 2019, which is where Ayurveda found her. One session was enough to know there was something there. She's been studying and practicing ever since, earning her certification in Ayurvedic Medicine through the Shakti School in 2025.
+            I've always been fascinated by the human body.
           </Text>
           <Text style={[type.body, styles.bioPara]}>
-            L. Glow is her practice in app form — a way to bring the core tools of Ayurveda into the daily lives of people between sessions, or in lieu of them. Her worldview, her methodology, her voice. The eventual physical center is coming. For now, this.
+            As a gymnast growing up, I learned to listen closely to mine. But like many women, my relationship with my body wasn't always rooted in love. I spent years navigating disordered eating, constantly searching for answers about health, weight, food, and what it truly means to be well. Looking back, that experience became one of my greatest teachers.
           </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            In 2017, I found yoga after a long run left me realizing my body needed something different. Then, in 2019, my husband challenged me to do something just for me. At the time, I was focused on being a wife, a mom, and building a career. So I signed up for yoga teacher training — not because I wanted to teach, but because I wanted to learn.
+          </Text>
+          <Text style={[type.body, styles.bioEmphasis]}>
+            That's where Ayurveda found me.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            For years, I had been asking questions.
+          </Text>
+          <Text style={[type.body, styles.bioQuestion]}>
+            Why can two people eat the same thing and have completely different outcomes?
+          </Text>
+          <Text style={[type.body, styles.bioQuestion]}>
+            Why do some people struggle with anxiety while others struggle with inflammation, weight, exhaustion, or burnout?
+          </Text>
+          <Text style={[type.body, styles.bioQuestion]}>
+            Why does wellness feel so complicated?
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            Ayurveda gave me a completely different lens. It taught me that wellness isn't about following the latest trend or finding the perfect diet. It's about understanding your unique nature and creating a lifestyle that supports it.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            On New Year's Eve 2023, I recorded a video declaring that the coming year would be my Year of Ayurveda. It felt terrifying to say out loud. In fact, I almost deleted the video. But something told me not to.
+          </Text>
+          <Text style={[type.body, styles.bioEmphasis]}>
+            That decision changed everything.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            Since then, I've become an Ayurveda Health Coach, continued my studies as an Ayurveda Counselor, and begun helping others reconnect with themselves through the wisdom of this 5,000-year-old science.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            What I love most about Ayurveda is its simplicity. It teaches that healing doesn't have to be overwhelming. Through four pillars — lifestyle, diet, exercise, and herbs — we can make small changes that create profound shifts. Most people think healing starts with a supplement or a meal plan. More often, it starts with how we live.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            I also believe Mother Earth is constantly showing us what we need. The dandelions that emerge in spring help us release the heaviness of winter. Lavender offers calm when life feels overwhelming. Nature has always been speaking — we just have to learn how to listen.
+          </Text>
+          <View style={styles.bioPhilosophy}>
+            <Text style={[type.body, { color: c.text, fontStyle: 'italic', textAlign: 'center', lineHeight: 28, fontWeight: '500' }]}>
+              "Nothing is for everybody,{'\n'}and everything is for somebody."
+            </Text>
+          </View>
+          <Text style={[type.body, styles.bioPara]}>
+            Your path to wellness won't look like anyone else's, and that's exactly the way it's supposed to be.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            As a mother, this work has become about more than my own healing. It's about breaking cycles and changing the conversation for future generations. I want my children — and their children — to grow up knowing that their worth is not tied to a number on a scale, a clothing size, or someone else's definition of health. When we heal ourselves, we create ripple effects that extend far beyond us.
+          </Text>
+          <Text style={[type.body, styles.bioPara]}>
+            Today, through L. Glôw Living, I help people reconnect with their bodies, understand their unique blueprint, and create sustainable habits rooted in nature, awareness, and self-compassion. Because the work isn't just about feeling better today — it's about creating a healthier legacy for the generations that follow.
+          </Text>
+          <View style={styles.bioClosing}>
+            <Text style={{ color: c.honeyAmber, fontStyle: 'italic', textAlign: 'center', lineHeight: 30, fontSize: 16 }}>
+              Because when we heal, we bloom.{'\n'}And when we bloom, we spread seeds.
+            </Text>
+          </View>
         </View>
 
         <BotanicalDivider color={c.sage} borderColor={c.border} width={innerWidth} />
@@ -242,6 +294,37 @@ function makeStyles(c, spacing, radius) {
       marginTop: spacing.md,
       lineHeight: 26,
       color: c.textMuted,
+    },
+    bioEmphasis: {
+      marginTop: spacing.lg,
+      lineHeight: 28,
+      color: c.text,
+      fontWeight: '600',
+      fontSize: 17,
+    },
+    bioQuestion: {
+      marginTop: spacing.sm,
+      lineHeight: 26,
+      color: c.textMuted,
+      fontStyle: 'italic',
+      paddingLeft: spacing.lg,
+    },
+    bioPhilosophy: {
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      marginTop: spacing.xl,
+      marginBottom: spacing.sm,
+      paddingVertical: spacing.lg,
+      paddingHorizontal: spacing.lg,
+      borderTopWidth: 1,
+      borderBottomWidth: 1,
+      borderColor: c.border,
+    },
+    bioClosing: {
+      alignSelf: 'stretch',
+      alignItems: 'center',
+      marginTop: spacing.xl,
+      paddingVertical: spacing.lg,
     },
     bookBtn: {
       marginTop: spacing.lg,

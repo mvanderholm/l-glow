@@ -1,8 +1,16 @@
-// Source: Thea, June 2026 — "Agni Myth Busters: L. Glôw Edition"
-// take and reframe adapted from Thea's text. Verbatim authorship is hers.
-// weekStart dates run August 17 → November 2, 2026 (12-week drip starting launch week).
-// Decision still needed from Thea: weekly drip (current), special edition screen, or both.
-// See roadmap item 11a.
+// Source: Thea, June 2026 — "Agni Myth Busters: L. Glôw Edition" (series: 'agni')
+//         Thea, June 2026 — general set (series: 'general'), sent directly in her voice.
+// weekStart dates:
+//   Agni edition:   August 17 → November 2, 2026 (12 weeks, launch week)
+//   General set:    November 9, 2026 → January 4, 2027 (9 weeks)
+//
+// Extended schema (general set adds optional fields):
+//   doshaBreakdown: { vata, pitta, kapha } — each with medicine and poison arrays
+//   appPrompt:      string — check-in question or reflection to show with the card
+//   challenge:      { title, instructions, track } — an action to try this week
+//
+// Weekly card renders myth + take + reframe only. Richer fields are ready for a
+// full-edition view when that gets built (roadmap 11a options B/C).
 
 export const mythbusters = [
   {
@@ -101,6 +109,105 @@ export const mythbusters = [
     take: 'The supplement aisle is not a personality trait. Sometimes the answer is: slow down, chew your food, go outside, stop eating standing over the sink.',
     reframe: 'Supplements can support a strong foundation. They can\'t replace one.',
   },
+
+  // ---- GENERAL SET — November 9, 2026 → January 4, 2027 ----
+  // Source: Thea, June 2026 — sent directly in her voice.
+
+  {
+    id: 'more-water-better',
+    series: 'general',
+    weekStart: '2026-11-09',
+    myth: 'More water is always better.',
+    take: 'Hydration matters. But Ayurveda asks a different question: can your body actually process the water you\'re drinking?\n\nIf digestion and metabolism are weak — especially in Kapha types — excess water can contribute to puffiness, water retention, sluggish digestion, reduced appetite, and weaker digestive fire.',
+    reframe: 'Instead of "How much water did I drink?" — ask "How thirsty am I? How is my digestion? How is my energy?"',
+    doshaBreakdown: {
+      vata:  { medicine: ['Warm water', 'Herbal tea', 'Small frequent sips'], poison: ['Forgetting to drink all day', 'Ice water', 'Chugging huge amounts at once'] },
+      pitta: { medicine: ['Room temp water', 'Coconut water', 'Cooling herbal infusions'], poison: ['Dehydration', 'Excess alcohol', 'Excess coffee'] },
+      kapha: { medicine: ['Warm water', 'Ginger tea', 'Cinnamon tea', 'Hot lemon water'], poison: ['Gallons of cold water', 'Drinking when not thirsty', 'Constant sipping all day'] },
+    },
+    appPrompt: 'Do you feel thirsty, or are you drinking because you think you should?',
+  },
+
+  {
+    id: 'water-before-meals',
+    series: 'general',
+    weekStart: '2026-11-16',
+    myth: 'Drink a giant glass of water before meals to lose weight.',
+    take: 'For some people this may help with appetite. But from an Ayurvedic perspective, you may also be diluting your digestive strength.\n\nThink of digestion as a campfire. A few drops? Fine. A bucket? Problem.',
+    reframe: 'Hydrate between meals. Small sips during. Listen to thirst.',
+    appPrompt: 'Agni doesn\'t need flooding. It needs support.',
+  },
+
+  {
+    id: 'hungry-eat',
+    series: 'general',
+    weekStart: '2026-11-23',
+    myth: 'If you\'re hungry, eat.',
+    take: 'There\'s a difference between hunger — your body asking for fuel — and appetite — your mind asking for stimulation.\n\nReal hunger feels gradual, steady, patient, open to many foods. Appetite often feels urgent, specific, emotional, bored, or stress-driven.',
+    reframe: 'Are you hungry? Or do you need rest, water, connection, movement, or just a break?',
+    appPrompt: 'What sounds good right now? If the answer is "only chips," "only chocolate," "only wine" — that\'s often appetite talking. Not hunger.',
+  },
+
+  {
+    id: 'eating-less-healthier',
+    series: 'general',
+    weekStart: '2026-11-30',
+    myth: 'Eating less is always healthier.',
+    take: 'Not if you\'re growing, recovering, pregnant, breastfeeding, training hard, healing, or under stress.\n\nA teenager needs different fuel than a sedentary adult. A marathon runner needs different fuel than an office worker. A postpartum mother needs different fuel than both.',
+    reframe: 'The question isn\'t how little you can eat. It\'s what your body actually needs right now.',
+  },
+
+  {
+    id: 'big-appetite-wrong',
+    series: 'general',
+    weekStart: '2026-12-07',
+    myth: 'A big appetite means something is wrong.',
+    take: 'Sometimes. But sometimes it means your digestive fire is strong. A healthy appetite generally signals digestion is working, metabolism is functioning, and the body is asking for fuel.',
+    reframe: 'The goal isn\'t suppressing hunger. The goal is understanding it.',
+  },
+
+  {
+    id: 'drink-while-eating',
+    series: 'general',
+    weekStart: '2026-12-14',
+    myth: 'You should drink while eating.',
+    take: 'You shouldn\'t avoid liquids — you also shouldn\'t wash your meal down.\n\nBefore a meal: a little water, maybe tea, maybe digestive bitters. During: small sips, warm or room temperature. After: allow digestion to begin before reaching for a big drink.',
+    reframe: 'Sip. Don\'t flood.',
+  },
+
+  {
+    id: 'weight-calories',
+    series: 'general',
+    weekStart: '2026-12-21',
+    myth: 'Weight gain is always about calories.',
+    take: 'Digestion matters. Metabolism matters. Absorption matters. Inflammation, hormones, stress, and sleep all matter.\n\nNot everyone processes food the same way — and a calorie count doesn\'t tell you any of that.',
+    reframe: 'Instead of "How many calories did I eat?" — ask how your digestion was, whether you were satisfied, whether you had energy after.',
+    appPrompt: 'How was your digestion today? Were you bloated, satisfied, energized?',
+  },
+
+  {
+    id: 'cold-drinks-healthy',
+    series: 'general',
+    weekStart: '2026-12-28',
+    myth: 'Cold drinks are healthy.',
+    take: 'Cold isn\'t automatically bad. But for many people — especially Vata and Kapha types, those with weak Agni, during meals, or in cold seasons — cold drinks can weaken digestion.',
+    reframe: 'Warm tea, warm lemon water, room temp water. Ice water with meals is the one worth reconsidering.',
+    challenge: {
+      title: 'The Ice Water Test',
+      instructions: 'For one week, replace ice water with room temperature or warm water.',
+      track: ['Bloating', 'Energy', 'Bowel movements', 'Hunger', 'Cravings'],
+    },
+  },
+
+  {
+    id: 'cravings-problem',
+    series: 'general',
+    weekStart: '2027-01-04',
+    myth: 'Your cravings are the problem.',
+    take: 'Your cravings are information. Not instructions. Not enemies.\n\nA craving might mean low blood sugar, poor sleep, emotional depletion, missing taste categories, hormonal changes, or weak digestion.',
+    reframe: 'The goal is curiosity. Not guilt.',
+  },
+
 ];
 
 // Closing truth bomb for the Agni edition — display after week 12 or on a full-edition screen.

@@ -32,7 +32,7 @@ Save primary dosha + score breakdown to `@lglow/primary_dosha`. Welcome screen r
 If no saved dosha and no param, routes to `/quiz` with a friendly message. Hardcoded default removed. Done.
 
 ~~**3. Add an "About Thea" screen.**~~
-Route `app/about.js` with photo placeholder, name, credentials, bio (draft copy), "book a session" stub, theme switcher, brand style toggle, and Instagram feed component. Linked from welcome screen. Done.
+Route `app/about.js` with photo placeholder, name, credentials, bio, "book a session" stub, theme switcher, brand style toggle, and Instagram feed component. Linked from welcome screen. Bio replaced with Thea's own words, June 2026. Photo placeholder still pending — swap in `assets/thea.jpg` when ready.
 
 ~~**4. Loading and empty states.**~~
 Welcome screen handles the AsyncStorage load delay gracefully — no flash of wrong content on first render. Done.
@@ -369,8 +369,8 @@ Source: transcript 28 (062526_01), June 2026. Weight balancing (not weight loss)
 
 ---
 
-**11b. General Mythbusters set — ready to load, data structure change needed.**
-A second set of 9 myths in Thea's voice, broader in scope than the Agni edition — covers water intake, hunger vs. appetite, cravings, weight, cold drinks, and eating timing. Confirmed by Thea: her own words and framing, inspired by (but not verbatim from) source material.
+~~**11b. General Mythbusters set — loaded.**~~
+9 myths in Thea's voice loaded into `data/content/mythbusters.js`, June 2026. Schema extended with optional `doshaBreakdown`, `appPrompt`, and `challenge` fields. Weekly drip runs Nov 9, 2026 → Jan 4, 2027. Weekly card renders myth/take/reframe only — richer fields ready for full-edition view when built.
 
 This set is structurally richer than the Agni edition and richer than the current `myth/take/reframe` shape in `data/content/mythbusters.js`. It includes:
 - Dosha-specific breakdowns per myth (Vata / Pitta / Kapha, with medicine vs. poison framing)
@@ -936,7 +936,7 @@ Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what ne
 **Quiz / check-in (needs Thea's input before changing):**
 - Q3 "How is your digestion?" → reframe toward hunger/agni language
 - Q4 sleep options incomplete — needs "Other" + a review pass with Thea
-- 100% single-dosha quiz results are wrong — always a mix, needs algorithm fix
+- ~~100% single-dosha quiz results are wrong~~ — baseline raised from +1 to +3; max single-dosha result is now ~65%, June 2026
 - Broader quiz accuracy issue — 10 questions may not reliably capture prakriti (ties to roadmap item 18)
 
 **Copy / UX (lower urgency, needs Thea's sign-off on wording):**
@@ -944,7 +944,7 @@ Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what ne
 - Lifestyle notes presentation too dense — break into bullets
 - "Just for Today" needs "choose one" instruction
 - ~~Learn section overuses Thea's name — should center the practice, not her~~ — subtitle and placeholder strings rewritten; attribution footer kept.
-- About Thea bio — waiting on her rewrite
+- ~~About Thea bio — waiting on her rewrite~~ — Thea's bio loaded, June 2026
 - ~~Credentials stacking under her name — fix ordering~~ — reordered to Ayurvedic Medicine · RYT · Certified Wellness Coach.
 - Practices / rituals numbers on You tab need explanation or rethink
 - ~~Saved favorites not discoverable — either wire it up or hide the section~~ — removed from Settings list; no defined feature yet.
