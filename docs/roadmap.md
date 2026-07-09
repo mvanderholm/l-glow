@@ -503,6 +503,14 @@ Source: Matt, July 2026. Flagged as the app's content footprint grows (Learn, He
 
 **Revisit when:** the content surface is bigger than it is today — #36 (Herb + Food Database) is the most likely trigger, since it's the largest unbuilt content asset and search is already part of its intended design.
 
+**Framing discussion, July 2026 (not a decision, just reasoning worth keeping):**
+
+- **Leaning scoped over global.** #36's own spec already calls for *symptom-based* search ("bloating," "anxiety," "PMS") — that's tag/curated-index matching, not full-text keyword search. That's a fundamentally different mechanism than what Learn (essay full-text) or Recipes (dosha/season/ingredient filters) would need. Bolting all three under one global search box means picking one mechanism and making the others worse fits. Each content-heavy screen getting its own tuned search field is the more honest design, at least to start — a global entry point becomes more justified once #40/#41 also ship and the footprint is wide enough that "which section is this even in" becomes a real user question.
+- **Mechanically simple regardless of scope.** Mark 1 is local-only, so this is never a real search index — it's client-side filtering over the static `data/content/*.js` arrays (title/tags/teaser matching). Cheap to build, but easy to under-notice a bad filter at low content volume — worth re-testing the matching quality once #36 triples the entry count, not just assuming it still works.
+- **Where it'd surface**, given the scoped lean above: a search field at the top of each content screen (Herbs, Learn, eventually Recipes) rather than a global header icon or drawer item.
+
+None of this resolves the open questions above — still needs an actual conversation before building — but it's the reasoning to start from rather than re-deriving from scratch next time this comes up.
+
 ---
 
 ~~**45. Link the Dosha Quiz and Guna Quiz to their Learn pages.**~~
