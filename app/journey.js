@@ -87,7 +87,11 @@ export default function Journey() {
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
         <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
         <Text style={[styles.hTitle, { color: c.text }]}>My Journey</Text>
-        <Pressable style={styles.hBtn}><SlidersIcon color={c.text} /></Pressable>
+        {/* Right header slot — was an unwired filter/sliders icon (dead tap, removed July 2026).
+            Reserved for a future per-screen action, possibly search (see roadmap #44). Spacer
+            keeps the title centered until something real goes here.
+            <Pressable style={styles.hBtn}><SlidersIcon color={c.text} /></Pressable> */}
+        <View style={styles.hBtn} />
       </View>
 
       {/* Tab strip */}
