@@ -404,15 +404,7 @@ Same placement question as 11a applies — weekly drip, special edition screen, 
 
 ## Logo & brand
 
-**25. Replace logo mark with the O from the style guide.**
-Thea prefers the standalone "O" glyph from the L. GLOW style guide image over the current logo mark (which has a chevron above the O). 
-
-Work required:
-1. Extract or recreate the O glyph from `docs/IMG_20260518_165434.png` — either trace it as an SVG or get the original vector file if one exists.
-2. Replace the current `components/LogoMark.js` (or the relevant SVG path) with the new mark.
-3. Check everywhere the logo renders: header, welcome screen, about screen, web layout sidebar. Confirm it looks right at all sizes.
-
-⚠️ **Before building:** Confirm with Thea / Matt whether the original vector asset is available anywhere (Figma file, brand kit, designer contact). Tracing from a compressed PNG is a fallback, not the first move.
+~~**25. Replace logo mark with the O from the style guide.**~~ Shipped — see the "Shipped" section near the top of this doc. *(This was a stale duplicate left behind after the item shipped — removed July 2026 during a roadmap read-through. If you're looking for logo/brand follow-up work, it isn't here; nothing open in this section right now.)*
 
 ---
 
