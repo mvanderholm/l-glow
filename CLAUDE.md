@@ -139,6 +139,20 @@ At the start of any session where you're reviewing open work, cross-check the ro
 
 ---
 
+## Transcript hygiene
+
+**Whenever a new voice memo transcript is added to `docs/transcripts/`, do all of the following immediately — don't wait to be asked:**
+
+1. **Name it descriptively on arrival.** `NN_description.txt`, or `NN_description_MMDDYY_NN.txt` if there's an original batch code worth preserving for traceability. Never leave a raw date-code as the whole filename — that's the exact mess that needed a cleanup pass in July 2026 (11 of 29 files undocumented, a numbering collision between two unrelated transcripts both named `15_`, and citation bugs elsewhere in the docs as a result).
+2. **If the number's taken**, don't cascade-renumber every later file — suffix it (`15b_...`) the way `15b_gunas_mental.txt` was resolved. Cascading renumbers break every existing "transcript N" citation across the other docs; a suffix breaks nothing.
+3. **Add it to `docs/transcripts/README.md`'s numbered list**, in recording order, matching the existing entry format (one paragraph: what it covers, what it's the source for, any Whisper transcription quirks).
+4. **Add it to `docs/transcripts-index.md`** under the relevant topic heading(s) — a transcript can appear under more than one topic if it covers multiple things.
+5. **Check whether its content is cited elsewhere** (`docs/roadmap.md`, `docs/voice-guide.md`, `docs/content-review-thea.md`) and make sure any "source: transcript N" references added around this work use the correct number and stay consistent with the README/index.
+
+Do not edit the transcript's own content when doing this — only the filename and the index docs. The transcripts are the historical record (see `docs/transcripts/README.md`).
+
+---
+
 ## Safety and scope
 
 - This app is wellness guidance, not medical advice. Never write copy that diagnoses, prescribes for specific conditions, or contradicts "see a doctor" guidance for serious symptoms.

@@ -97,4 +97,6 @@ Vata and Pitta are usually rendered correctly. Doshas, prakriti, and abhyanga al
 
 ## Adding new transcripts
 
-Future voice memos should be transcribed locally with WhisperDesktop (medium model or better — large-v3 if available, since it handles Sanskrit slightly better in our limited testing) and added to this folder with the next sequential number **and** a short description in the filename (`NN_description.txt`, or `NN_description_MMDDYY_NN.txt` if there's an original batch code worth preserving). Update this README's file list, and `docs/transcripts-index.md`, when adding new entries.
+Future voice memos should be transcribed locally with WhisperDesktop (medium model or better — large-v3 if available, since it handles Sanskrit slightly better in our limited testing) and added to this folder with the next sequential number **and** a short description in the filename (`NN_description.txt`, or `NN_description_MMDDYY_NN.txt` if there's an original batch code worth preserving).
+
+The full process — naming, indexing here and in `docs/transcripts-index.md`, and checking cross-references elsewhere in the docs — is documented once, as a standing rule, in `CLAUDE.md` under "Transcript hygiene." Follow it every time; don't let this folder drift out of sync with its own index again.
