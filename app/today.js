@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { loadDoshaResult, loadTodayCheckin } from '../data/user/storage';
 import { recommendations, currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
+import BackButton from '../components/BackButton';
 
 // Deterministic daily pick — stable on refresh, rotates each day
 function dailyPick(arr) {
@@ -77,6 +78,7 @@ export default function Today() {
       <ScrollView contentContainerStyle={styles.container}>
 
         {/* Header */}
+        <BackButton onPress={() => router.back()} color={c.text} style={{ marginBottom: spacing.xs }} />
         <Text style={[type.label, { color: c.textMuted }]}>{date}</Text>
         <Text style={[type.display, { marginTop: spacing.xs }]}>Here's today.</Text>
 

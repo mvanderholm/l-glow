@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
-import Svg, { Path } from 'react-native-svg';
+import BackButton from '../components/BackButton';
 
 function friendlyError(code) {
   switch (code) {
@@ -52,9 +52,7 @@ export default function Signup() {
         <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 
           {/* Back */}
-          <Pressable style={s.back} onPress={() => router.back()} hitSlop={8}>
-            <BackIcon color={c.textMuted} />
-          </Pressable>
+          <BackButton onPress={() => router.back()} color={c.textMuted} style={s.back} />
 
           {/* Header */}
           <Text style={[s.overline, { color: c.textMuted }]}>L. Glow</Text>
@@ -153,15 +151,9 @@ export default function Signup() {
   );
 }
 
-function BackIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M5 12l7-7M5 12l7 7" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>;
-}
-
 const s = StyleSheet.create({
   scroll:    { flexGrow: 1, padding: 28, paddingTop: 12 },
-  back:      { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+  back:      { marginBottom: 12 },
   overline:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
   title:     { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 34, lineHeight: 40, marginBottom: 8 },
   sub:       { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, marginBottom: 36 },

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { herbs } from '../data/content/herbs';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
+import Svg, { Path } from 'react-native-svg';
 
 const DOSHA_COLORS = { vata: '#8B6A7A', pitta: '#E8A030', kapha: '#4A8FA8' };
 const POTENCY_COLOR = { warming: '#C97855', cooling: '#4A8FA8', neutral: '#7C7357' };

@@ -127,7 +127,7 @@ export default function Home() {
         </View>
 
         {savedDosha === null ? null : savedDosha ? (
-          <ReturningUser dosha={savedDosha} colors={c} spacing={spacing} type={type} scrollRef={scrollRef} />
+          <ReturningUser dosha={savedDosha} userName={userName} colors={c} spacing={spacing} type={type} scrollRef={scrollRef} />
         ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
@@ -257,7 +257,7 @@ function BeginGrid({ colors: c }) {
   );
 }
 
-function ReturningUser({ dosha, colors: c, spacing, type, scrollRef }) {
+function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef }) {
   const router = useRouter();
   const info = doshaInfo[dosha];
   const { theme: { radius } } = useTheme();
@@ -279,7 +279,7 @@ function ReturningUser({ dosha, colors: c, spacing, type, scrollRef }) {
 
   return (
     <View style={{ marginTop: spacing.xl, paddingTop: spacing.xl, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border }}>
-      <Text style={[type.h2, { color: c.text }]}>Welcome back</Text>
+      <Text style={[type.h2, { color: c.text }]}>Welcome back{userName ? `, ${userName}` : ''}</Text>
       <Text style={[type.h3, { color: info.color, marginTop: 4 }]}>{info.name}</Text>
 
       <View style={[{ marginTop: spacing.lg, padding: spacing.lg, backgroundColor: c.surface, borderRadius: 26, ...card }]}>

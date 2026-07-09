@@ -88,14 +88,16 @@ function AppNavigator() {
       <Stack.Screen name="breathwork" />
       <Stack.Screen name="meditation" />
       <Stack.Screen name="selfmassage" />
-      <Stack.Screen name="intake"      options={{ headerShown: false }} />
-      <Stack.Screen name="guna-quiz"   options={{ headerShown: false }} />
-      <Stack.Screen name="guna-result" options={{ headerShown: false }} />
-      <Stack.Screen name="agni-quiz"   options={{ headerShown: false }} />
-      <Stack.Screen name="agni-result" options={{ headerShown: false }} />
-      <Stack.Screen name="login"       options={{ headerShown: false }} />
-      <Stack.Screen name="signup"      options={{ headerShown: false }} />
-      <Stack.Screen name="welcome"     options={{ headerShown: false }} />
+      <Stack.Screen name="intake"       options={{ headerShown: false }} />
+      <Stack.Screen name="guna-quiz"    options={{ headerShown: false }} />
+      <Stack.Screen name="guna-result"  options={{ headerShown: false }} />
+      <Stack.Screen name="agni-quiz"    options={{ headerShown: false }} />
+      <Stack.Screen name="agni-result"  options={{ headerShown: false }} />
+      <Stack.Screen name="tongue-check" options={{ headerShown: false }} />
+      <Stack.Screen name="tongue-result" options={{ headerShown: false }} />
+      <Stack.Screen name="login"        options={{ headerShown: false }} />
+      <Stack.Screen name="signup"       options={{ headerShown: false }} />
+      <Stack.Screen name="welcome"      options={{ headerShown: false }} />
     </Stack>
   );
 

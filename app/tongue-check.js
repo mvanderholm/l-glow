@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { tongueSteps, tongueSignList } from '../data/content/tongueCheck';
 import { useTheme } from '../context/ThemeContext';
+import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 // Source: transcript 27 (062426_01), June 2026. Content is DRAFT — Thea to review.
@@ -68,9 +69,7 @@ export default function TongueCheck() {
         {/* ── Intro ── */}
         {isIntro && (
           <>
-            <Pressable onPress={goBack} hitSlop={8} style={[s.backBtn, { marginBottom: 20 }]}>
-              <BackIcon color={c.textMuted} />
-            </Pressable>
+            <BackButton onPress={goBack} color={c.textMuted} style={{ marginBottom: 20 }} />
 
             <Text style={[s.overline, { color: c.textMuted }]}>Tongue check-in</Text>
             <Text style={[s.prompt, { color: c.text }]}>Your body is always talking.</Text>
@@ -99,9 +98,7 @@ export default function TongueCheck() {
         {isStep && (
           <>
             <View style={s.topRow}>
-              <Pressable onPress={goBack} hitSlop={8} style={s.backBtn}>
-                <BackIcon color={c.textMuted} />
-              </Pressable>
+              <BackButton onPress={goBack} color={c.textMuted} />
               <Text style={[s.counter, { color: c.textMuted }]}>
                 {phase} / {SIGNS_PHASE}
               </Text>
@@ -132,9 +129,7 @@ export default function TongueCheck() {
         {isSigns && (
           <>
             <View style={s.topRow}>
-              <Pressable onPress={goBack} hitSlop={8} style={s.backBtn}>
-                <BackIcon color={c.textMuted} />
-              </Pressable>
+              <BackButton onPress={goBack} color={c.textMuted} />
               <Text style={[s.counter, { color: c.textMuted }]}>
                 {phase} / {SIGNS_PHASE}
               </Text>
@@ -183,14 +178,6 @@ export default function TongueCheck() {
   );
 }
 
-function BackIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M19 12H5M5 12l7-7M5 12l7 7" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
 function CheckIcon({ color }) {
   return (
     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
@@ -205,7 +192,6 @@ const s = StyleSheet.create({
 
   scroll:  { padding: 24, paddingTop: 16, paddingBottom: 48 },
   topRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, height: 40 },
-  backBtn: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   counter: { fontFamily: 'Inter_400Regular', fontSize: 13.5 },
 
   overline:    { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 },

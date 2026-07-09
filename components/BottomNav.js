@@ -12,8 +12,7 @@ const TABS = [
   { name: 'Nourishment', href: '/nourishment', icon: NourishIcon },
 ];
 
-const PRIMARY_ROUTES = new Set(['/lifestyle', '/movement', '/checkin', '/herbs', '/nourishment']);
-const HIDDEN_ROUTES  = new Set(['/welcome', '/login', '/signup']);
+const HIDDEN_ROUTES = new Set(['/welcome', '/login', '/signup']);
 
 export default function BottomNav() {
   const { theme: { colors: c } } = useTheme();

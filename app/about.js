@@ -1,4 +1,6 @@
 // Photo placeholder is intentionally blank — swap in assets/thea.jpg when ready.
+// assets/about-archway.jpg (formerly the top banner here) is no longer used on this
+// screen — kept in assets/ for reuse elsewhere, placement TBD. See roadmap #47.
 
 import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Image, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +10,7 @@ import InstagramFeed from '../components/InstagramFeed';
 import { CornerSprig, LeafSprig, BotanicalDivider } from '../components/BotanicalAccent';
 import { INSTAGRAM_HANDLE } from '../data/instagram';
 import { SPOTIFY_PROFILE_URL } from '../data/content/music';
+import { BOOKING_URL } from '../data/booking';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 const SWATCHES = [
@@ -24,21 +27,11 @@ export default function About() {
   const styles = makeStyles(c, spacing, radius);
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        {/* Archway header — full bleed mood image */}
-        <View style={styles.archwayBanner}>
-          <Image
-            source={require('../assets/about-archway.jpg')}
-            style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            resizeMode="cover"
-          />
-          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(10,5,0,0.52)' }]} pointerEvents="none" />
-        </View>
-
-        {/* Photo — swap in assets/thea.jpg when ready */}
-        <View style={styles.photoFrame}>
+        {/* Photo — lead image, top of page. Swap in assets/thea.jpg when ready */}
+        <View style={[styles.photoFrame, { marginTop: spacing.lg }]}>
           <CornerSprig color={c.olive} size={40} style={{ position: 'absolute', top: 6, right: 6 }} />
           <View style={{ position: 'absolute', bottom: 6, left: 6, transform: [{ rotate: '180deg' }] }}>
             <CornerSprig color={c.olive} size={40} />
@@ -128,9 +121,9 @@ export default function About() {
         {/* Book a session */}
         <Text style={[type.label, { textAlign: 'center' }]}>Work with Thea</Text>
         <Text style={[type.muted, { textAlign: 'center', marginTop: spacing.xs }]}>
-          One-on-one sessions coming soon.
+          Go through this with Thea directly, one on one.
         </Text>
-        <Pressable style={styles.bookBtn} disabled>
+        <Pressable style={styles.bookBtn} onPress={() => Linking.openURL(BOOKING_URL)}>
           <Text style={[styles.bookBtnText, { color: c.text }]}>Book a Session</Text>
         </Pressable>
 
@@ -253,14 +246,7 @@ function makeStyles(c, spacing, radius) {
   return StyleSheet.create({
     container: {
       padding: spacing.lg,
-      paddingTop: 0,
       alignItems: 'center',
-    },
-    archwayBanner: {
-      alignSelf: 'stretch',
-      marginHorizontal: -spacing.lg,
-      height: 320,
-      marginBottom: spacing.xl,
     },
     tubBanner: {
       alignSelf: 'stretch',
@@ -328,12 +314,13 @@ function makeStyles(c, spacing, radius) {
     },
     bookBtn: {
       marginTop: spacing.lg,
+      marginBottom: spacing.xl,
       paddingVertical: spacing.md,
       paddingHorizontal: spacing.xl,
       borderRadius: radius.pill,
       borderWidth: 1,
-      borderColor: c.border,
-      opacity: 0.4,
+      borderColor: c.accent,
+      backgroundColor: c.accent + '1A',
     },
     bookBtnText: {
       fontWeight: '600',

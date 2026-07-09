@@ -2,9 +2,10 @@ import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoid
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
 import { card } from '../theme/index';
+import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 const KEY = (d = new Date()) => `@lglow/journal2_${d.toISOString().slice(0, 10)}`;
@@ -24,7 +25,6 @@ const PAST = [
 
 export default function Journal() {
   const { theme: { colors: c, spacing } } = useTheme();
-  const { open: openDrawer } = useDrawer();
   const today = new Date();
   const [answers, setAnswers] = useState({ grateful: '', showed: '', tomorrow: '' });
   const [saved, setSaved] = useState(false);
@@ -46,7 +46,7 @@ export default function Journal() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        <BackButton onPress={() => router.back()} color={c.text} />
         <Text style={[styles.hTitle, { color: c.text }]}>Journal</Text>
         <Pressable style={styles.hBtn}><PlusIcon color={c.text} /></Pressable>
       </View>
@@ -155,12 +155,6 @@ export default function Journal() {
   );
 }
 
-
-function MenuIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-  </Svg>;
-}
 
 function PlusIcon({ color }) {
   return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">

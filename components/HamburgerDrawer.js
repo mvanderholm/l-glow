@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Animated, Modal, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Pressable, Animated, Modal, StyleSheet, Dimensions, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
+import { BOOKING_URL } from '../data/booking';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const W = Math.min(Dimensions.get('window').width * 0.78, 300);
@@ -34,6 +35,11 @@ export default function HamburgerDrawer() {
   function navigate(path) {
     close();
     setTimeout(() => router.push(path), 50);
+  }
+
+  function openBooking() {
+    close();
+    setTimeout(() => Linking.openURL(BOOKING_URL), 50);
   }
 
   return (
@@ -70,12 +76,14 @@ export default function HamburgerDrawer() {
               <DrawerItem icon={BookIcon}     label="Learn"            onPress={() => navigate('/learn')}  c={c} />
               <DrawerItem icon={PenIcon}      label="Journal"          onPress={() => navigate('/journal')} c={c} />
               <DrawerItem icon={PersonIcon}   label="About Thea"       onPress={() => navigate('/about')}  c={c} />
+              <DrawerItem icon={CalendarIcon} label="Book a Session"   onPress={openBooking}  c={c} />
             </View>
 
             <View style={[styles.sep, { backgroundColor: c.border }]} />
 
             <View style={styles.section}>
               <DrawerItem icon={LeafIcon}     label="Dosha Quiz"       onPress={() => navigate('/quiz')}   c={c} />
+              <DrawerItem icon={GunaIcon}     label="Guna Quiz"        onPress={() => navigate('/guna-quiz')} c={c} />
               <DrawerItem icon={ClipboardIcon} label="My Intake Form"  onPress={() => navigate('/intake')} c={c} />
             </View>
 
@@ -146,6 +154,22 @@ function LeafIcon({ color, size }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} />
       <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function CalendarIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h11A2.5 2.5 0 0 1 20 9.5v9A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5v-9Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M4 10.5h16M8 4v4M16 4v4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function GunaIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
     </Svg>
   );
 }

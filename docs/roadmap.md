@@ -26,6 +26,9 @@ Thea explicitly wants L. Glow to be a quiet app (transcript 13). Users are often
 **Voice input — option, not default.**
 Thea personally prefers speaking answers over typing (for check-ins especially), but recognizes users are often around others. If voice input is added to the check-in flow, it must be opt-in, never the only path.
 
+**Infrastructure: domain, email, booking, payments (July 2026).**
+Domain `lglowliving.com` — registered/hosted on Squarespace, which also runs the marketing site. Primary email is `thea@lglowliving.com`, hosted on Squarespace (not Google Workspace — that route was considered and dropped in favor of keeping email on Squarespace alongside the domain). Booking is cal.com (`cal.com/lglowliving`, see #34) — wired into the app in `data/booking.js`. Thea's Venmo for direct client payments (e.g. paying for a booked session) is `@lglowliving`. Not wired into the app — the app's job is the funnel and booking link-out, not payment processing (see "Out of scope").
+
 ---
 
 ## Shipped
@@ -64,20 +67,27 @@ Expo Router static export configured. `vercel.json` added. Download CTAs (App St
 `components/LogoMark.js` rebuilt with the O glyph — circle outline + inner 4-pointed star + small accent star above. Proportions derived from Thea's style guide image. App icons (`assets/icon.png`, `assets/adaptive-icon.png`) regenerated from the same glyph via `scripts/generate-icons.js`. Done.
 
 ~~**Hamburger drawer.**~~
-`context/DrawerContext.js` + `components/HamburgerDrawer.js`. Slide-in from left, spring animation, backdrop tap-to-close. Wired to all 5 main screens. Account/settings items only: About Thea (→ /about), Dosha Quiz (→ /quiz), Reminders (soon), Help & guidance (soon). Navigation stays in bottom nav exclusively. Done.
+`context/DrawerContext.js` + `components/HamburgerDrawer.js`. Slide-in from left, spring animation, backdrop tap-to-close. Wired to all 5 main screens. Account/settings items only: About Thea (→ /about), Book a Session (→ opens `cal.com/lglowliving` externally via `Linking.openURL`, added July 2026), Dosha Quiz (→ /quiz), Guna Quiz (→ /guna-quiz, added July 2026), My Intake Form (→ /intake), Reminders (soon), Help & guidance (soon). Navigation stays in bottom nav exclusively. Done.
 
 ~~**TestFlight distribution configured.**~~
 `eas.json` updated with submit profile and `ascAppId`. iOS production build submitted to App Store Connect. Thea added as internal tester. Future builds: `eas build --platform ios --profile production` then `eas submit --platform ios --profile production --latest`. Done.
 
+~~**Content review packet compiled for Thea.**~~
+`docs/content-review-thea.md` — consolidates every piece of draft-status copy across the app into one doc she can work through in a sitting: the 10 Learn library essays (pointed to the in-app Learn tab rather than pasted, since they're long-form), full text for the branching quiz results (dosha archetypes, guna, agni, tongue) so she isn't retaking quizzes to see every variant, plus intake consent copy, journey tab copy, the affirmations bank, and welcome page status. Also a "nothing written yet" checklist (movement postures, agni quiz wording, 5 empty Learn concepts, dosha-specific intentions/routines, Spotify links) and a flag section — see below. Done July 2026.
+
+**Finding from that review, corrected:** Went looking for content that was quietly living as if approved without ever being marked draft. Both `herbs.js` and `recommendations.js` turned out to be moot, not just herbs — see #38 (below), missed on the first pass: Thea already recorded detailed food recommendations for all three doshas (transcripts 22–24, June 2026) with Best/Good/Not Beneficial/Avoid breakdowns, explicitly meant to feed the recommendations screen's food section. So `recommendations.js`'s food lists aren't "unreviewed and need her eyes" — they're superseded by approved content that's sitting unloaded, same shape as the herbs.js situation. The actual blocker for both is the same one: the food+herb database placement/schema decision under #36. `data/content/recommendations.js`'s *seasonal engine* (the ritucharya month-to-season mapping) is separate from the food lists and wasn't addressed by #38 — that part may still be worth a look, but the food-list content itself is not an open gap.
+
 ---
 
-## Next — requires Thea's voice guide approval first
+## Next
+
+Voice guide approved by Thea, July 2026 (v1.0) — the gate on #1 and #2 below is lifted.
 
 **1. Rewrite welcome screen copy in Thea's voice.**
-Current copy ("Discover your dosha, check in with body and mind…") is scaffold placeholder. Replace once voice guide v0.4 is approved by Thea.
+`app/welcome.js` rewritten against voice guide v1.0 — hero subhead, differentiation section, dosha quiz card, and About Thea preview updated. The differentiation paragraph specifically needed fixing: it still said "her methodology, her voice, her framework," which is exactly the framing Thea's v1.0 note corrected (it's her teaching *you* to read your own body, not her worldview imposed on you). About Thea preview also updated off the old "destroyed hip" origin story, which the voice guide no longer carries either — now matches her published bio. Still [DRAFT] pending Thea's line-edit pass before this page is the public front door.
 
 **2. Rewrite daily check-in copy in Thea's voice.**
-Same constraint — wait for voice guide approval.
+`app/checkin.js` was already substantially aligned (header, "the body holds the score," hunger/tongue framing) — only the submit button copy needed a pass, now "Save & See What Today Needs" to echo the app's north-star question. Deliberately did not touch the dimension labels/descriptions (physical, mental, emotional, hunger, tongue) — that's the separate, still-gated review in #19 below; changing question content needs Thea's input, not just tone.
 
 ~~**3. Add the morning hunger question to the daily check-in.**~~
 ~~One new question: "How's your morning hunger today?" Five levels from "no appetite" to "ravenous." Persisted alongside check-in values. Gentle framing — information about digestive fire, not a judgment."~~ Done — `hunger` dimension live in `app/checkin.js` alongside `tongue` coating score. Both already wired into `buildSessionSummary()`.
@@ -118,10 +128,8 @@ The morning + evening pair is the intended signal source for the vikriti visuali
 **4. Dosha explanations rewrite.**
 Replace placeholder dosha intro copy in `data/content/quiz.js` with Thea's own language. Waiting on her round 2 voice memo.
 
-**18. Revisit dosha quiz questions.**
-Full review of the quiz question set with Thea. Questions should map cleanly to her understanding of how the doshas present — current set is a reasonable scaffold but may not reflect her clinical framing. She should define what physical, mental, and behavioral signals she actually uses to identify someone's prakriti.
-
-Content dependency: Thea to review and rewrite/reorder questions. Do not change question set without her input — the quiz is the app's first clinical impression.
+~~**18. Revisit dosha quiz questions.**~~
+Full review of the quiz question set with Thea — done. She confirmed the redesigned set (below) fully **replaces** the old 8-question one, not coexists with it. `data/content/quiz.js`'s `quizQuestions` now holds her 14-question set (physical → physiological → psychological, sequenced per her transcript 15 framing); the old question set is gone. `data/content/quiz-draft.js` deleted — its content is what's now live. `app/quiz.js` already had the renderer support this needed (multiSelect, "none of these" escape, section labels) from earlier work this cycle, so no renderer changes were needed for the swap itself. Welcome screen's quiz-card copy updated from "ten questions" to "fourteen questions." Done July 2026.
 
 **Field research — transcript 13 (Thea live-testing questions on a friend):**
 Thea walked a friend through a set of questions in real time and captured her reactions. This is the clearest signal yet on what the redesigned question set should look like. Questions she tested and the UX reactions:
@@ -140,7 +148,7 @@ Thea walked a friend through a set of questions in real time and captured her re
 - Skin and possibly hair need multi-select ("check all that apply"), not single-select
 - Combination answers need to be representable — "oily but also dry" is a real clinical presentation, not a user error
 
-**Open question before building:** These questions are more physical/constitutional (body frame, wrist, hair, skin, eyes) than the current quiz which skews behavioral. Does the redesigned quiz replace the current one entirely, or do both exist? Thea's call — have the conversation before touching the question set.
+**Resolved:** Thea confirmed the redesigned quiz replaces the current one entirely — see #18 above.
 
 **Transcript 15 — dosha quiz voice memo (June 2026):**
 Thea described all three constitutional types in detail and named the specific question areas she wants. Key decisions from this memo:
@@ -174,7 +182,7 @@ Get people into the rhythm of answering before the introspective stuff arrives.
 
 **Attribution note:** Thea referenced Frawley & Lad as source material for her clinical descriptions. Quiz options must be in Thea's own voice — not reproduced from that text.
 
-**Draft question set:** See `data/content/quiz-draft.js` — 14 questions, flagged as DRAFT throughout. Awaits Thea's review before any live quiz replacement.
+**Question set:** Live in `data/content/quiz.js` as of July 2026 — see #18 above. (14 questions, not 15 — corrected miscount from earlier in this doc.)
 
 **5. Asana module — Thea's content.**
 Posture descriptions, timing, and benefit copy for each dosha's 3–5 postures in `data/content/movement.js`. Scaffold is built and wired — plug in her content when ready.
@@ -491,6 +499,21 @@ Done — Check In is now its own pillar tab at `/checkin`.
 **17. Check-in history view.**
 Hold until real users have at least a week of data. A simple trend of morning hunger over time is the first diagnostically interesting view. Don't over-design before the data exists.
 
+**44. Search — logged for later, scope not yet decided.**
+Source: Matt, July 2026. Flagged as the app's content footprint grows (Learn, Herbs, Mythbusters, Recipes, and eventually the Herb + Food Database in #36, Freedom with Food in #40, Weight Balancing in #41). No scope decided yet — deliberately deferred rather than committed to a design.
+
+**Open questions to resolve before building:**
+- Scope: a single global search entry point across all content, or search scoped to individual sections (the Herb + Food Database in #36 already plans its own search-by-name/symptom UX as a core part of that feature)?
+- Where it surfaces: header icon, hamburger drawer, or a dedicated screen?
+- Mark 1 is local-only with all content in static JS files (`data/content/`) — any search here is client-side filtering, not a backend query. That changes if/when #30's backend lands.
+
+**Revisit when:** the content surface is bigger than it is today — #36 (Herb + Food Database) is the most likely trigger, since it's the largest unbuilt content asset and search is already part of its intended design.
+
+---
+
+~~**45. Link the Dosha Quiz and Guna Quiz to their Learn pages.**~~
+`app/learn.js` now reads a `conceptId` route param (via `useLocalSearchParams`) and auto-opens the matching concept modal on mount. `app/quiz.js` shows a "What's a dosha, anyway? →" link on the first question, linking to `/learn?conceptId=doshas`. `app/guna-quiz.js` shows "What are the gunas? →" on its first question, linking to `conceptId=gunas-mental`. (Param ended up named `conceptId`, not `concept` as originally sketched — no functional difference.) Done July 2026.
+
 ---
 
 ## App architecture — Thea's stated framework
@@ -536,7 +559,7 @@ Mark 1 recommendations are organized primarily by dosha and season. That structu
 
 - **Community space.** Thea explicitly named this as phase 2/3: "comparing and talking about your journey with other people is going to be important when the time is right." Not for launch. Flag any architecture decision that would make a social layer harder to add later.
 
-- **Vikriti visualization driven by daily check-in.** A second color swatch alongside the Prakriti one, showing the user's current dosha state (vikriti) as derived from their check-in responses over time. The visual gap between the two swatches makes the concept of prakriti vs. vikriti tangible — you can see how far you've drifted and which direction. Requires: (a) check-in questions revised to reliably signal dosha state (#19), (b) an algorithm to compute a running vikriti estimate from check-in data, (c) enough data from real users to validate the signal. Do not build the algorithm until the question set is locked.
+- **Vikriti visualization driven by daily check-in.** Note (Matt, July 2026): Prakriti and Vikriti are both dosha-based readings, but answer different questions — **Prakriti is the constitution you were born with** (fixed; this is what the dosha quiz measures) and **Vikriti is your current state** (changeable day to day; this is what the daily check-in and/or a dosha quiz retake would signal). The design goal: show Prakriti as something sticky/stable in the UI, and derive Vikriti from check-in data (and possibly quiz retakes) as the thing that visibly moves. A second color swatch alongside the Prakriti one, showing vikriti as derived from check-in responses over time. The visual gap between the two swatches makes prakriti vs. vikriti tangible — you can see how far you've drifted and which direction. Requires: (a) check-in questions revised to reliably signal dosha state (#19), (b) an algorithm to compute a running vikriti estimate from check-in data, (c) enough data from real users to validate the signal. Do not build the algorithm until the question set is locked.
 - Practitioner-side tools: Thea views a client's check-in history before a session.
 - "Book a session with Thea" CTA wired to scheduling software, or eventually in-app.
 - Account creation and cross-device sync (resist until real users ask for it).
@@ -563,6 +586,13 @@ Each question has three answers: left = Sattvic, middle = Rajasic, right = Tamas
 **Content dependency:** The 24 assessment dimensions and all three answer columns come from transcript 08 and are ready to scaffold. The result copy (what does your guna dominance mean, what does the path forward look like) must come from Thea before shipping.
 
 **Data:** Stores as a `guna_results` record alongside the dosha result — `sattva_score`, `rajas_score`, `tamas_score`, `dominant_guna`, `taken_at`. Schema already planned in `lglow.` MSSQL schema — add this table alongside the others.
+
+---
+
+~~**43. Un-gate the Guna Quiz and give it its own drawer nav entry.**~~
+Confirmed with Thea, July 2026 — she wants it in the nav, reversing her original "when somebody is comfortable" engagement gate (see #32). `app/you.js`: removed the `gunaUnlocked` check (dosha quiz + 7 check-ins) — Guna Assessment now always shows in the You-tab Settings list; also removed the now-dead `checkinCount` state that existed only to feed that gate. `components/HamburgerDrawer.js`: added a "Guna Quiz" item routing to `/guna-quiz`, directly under "Dosha Quiz."
+
+Resolved the open question by keeping both entry points rather than removing the You-tab row: the You-tab Settings entry still shows the dominant-guna subtitle once taken (a nice bit of state the drawer link doesn't have room for), and the drawer entry gives global one-tap access consistent with how Dosha Quiz is already surfaced. Worth flagging to Thea if she'd rather the You-tab row disappear now that the drawer covers discovery — easy to remove later if so.
 
 ---
 
@@ -909,20 +939,28 @@ Full section details and question tables: `docs/notes-transcript-14.md`
 
 ---
 
-**34. "Book a session with Thea" CTA — coaching session upsell.**
-*Disabled placeholder card built and live at the top of the Prakriti section (section 14 of the intake form). Shows "1-on-1 sessions coming soon" badge. To activate: replace `CtaDisabledBlock` in `app/intake.js` with a pressable card calling `Linking.openURL(bookingUrl)` once Thea has a booking URL.*
+~~**34. "Book a session with Thea" CTA — coaching session upsell.**~~
+Live. Scheduling platform is **cal.com** — booking URL `cal.com/lglowliving` set up July 2026, stored in `data/booking.js` as `BOOKING_URL`. Wired into two surfaces: the Prakriti section CTA in `app/intake.js` (`CtaDisabledBlock` now a pressable calling `Linking.openURL(BOOKING_URL)`) and the "Book a Session" button on `app/about.js`. Both were previously disabled placeholders.
 Source: transcript 14. Thea explicitly wants to offer 1:1 coaching sessions as a paid upsell through the app, and specifically names the Prakriti constitution assessment (intake form section 14) as the primary trigger.
 
 > "Ideally, we go through this in the first coaching session, so I definitely in the app want to offer that as an extra side service. And if not, that's okay too."
 
-The CTA is non-pressuring — it surfaces at the top of the Prakriti section of the intake form and possibly elsewhere (recommendations screen, about Thea screen). Tone: "want to go through this with Thea directly? Book a session." Not a gate, not a nag.
+Tone kept non-pressuring per Thea's framing: "want to go through this with Thea directly? Book a session." Not a gate, not a nag.
 
-**Open questions before building:**
-- Where does the CTA link? Direct booking via Calendly, email, or something else? Thea needs to decide her scheduling infrastructure.
-- Are there other surfaces where this should appear (home screen for new users, recommendations screen)?
-- Pricing and packaging for the session — not part of the app initially, just a link-out to wherever she manages bookings.
+**Still open:** pricing and packaging for the session isn't part of the app — that's managed entirely on the cal.com side. Consider whether the CTA should also appear on the recommendations screen or new-user home screen.
 
-**Build order:** Wire up once the booking URL exists. Until then, the CTA can render as a placeholder or be hidden entirely — do not ship a dead link.
+---
+
+**42. Explore: collect payment (partial or full) at time of booking via cal.com.**
+Source: Matt, July 2026. Right now the booking CTA (#34) just link-outs to `cal.com/lglowliving` — no payment happens in that flow. Explore whether cal.com can collect a deposit or full payment at the moment someone books a session, rather than Thea invoicing/collecting Venmo (`@lglowliving`) separately afterward.
+
+**What needs research before any build decision:**
+- cal.com's native payment integration is built around Stripe (via its Apps marketplace) — confirm current support, since Venmo is not a standard cal.com payment processor. Likely outcome: either (a) run payment through Stripe on cal.com's side and treat Venmo as the informal/manual fallback, or (b) keep Venmo as manual collection after booking and skip in-cal.com payment entirely.
+- Confirm whether cal.com supports partial payment / deposit collection specifically, or only full payment at booking.
+- If Stripe is required, that's a new account/integration decision for Thea (separate from Squarespace Payments — see infrastructure note above) — flag before assuming it's the path.
+- No app code changes are implied by this — the payment collection step happens on cal.com's hosted booking page, not inside the L. Glow app. The app's booking CTA (#34) would be unaffected unless Thea wants different messaging (e.g. "book and pay" vs. "book").
+
+**Build order:** Research cal.com's payment app options and pricing with Thea/Matt → decide Stripe-via-cal.com vs. Venmo-manual → only then revisit CTA copy if messaging needs to change.
 
 ---
 
@@ -945,9 +983,9 @@ Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what ne
 - Broader quiz accuracy issue — 10 questions may not reliably capture prakriti (ties to roadmap item 18)
 
 **Copy / UX (lower urgency, needs Thea's sign-off on wording):**
-- "Welcome back, Vata" → "Welcome back, [name]" (requires name capture somewhere)
-- Lifestyle notes presentation too dense — break into bullets
-- "Just for Today" needs "choose one" instruction
+- ~~"Welcome back, Vata" → "Welcome back, [name]"~~ — fixed July 2026. `app/index.js`'s `ReturningUser` now reads "Welcome back, {userName}" when a name is on file (dosha still shown as a secondary line below, not standing in for the name). `userName` was already loaded in the parent `Home` component for the top-of-page greeting — just wasn't threaded down to this section.
+- ~~Lifestyle notes presentation too dense — break into bullets~~ — turned out to already be resolved elsewhere in the app (not tracked as done at the time): `app/recommendations.js`'s "Lifestyle Note" section already splits `rec.lifestyle` into bullets, and both `app/guna-result.js` and `app/agni-result.js` render their lifestyle practices as bulleted lists via `PracticeSection`. No dense-paragraph presentation left anywhere. Struck through July 2026.
+- ~~"Just for Today" needs "choose one" instruction~~ — also already resolved, not previously marked: `app/index.js` line ~297 shows "Choose one, or write your own." under the intention prompt. Struck through July 2026.
 - ~~Learn section overuses Thea's name — should center the practice, not her~~ — subtitle and placeholder strings rewritten; attribution footer kept.
 - ~~About Thea bio — waiting on her rewrite~~ — Thea's bio loaded, June 2026
 - ~~Credentials stacking under her name — fix ordering~~ — reordered to Ayurvedic Medicine · RYT · Certified Wellness Coach.
@@ -1005,7 +1043,7 @@ This content feeds into:
 ## Herb + Food Database — major new feature
 
 **36. L. Glôw Herb + Food Impact Database — content complete, build needed.**
-Source: `docs/LGlow_Herb_Food_Impact_Database_v2_filled.docx`. Thea has produced a complete A–Z herb and food database, hundreds of entries from Agrimony to Yerba Santa. This is the most substantial content asset produced to date and supersedes the draft `data/content/herbs.js` entirely.
+Source: `docs/LGlow_Herb_Food_Impact_Database_v2_filled.docx`. Thea has produced a complete A–Z herb and food database, hundreds of entries from Agrimony to Yerba Santa. This is the most substantial content asset produced to date and supersedes the draft `data/content/herbs.js` entirely. (See `docs/content-review-thea.md` §3.1 — this is why `herbs.js` didn't need a separate review pass despite never being flagged as draft.)
 
 **What the document contains:**
 - A-Z entries, each with: name, type, Latin name, taste, energy, vipaka, dosha impact notation (VK- P+ style), integer dosha scores, actions array, medicine_when array, poison_when array, and an L. Glôw translation phrase
@@ -1083,6 +1121,37 @@ She recorded a full disclaimer in her own voice (transcript 27, lines 9–54). K
 7. Pulse content — wait for Thea's recording before building pulse screen
 
 **Content dependency:** Tongue content is DRAFT, Thea to review. Pulse blocked until Thea records it.
+
+---
+
+## Routing audit findings (July 2026)
+
+Full audit: every route file cross-checked against `_layout.js` registrations, every `router.push`/`router.replace`/`href` target checked for validity, every screen checked for a way back out. Result: all 31 routes match 1:1 (no orphaned registrations, no broken links). Two real bugs found and fixed same session — `app/today.js` had no back/menu navigation at all (added `BackButton`); `app/you.js`'s "My dosha & intake" settings row only ever routed to `/quiz`, never `/intake` (relabeled to "My Dosha" to match actual behavior, since a correctly-wired "My Intake Form" already exists separately in the hamburger drawer). Dead code (`PRIMARY_ROUTES` in `components/BottomNav.js`, declared but never read) also removed.
+
+**46. `app/tools.js` is fully built but completely unreachable.**
+Registered in `_layout.js`, has real content (Recipes, Herbs, Breathwork, Meditation, Self Massage, Journaling, Tongue Check, Learn, About Thea tiles) — but nothing anywhere in the app links to `/tools`. Not the hamburger drawer, not the bottom nav, not any screen's CTA. Likely a leftover from before the Lifestyle/Movement/Herbs/Nourishment bottom-nav restructure (see the "legacy screens" comment in `_layout.js` for journey/journal/you, which *are* still linked from the drawer — tools isn't even that).
+
+**Decision needed:** delete it, or wire it in somewhere (it substantially overlaps with content already reachable via Lifestyle/Movement tiles and the drawer, so wiring it in risks a third redundant path to the same screens). Leaning delete, but that's Matt's call, not mine to make unilaterally.
+
+---
+
+## About Thea — image restructure
+
+~~**47. Remove the top archway banner image; headshot placeholder becomes the page's lead image.**~~
+`app/about.js`: removed the full-bleed archway banner (`assets/about-archway.jpg`) entirely. The headshot placeholder (`assets/thea.jpg` when Thea sends it) is now the first thing on the page — same framed-square treatment as before (140×180, botanical corner accents), just moved to the top instead of sitting below the banner. Screen now uses `edges={['top','bottom']}` (was `['bottom']` only) since there's no longer a full-bleed image intentionally extending under the status bar. Asset file itself untouched — kept in `assets/` for reuse elsewhere, per the note left in `about.js`. Done July 2026.
+
+**Still open:** where (if anywhere) does the archway image get reused, and does the headshot placeholder need a different size/aspect treatment now that it's the lead image rather than a supporting one — left unchanged for now, easy follow-up once there's a photo to actually look at.
+
+---
+
+## Thea's "User's Manual" — new content, placement undecided
+
+**48. Full essay-length piece from Thea, not yet placed anywhere in the app.**
+Source: Thea, sent directly to Matt, July 2026. Full verbatim text preserved in `docs/thea-users-manual.md` (not reproduced here — read it there). Opens "Welcome to Your User's Manual," and reframes the entire app as a tool for the user to learn to read their *own* body's signals rather than follow anyone else's rules — explicitly including L. Glow itself ("Stop listening to everyone else. L. Glôw included.").
+
+**Why this matters:** it's the same correction already made to the voice guide's opening section this cycle (`docs/voice-guide.md`, "What L. Glow actually is" — her "it's not her worldview, it's your work to do for yourself" note), but written out at full essay length in a way that reads like it's meant for a user to actually encounter, not just background philosophy for the team. Strong candidate for an actual onboarding moment, welcome-screen rewrite, or dedicated first-run "your blueprint" flow.
+
+**Status:** Matt doesn't yet know what to do with it. **Do not build anything from this content — no screens, no copy, no onboarding flow — until that placement decision is made.** Flagging its existence and connection to the voice guide is the extent of this item for now.
 
 ---
 

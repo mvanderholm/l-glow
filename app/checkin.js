@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { saveCheckin } from '../data/user/storage';
+import BackButton from '../components/BackButton';
 
 const dimensions = [
   { key: 'physical', label: 'Physical', desc: 'Energy, digestion, body' },
@@ -17,6 +18,7 @@ const scale = [1, 2, 3, 4, 5];
 
 export default function CheckIn() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
+  const insets = useSafeAreaInsets();
   const [values, setValues] = useState({ physical: 3, mental: 3, emotional: 3, hunger: 3, tongue: 3 });
   const [note, setNote] = useState('');
   const styles = makeStyles(colors, spacing, radius);
@@ -31,6 +33,12 @@ export default function CheckIn() {
           resizeMode="cover"
         />
         <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,10,5,0.45)' }]} pointerEvents="none" />
+        <BackButton
+          onPress={() => router.back()}
+          color="#ECE8DF"
+          overlay
+          style={[styles.backBtn, { top: insets.top + 8 }]}
+        />
         <View style={styles.teaHeaderContent}>
           <Text style={[type.label, { color: 'rgba(236,232,223,0.8)' }]}>
             Today, {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
@@ -89,7 +97,7 @@ export default function CheckIn() {
           router.replace('/today');
         }}
       >
-        <Text style={styles.primaryBtnText}>Save & See Guidance</Text>
+        <Text style={styles.primaryBtnText}>Save & See What Today Needs</Text>
       </Pressable>
     </ScrollView>
     </SafeAreaView>
@@ -143,5 +151,9 @@ return StyleSheet.create({
     alignItems: 'center',
   },
   primaryBtnText: { color: '#FFFFFF', fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1 },
+  backBtn: {
+    position: 'absolute',
+    left: spacing.md,
+  },
 });
 }

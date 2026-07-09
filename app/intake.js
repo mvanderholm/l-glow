@@ -1,9 +1,12 @@
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
+import { BOOKING_URL } from '../data/booking';
+import BackButton from '../components/BackButton';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const INTAKE_KEY = '@lglow/intake';
@@ -595,15 +598,18 @@ function PrakritiMultiField({ field, value = [], onChange, colors: c }) {
 
 function CtaDisabledBlock({ colors: c }) {
   return (
-    <View style={[fs.ctaCard, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+    <Pressable
+      style={({ pressed }) => [fs.ctaCard, { backgroundColor: c.surfaceAlt, borderColor: c.accent, opacity: pressed ? 0.8 : 1 }]}
+      onPress={() => Linking.openURL(BOOKING_URL)}
+    >
       <View style={[fs.ctaBadge, { backgroundColor: c.accent + '1A' }]}>
-        <Text style={[fs.ctaBadgeText, { color: c.accent }]}>1-on-1 sessions coming soon</Text>
+        <Text style={[fs.ctaBadgeText, { color: c.accent }]}>Book a session</Text>
       </View>
       <Text style={[fs.ctaTitle, { color: c.text }]}>Go through this with Thea</Text>
       <Text style={[fs.ctaBody, { color: c.textMedium }]}>
-        Identifying your original constitution is easier with a trained eye. Thea can walk through this section with you in a session.
+        Identifying your original constitution is easier with a trained eye. Tap to book a session and walk through this together.
       </Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -652,9 +658,7 @@ function SectionForm({ section, intake, update, onBack, colors: c }) {
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
       <View style={[fs.sectionHeader, { borderBottomColor: c.border }]}>
-        <Pressable style={fs.backBtn} onPress={onBack} hitSlop={8}>
-          <BackIcon color={c.text} />
-        </Pressable>
+        <BackButton onPress={onBack} color={c.text} />
         <View style={{ flex: 1 }}>
           <Text style={[fs.sectionTitle, { color: c.text }]}>{section.title}</Text>
           {progress && (
@@ -788,11 +792,7 @@ export default function Intake() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       {/* Header */}
       <View style={[fs.header, { borderBottomColor: c.border }]}>
-        {activeId ? (
-          <View style={{ width: 40 }} />
-        ) : (
-          <View style={{ width: 40 }} />
-        )}
+        <BackButton onPress={() => router.back()} color={c.text} />
         <Text style={[fs.headerTitle, { color: c.text }]}>Intake</Text>
         <View style={{ width: 40 }} />
       </View>
@@ -816,11 +816,6 @@ export default function Intake() {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
-function BackIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M19 12H5M5 12l7-7M5 12l7 7" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>;
-}
 function ChevronIcon({ color }) {
   return <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
     <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
@@ -862,7 +857,6 @@ const fs = StyleSheet.create({
   progressMini:     { fontFamily: 'Inter_400Regular', fontSize: 12 },
 
   sectionHeader:   { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, gap: 10 },
-  backBtn:         { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   sectionTitle:    { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 18 },
   sectionProgress: { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
 

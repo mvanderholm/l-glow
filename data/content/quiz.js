@@ -1,68 +1,157 @@
+// Question set replaced July 2026 — redesigned per Thea's transcript 15 voice memo,
+// approved by her and confirmed to fully replace (not coexist with) the prior 8-question
+// set. Formerly `data/content/quiz-draft.js` (now deleted). Sequencing principle: easy,
+// obvious questions first, subjective questions last (see Thea's framing below).
 export const quizQuestions = [
+
+  // ---- PHYSICAL / OBVIOUS ---- (easy to answer, obvious to the person)
+
   {
-    prompt: 'How would you describe your body frame?',
+    section: 'physical',
+    prompt: 'Think back as far as you can — before the gym, before stress changed things. What\'s your natural body frame?',
     options: [
-      { label: 'Thin and light — I find it hard to gain weight', dosha: 'vata' },
-      { label: 'Medium and muscular — I gain and lose weight fairly easily', dosha: 'pitta' },
-      { label: 'Broad and solid — I gain weight easily and lose it slowly', dosha: 'kapha' },
+      { label: 'Thin and narrow — light bones, joints that show, hard to build muscle', dosha: 'vata' },
+      { label: 'Medium and proportional — moderate build, decent muscle without much effort', dosha: 'pitta' },
+      { label: 'Broad and solid — larger frame, well-developed, naturally strong', dosha: 'kapha' },
     ],
   },
+
   {
-    prompt: 'What best describes your skin?',
+    section: 'physical',
+    prompt: 'Your natural relationship with weight — the default your body wants to return to:',
     options: [
-      { label: 'Dry, rough, or flaky — especially in cold or windy weather', dosha: 'vata' },
-      { label: 'Warm, oily, prone to redness or breakouts', dosha: 'pitta' },
-      { label: 'Smooth, thick, and cool to the touch', dosha: 'kapha' },
+      { label: 'I stay light without trying — sometimes I actually struggle to gain weight', dosha: 'vata' },
+      { label: 'Pretty steady — I gain and lose at a moderate, predictable pace', dosha: 'pitta' },
+      { label: 'Weight comes on easily and it\'s slow to leave', dosha: 'kapha' },
     ],
   },
+
   {
-    prompt: 'How is your digestion?',
+    section: 'physical',
+    prompt: 'Your skin at its most natural — no products, no seasons messing with it. Check everything that fits.',
+    multiSelect: true,
     options: [
-      { label: 'Irregular — sometimes strong, sometimes not, with gas or bloating', dosha: 'vata' },
-      { label: 'Strong and sharp — I get irritable if meals are skipped', dosha: 'pitta' },
-      { label: 'Slow and steady — I rarely feel hungry but can eat large amounts', dosha: 'kapha' },
+      { label: 'Dry, rough, or flaky — cracks easily, cool to the touch', dosha: 'vata' },
+      { label: 'Warm and tends toward oily — flushes easily, some redness', dosha: 'pitta' },
+      { label: 'Smooth, moist, and cool — oily, pale, thicker than average', dosha: 'kapha' },
     ],
   },
+
   {
-    prompt: 'How do you sleep?',
+    section: 'physical',
+    prompt: 'Your natural hair — before color, heat, and styling products. Check everything that fits.',
+    multiSelect: true,
     options: [
-      { label: 'Light and interrupted — I wake easily and sometimes feel unrested', dosha: 'vata' },
-      { label: 'Sound but short — I wake feeling alert and ready', dosha: 'pitta' },
-      { label: 'Deep and long — I love sleeping and often feel groggy in the morning', dosha: 'kapha' },
+      { label: 'Dry, coarse, or curly — tends toward frizz', dosha: 'vata' },
+      { label: 'Fine, silky, or straight — tends to thin or gray early', dosha: 'pitta' },
+      { label: 'Thick, wavy, and heavy — usually oily, lots of volume', dosha: 'kapha' },
     ],
   },
+
   {
-    prompt: 'How would you describe your energy through the day?',
+    section: 'physical',
+    prompt: 'Think about your teeth before braces, orthodontics — what you were born with:',
     options: [
-      { label: 'Comes in bursts — I run fast then crash and need to rest', dosha: 'vata' },
-      { label: 'Intense and focused — I push hard and can overheat or burn out', dosha: 'pitta' },
-      { label: 'Steady and enduring — slow to start but I go all day', dosha: 'kapha' },
+      { label: 'Crooked, crowded, or with gaps — sometimes stuck out a little', dosha: 'vata' },
+      { label: 'Medium-sized and even — on the softer side, gums that bled easily', dosha: 'pitta' },
+      { label: 'Strong, white, and well-formed — healthy gums, rarely had issues', dosha: 'kapha' },
     ],
   },
+
   {
-    prompt: 'How do you handle stress?',
+    section: 'physical',
+    prompt: 'Your eyes:',
     options: [
-      { label: 'I get anxious, scattered, and overwhelmed', dosha: 'vata' },
-      { label: 'I get irritable, critical, or competitive', dosha: 'pitta' },
-      { label: 'I withdraw, become stubborn, or shut down', dosha: 'kapha' },
+      { label: 'Small and active — dark brown or black, sometimes dry or sunken', dosha: 'vata' },
+      { label: 'Sharp and penetrating — green, gray, hazel, or copper; sensitive to bright light', dosha: 'pitta' },
+      { label: 'Large and soft — blue or deep brown, long lashes, naturally moist', dosha: 'kapha' },
     ],
   },
+
+  // ---- PHYSIOLOGICAL ---- (moderate subjectivity)
+
   {
-    prompt: 'How do you learn and remember?',
+    section: 'physiological',
+    prompt: 'Your appetite, day to day:',
     options: [
-      { label: 'I grasp things quickly but forget just as fast', dosha: 'vata' },
-      { label: 'I learn well with focus and remember what I choose to learn', dosha: 'pitta' },
-      { label: 'I take time to understand but once I know it I never forget', dosha: 'kapha' },
+      { label: 'All over the place — sometimes ravenous, sometimes I forget to eat entirely', dosha: 'vata' },
+      { label: 'Strong and on schedule — I notice when a meal is late. I get irritable.', dosha: 'pitta' },
+      { label: 'Slow to arrive — I can skip meals without much trouble and not feel it', dosha: 'kapha' },
     ],
   },
+
   {
-    prompt: 'What best describes your temperament?',
+    section: 'physiological',
+    prompt: 'Your digestion and elimination, honestly:',
     options: [
-      { label: 'Enthusiastic, creative, and changeable — I love variety', dosha: 'vata' },
-      { label: 'Driven, precise, and decisive — I love a good goal', dosha: 'pitta' },
-      { label: 'Calm, caring, and loyal — I love comfort and routine', dosha: 'kapha' },
+      { label: 'Irregular — constipation, dryness, gas. Things don\'t move on any real schedule.', dosha: 'vata' },
+      { label: 'Fast and loose — soft and frequent, sometimes a little too fast', dosha: 'pitta' },
+      { label: 'Slow and heavy — things move on their own timetable, stools are thick and pale', dosha: 'kapha' },
     ],
   },
+
+  {
+    section: 'physiological',
+    prompt: 'Your natural sleep:',
+    options: [
+      { label: 'Light and interrupted — I wake easily, vivid or anxious dreams, don\'t need a lot', dosha: 'vata' },
+      { label: 'Moderate and sound — I sleep less than most but wake feeling clear', dosha: 'pitta' },
+      { label: 'Deep and long — I could always sleep more. Hard to get up in the morning.', dosha: 'kapha' },
+    ],
+  },
+
+  {
+    section: 'physiological',
+    prompt: 'Your hands and feet tend to be:',
+    options: [
+      { label: 'Cold — I\'m the one looking for a sweater when everyone else is fine', dosha: 'vata' },
+      { label: 'Warm — I run hot and don\'t love direct sun or humid heat', dosha: 'pitta' },
+      { label: 'Neutral — not particularly hot or cold, usually comfortable', dosha: 'kapha' },
+    ],
+  },
+
+  // ---- SUBJECTIVE / PSYCHOLOGICAL ---- (save for last once user is in the flow)
+
+  {
+    section: 'psychological',
+    prompt: 'Your energy style:',
+    options: [
+      { label: 'Quick bursts — I move fast and get a lot done, but I crash. Easily fatigued.', dosha: 'vata' },
+      { label: 'Purposeful and driven — strong endurance when I\'m motivated', dosha: 'pitta' },
+      { label: 'Slow to start, slow to stop — takes a while to get going but I can sustain for a long time', dosha: 'kapha' },
+    ],
+  },
+
+  {
+    section: 'psychological',
+    prompt: 'How your mind naturally works:',
+    options: [
+      { label: 'Fast and restless — I jump between ideas, pick things up quickly, get distracted', dosha: 'vata' },
+      { label: 'Sharp and focused — analytical, decisive, I like to understand things fully', dosha: 'pitta' },
+      { label: 'Calm and deliberate — I take my time, but what I learn, I keep', dosha: 'kapha' },
+    ],
+  },
+
+  {
+    section: 'psychological',
+    prompt: 'Your memory:',
+    options: [
+      { label: 'Quick to pick up, quick to forget — great in the moment, not so much long-term', dosha: 'vata' },
+      { label: 'Sharp — I remember what I need to, especially what matters to me', dosha: 'pitta' },
+      { label: 'Takes time to absorb, but once it\'s in, it stays for good', dosha: 'kapha' },
+    ],
+  },
+
+  {
+    section: 'psychological',
+    prompt: 'When things get hard, what shows up first?',
+    options: [
+      { label: 'Anxiety and overwhelm — fear, indecision, scattered energy, can\'t sit still', dosha: 'vata' },
+      { label: 'Anger and frustration — impatience, sharp words, the need to get control back', dosha: 'pitta' },
+      { label: 'Withdrawal and heaviness — I get quiet, stubborn, don\'t want to move', dosha: 'kapha' },
+    ],
+  },
+
 ];
 
 export const doshaInfo = {

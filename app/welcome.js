@@ -1,5 +1,6 @@
-// CONTENT NOTE: All copy below is [DRAFT] — written in Thea's voice for structure/review.
-// Thea must approve or rewrite every section before this page ships publicly.
+// CONTENT NOTE: All copy below is [DRAFT] — rewritten against voice guide v1.0 (approved by
+// Thea, July 2026). Still her final line-edit pass before this page ships publicly — being
+// grounded in the approved guide isn't the same as being her own words verbatim.
 // Photo placeholder (photoFrame) = swap in assets/thea.jpg when ready.
 
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
@@ -52,7 +53,7 @@ export default function Welcome() {
             </Text>
             <Text style={[styles.heroSub, { color: 'rgba(245,237,227,0.78)', marginTop: 12 }]}>
               {/* [DRAFT] */}
-              Ayurvedic guidance from Thea — practitioner, teacher, and the person behind L. Glow.
+              Ayurvedic guidance from Thea — teaching you to read your own body, not follow her rules.
             </Text>
             <Pressable
               style={[styles.heroCta, { marginTop: 28 }]}
@@ -83,7 +84,7 @@ export default function Welcome() {
             </Text>
             <Text style={[type.body, { color: c.textMedium, marginTop: 14, lineHeight: 26 }]}>
               {/* [DRAFT] */}
-              Ayurveda doesn't work that way. What's medicine for one person is noise for another. L. Glow is Thea's practice in app form — her methodology, her voice, her framework — built to meet you where you actually are, not where a generic protocol thinks you should be.
+              Ayurveda doesn't work that way. What's medicine for one person is noise for another. L. Glow is Thea teaching you to read your own body's signals — not handing down her opinions about you, not running you through a generic protocol. Her tools. Your read.
             </Text>
           </View>
 
@@ -114,7 +115,7 @@ export default function Welcome() {
               <Text style={[type.h2, { color: c.text, marginBottom: 10 }]}>The Dosha Quiz</Text>
               <Text style={[type.body, { color: c.textMedium, lineHeight: 24, marginBottom: 20 }]}>
                 {/* [DRAFT] */}
-                Ten questions. Takes about three minutes. Tells you your constitution — and everything in the app is organized around that answer.
+                Fourteen questions, about five minutes. Not a personality test — it finds your baseline blend, the color that's yours. Everything else in here reads off of it.
               </Text>
               <Pressable
                 style={[styles.quizBtn, { backgroundColor: c.accent }]}
@@ -140,7 +141,7 @@ export default function Welcome() {
                 </Text>
                 {/* [DRAFT] */}
                 <Text style={[type.body, { color: c.textMedium, fontSize: 15, lineHeight: 23 }]}>
-                  She came to yoga sideways, via a destroyed hip and a friend who said just come to class. Ayurveda found her at teacher training. She's been practicing ever since.
+                  A gymnast turned yoga teacher turned Ayurvedic practitioner — she spent years chasing her own answers about food, weight, and what "well" even means before Ayurveda gave her a different lens. Now she teaches other people to find theirs.
                 </Text>
                 <Pressable style={{ marginTop: 12 }} onPress={() => router.push('/about')}>
                   <Text style={{ color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Full bio →</Text>

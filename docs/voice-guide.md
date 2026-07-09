@@ -1,24 +1,36 @@
 # L. Glow — Voice & Philosophy Guide
 
-*Draft v0.4, distilled from Thea's voice memos. For her review.*
+*v1.0 — approved by Thea, July 2026. Distilled from her voice memos and bio; this is now the constitution for all app copy. Amend only with her sign-off.*
 
 ---
 
 ## What L. Glow actually is
 
-L. Glow is Thea's practice, in app form. Not a generic ayurveda app with a credentialed advisor — *her* worldview, *her* voice, *her* methodology, made available to users between sessions or in lieu of them. The name L. Glow is the brand for her practice.
+Thea's own correction to this section, direct from her — keep this framing front and center:
 
-When in doubt about a content decision: would Thea say this? Would she say it this way? If no, cut it.
+*"This app is like a user's manual for ME. It's the blueprint for YOU. Why you are the way you are — mentally, physically, emotionally, spiritually. Stop listening to others on how YOU work, start listening to YOU. Your body is giving you signs, clues, all day, every day. Start listening and one by one you will start to understand how to do you. It's not *her* worldview, *her* voice, *her* methodology. It's Thea's way of helping YOU find your OWN voice. It's not her work — it's your work to do for yourself."*
+
+This corrects the framing v0.3 opened with. The app is still built entirely in Thea's voice, teaching method, and clinical framework — an RYT and Ayurvedic practitioner's specific approach, not a brand-neutral wellness app with a credentialed advisor bolted on. That part hasn't changed. What changes is the *posture*: L. Glow isn't Thea's worldview handed down to the user. It's Thea teaching the user to read their own body's signals, so the user arrives at their own understanding. The work of the app belongs to the user, not to Thea.
+
+When in doubt about a content decision: would Thea say this, in this way — and does it hand the user a verdict, or does it help the user hear their own body more clearly? If it reads like the former, cut it or reframe it toward the latter.
 
 ---
 
 ## Who Thea is
 
-Thea came to yoga in 2017 — not as a seeker, but as an athlete with completely destroyed hips after a Sunday run. A friend dragged her in. Her response at the door: "I don't do yoga. It's too slow. It's not my thing." She went anyway. Her words: her life was "essentially transformed."
+Updated from her published bio (`app/about.js`, shipped June 29 2026, in her own words) — supersedes the earlier voice-memo distillation this section used to carry.
 
-Two years later, yoga teacher training. Ayurveda was introduced there — a day session, maybe a weekend. She knew immediately there was something to it. Her description of that first encounter: *"The first time I really started to understand my body in a way of balance as opposed to extreme."*
+Thea grew up a gymnast, closely attuned to her body from an early age. But that closeness didn't mean peace with it — she spent years navigating disordered eating, chasing answers about health, weight, food, and what "well" actually meant. She names that stretch as one of her greatest teachers, not a wound to hide.
 
-That phrase — **balance as opposed to extreme** — is the hinge between her athletic past and her practice. It is also the hinge underneath every recommendation the app makes.
+In 2017, a long run left her body signaling that something needed to change — that's what brought her to yoga. Two years later, in 2019, her husband challenged her to do something just for herself; at the time she was mid-career, a wife, a mom, with little room left over. She signed up for yoga teacher training not to teach, but to learn. **That's where Ayurveda found her.**
+
+She'd been carrying the same questions for years before that: why two people can eat the same thing and end up in completely different places; why one person's imbalance shows up as anxiety and another's as inflammation, weight, exhaustion, or burnout; why wellness has to feel so complicated. Ayurveda answered by refusing the premise — it's not about the right diet or the latest trend, it's about understanding your own nature and building a life that supports it. This is the origin of principle #1 (nothing is for everybody, everything is for somebody) in her own words, not an abstraction layered on top after the fact.
+
+On New Year's Eve 2023, she recorded a video declaring the coming year her "Year of Ayurveda" — and almost deleted it before posting. She didn't. That's the hinge point in her own telling: since then she's become an Ayurveda Health Coach and continued her studies as an Ayurveda Counselor, building what became L. Glôw Living.
+
+**What she says she loves most about Ayurveda is its simplicity.** Healing doesn't have to be overwhelming — small changes across four pillars (lifestyle, diet, exercise, herbs) create the real shifts. Most people think healing starts with a supplement or a meal plan. She teaches that it starts with how you live.
+
+**Motherhood widened the stakes.** This isn't only her own healing anymore — it's about breaking cycles for her kids and their kids, so worth stops being measured in a number on a scale or someone else's definition of health.
 
 ---
 
@@ -274,6 +286,7 @@ The ama/agni distinction also guards against a common recommendation failure: se
 
 These are Thea's. The app uses them verbatim or in close echoes, and they become the connective tissue across screens:
 
+- "It's the blueprint for you." / "Start listening to you." — the app's core reframe: not Thea's worldview handed down, but Thea helping the user find their own voice. This is the corrected framing for what L. Glow *is*, not just a nice line — see the opening section.
 - "Nothing is for everybody, and everything is for somebody."
 - "Like increases like. Opposites bring balance."
 - "We are what we digest, not what we eat."
@@ -348,4 +361,4 @@ There's a spectrum from "her name and face on the front door, the app is explici
 
 ---
 
-*Thea — does this sound like you? Mark it up however is easiest. Anything that doesn't feel right, cross out or rewrite. Anything missing, add it. The "What the app will not do" section and the dietary care note are the two places I made calls that go beyond what you literally said — those are the places I most want your pushback if I got it wrong. This document becomes the constitution for everything we draft after this, so it's worth getting right before we move on.*
+*Approved by Thea, July 2026. This is now the constitution for everything drafted after this point — welcome screen copy, daily check-in copy, and any new content should be checked against it.*

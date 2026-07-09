@@ -37,7 +37,7 @@ function computeStats(checkins) {
 
 const SETTINGS = [
   { label: 'Reminders',           Icon: BellIcon,     soon: true  },
-  { label: 'My dosha & intake',   Icon: LeafIcon,     soon: false },
+  { label: 'My Dosha',            Icon: LeafIcon,     soon: false },
   { label: 'Help & guidance',     Icon: QuestionIcon, soon: true  },
 ];
 
@@ -48,7 +48,6 @@ export default function You() {
   const { user, signOut } = useAuth();
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
-  const [checkinCount, setCheckinCount] = useState(0);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
 
@@ -57,7 +56,6 @@ export default function You() {
     loadGunaResult().then(r => setGunaResult(r));
     loadUserName().then(n => { if (n) setUserName(n); });
     loadRecentCheckins(365).then(list => {
-      setCheckinCount(list.length); // for guna gate
       setStats(computeStats(list));
     });
   }, []);
@@ -142,12 +140,10 @@ export default function You() {
         {/* Settings */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Settings</Text>
         {(() => {
-          // Gate: dosha quiz taken + 7+ check-ins unlocks guna assessment
-          const gunaUnlocked = !!(result && result.dosha && checkinCount >= 7);
-          // All visible settings rows
+          // All visible settings rows — Guna Assessment un-gated July 2026, now in nav too (see HamburgerDrawer)
           const rows = [
             ...SETTINGS,
-            ...(gunaUnlocked ? [{ label: 'Guna Assessment', Icon: GunaIcon, soon: false, guna: true }] : []),
+            { label: 'Guna Assessment', Icon: GunaIcon, soon: false, guna: true },
           ];
           return (
             <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
@@ -157,7 +153,7 @@ export default function You() {
                   style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
                   onPress={() => {
                     if (item.soon) return;
-                    if (item.label === 'My dosha & intake') router.push('/quiz');
+                    if (item.label === 'My Dosha') router.push('/quiz');
                     if (item.guna) {
                       if (gunaResult) {
                         router.push({

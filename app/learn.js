@@ -1,13 +1,23 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { concepts, tierLabels } from '../data/content/learn';
 import { useTheme } from '../context/ThemeContext';
 
 export default function Learn() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
+  const { conceptId } = useLocalSearchParams();
   const [selected, setSelected] = useState(null);
   const styles = makeStyles(colors, spacing, radius);
+
+  // Deep link from the dosha/guna quizzes — open the matching concept directly.
+  useEffect(() => {
+    if (conceptId) {
+      const match = concepts.find(c => c.id === conceptId);
+      if (match) setSelected(match);
+    }
+  }, [conceptId]);
 
   const tiers = [1, 2, 3];
   const tierAccents = {

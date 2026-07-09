@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { agniQuestions } from '../data/content/agniQuiz';
 import { saveAgniResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
-import Svg, { Path } from 'react-native-svg';
+import BackButton from '../components/BackButton';
 
 export default function AgniQuiz() {
   const { theme: { colors: c } } = useTheme();
@@ -56,9 +56,7 @@ export default function AgniQuiz() {
 
         {/* Back + counter */}
         <View style={s.topRow}>
-          <Pressable onPress={goBack} hitSlop={8} style={s.backBtn}>
-            <BackIcon color={c.textMuted} />
-          </Pressable>
+          <BackButton onPress={goBack} color={c.textMuted} />
           <Text style={[s.counter, { color: c.textMuted }]}>
             {index + 1} / {agniQuestions.length}
           </Text>
@@ -86,21 +84,12 @@ export default function AgniQuiz() {
   );
 }
 
-function BackIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M19 12H5M5 12l7-7M5 12l7 7" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
 const s = StyleSheet.create({
   progressTrack: { height: 3, width: '100%' },
   progressFill:  { height: 3 },
 
   scroll:    { padding: 24, paddingTop: 8 },
   topRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28, height: 40 },
-  backBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
   counter:   { fontFamily: 'Inter_400Regular', fontSize: 13.5 },
 
   overline:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 12 },
