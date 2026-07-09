@@ -1,8 +1,9 @@
-// DRAFT — playlist URLs need Thea's Spotify links before the home card goes live.
+// DRAFT — per-dosha playlist URLs still need Thea's Spotify links before the home card goes live.
 // Open question: does she organize playlists by dosha only, or also by season/energetic state?
 // Current structure is dosha-keyed. Add season/state variants once she confirms.
 
-export const SPOTIFY_PROFILE_URL = null; // Thea to provide her Spotify profile URL
+// L. Glow Living's profile — provided by Matt, July 2026.
+export const SPOTIFY_PROFILE_URL = 'https://open.spotify.com/user/olukz578ug7dbs8ejdiyf8afs?si=f953687e1a0a4712';
 
 export const playlists = {
   vata: {

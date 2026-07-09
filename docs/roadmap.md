@@ -75,7 +75,7 @@ Expo Router static export configured. `vercel.json` added. Download CTAs (App St
 ~~**Content review packet compiled for Thea.**~~
 `docs/content-review-thea.md` — consolidates every piece of draft-status copy across the app into one doc she can work through in a sitting: the 10 Learn library essays (pointed to the in-app Learn tab rather than pasted, since they're long-form), full text for the branching quiz results (dosha archetypes, guna, agni, tongue) so she isn't retaking quizzes to see every variant, plus intake consent copy, journey tab copy, the affirmations bank, and welcome page status. Also a "nothing written yet" checklist (movement postures, agni quiz wording, 5 empty Learn concepts, dosha-specific intentions/routines, Spotify links) and a flag section — see below. Done July 2026. **Updated** the same day the first TestFlight build went out: added a note flagging that the dosha quiz redesign (already approved, see #18) is now live and worth a real run-through, not just a re-read of the questions as text.
 
-**Finding from that review, corrected:** Went looking for content that was quietly living as if approved without ever being marked draft. Both `herbs.js` and `recommendations.js` turned out to be moot, not just herbs — see #38 (below), missed on the first pass: Thea already recorded detailed food recommendations for all three doshas (transcripts 22–24, June 2026) with Best/Good/Not Beneficial/Avoid breakdowns, explicitly meant to feed the recommendations screen's food section. So `recommendations.js`'s food lists aren't "unreviewed and need her eyes" — they're superseded by approved content that's sitting unloaded, same shape as the herbs.js situation. The actual blocker for both is the same one: the food+herb database placement/schema decision under #36. `data/content/recommendations.js`'s *seasonal engine* (the ritucharya month-to-season mapping) is separate from the food lists and wasn't addressed by #38 — that part may still be worth a look, but the food-list content itself is not an open gap.
+**Finding from that review, corrected:** Went looking for content that was quietly living as if approved without ever being marked draft. Both `herbs.js` and `recommendations.js` turned out to be moot, not just herbs — see #38 (below), missed on the first pass: Thea already recorded detailed food recommendations for all three doshas (transcripts 23–25, June 2026) with Best/Good/Not Beneficial/Avoid breakdowns, explicitly meant to feed the recommendations screen's food section. So `recommendations.js`'s food lists aren't "unreviewed and need her eyes" — they're superseded by approved content that's sitting unloaded, same shape as the herbs.js situation. The actual blocker for both is the same one: the food+herb database placement/schema decision under #36. `data/content/recommendations.js`'s *seasonal engine* (the ritucharya month-to-season mapping) is separate from the food lists and wasn't addressed by #38 — that part may still be worth a look, but the food-list content itself is not an open gap.
 
 ---
 
@@ -216,7 +216,7 @@ Concept list (prioritized):
 *Tier 2 — deepening*
 - The six tastes / shad rasa
 - ~~The gunas (qualitative: hot/cold, light/heavy, dry/oily)~~ — body filled, source: transcript 16, June 2026
-- ~~The three gunas (mental: sattva, rajas, tamas)~~ — body filled, source: transcript 15, June 2026
+- ~~The three gunas (mental: sattva, rajas, tamas)~~ — body filled, source: transcript 15b, June 2026
 - Ojas — vital essence
 - Dinacharya and ritucharya
 
@@ -304,6 +304,8 @@ Source: transcript 28 (062526_01), June 2026. Thea's vision has expanded beyond 
 Design constraints: friend-texting-a-song tone, not clinical. Thea owns all curation. Spotify link-outs only — no in-app audio.
 
 ⚠️ **Open question before building:** How does Thea want to organize her Spotify playlists — by dosha, by mood/energy state, by category above, or a combination? Ask before scaffolding the data structure. A five-minute conversation prevents a refactor.
+
+**Progress, July 2026:** L. Glow Living's Spotify profile URL is set — `SPOTIFY_PROFILE_URL` in `data/content/music.js`, which activates the previously-disabled Spotify button on the About Thea screen. Per-dosha playlist URLs (`playlists.vata/pitta/kapha.url`) are still `null`, and the open question above is still unanswered — this only unblocked the profile link-out, not the dosha-specific playlists this section describes.
 
 ~~**20. Daily Affirmations screen.**~~
 Scaffold complete. `app/affirmations.js` live under You tab — single affirmation, date-seeded daily pick, "another one →" to cycle through pool. `data/content/affirmations.js` has 13 placeholder entries (4 universal + 3 per dosha); schema supports `season` and `state` fields for future vikriti routing. Currently prakriti-based — swap to vikriti once check-in signal is reliable (#19). Thea to source and expand the content bank. Done.
@@ -1029,7 +1031,7 @@ Proposed shape:
 ## Vata / Pitta / Kapha Food Recommendations — content ready
 
 **38. Dosha food lists — Thea's content approved, ready to load.**
-Source: transcripts 22–24 (062126_04, 05, 06), June 2026. Thea has recorded detailed food recommendations for all three doshas with Best / Good / Not Beneficial / Avoid breakdowns across: grains, legumes, vegetables, fruits, nuts, oils, spices, animal products, and sweeteners. Authorship confirmed — her own words formed from multiple sources.
+Source: transcripts 23–25 (062126_04, 05, 06), June 2026. Thea has recorded detailed food recommendations for all three doshas with Best / Good / Not Beneficial / Avoid breakdowns across: grains, legumes, vegetables, fruits, nuts, oils, spices, animal products, and sweeteners. Authorship confirmed — her own words formed from multiple sources. **Note, July 2026:** several ingredient names came through garbled from Whisper transcription — see `docs/notes-transcript-23-25.md` for the specific spellings awaiting Thea's confirmation before this loads into the app.
 
 This content feeds into:
 - Item 36 (Herb + Food Database) — the dosha-specific medicine/poison breakdowns per food

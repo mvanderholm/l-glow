@@ -160,7 +160,7 @@ Same situation — the universal anchors (wake before 6am, phone down after 9pm,
 
 ### 2.6 Music — Spotify links
 
-Need your Spotify profile URL and, ideally, one playlist per dosha (mood framing is already sketched: Vata = "slow, warm, grounding," Pitta = "cool and easy," Kapha = "something that moves you"). Also an open question noted in the file: do you want playlists organized by dosha only, or also by season / energetic state?
+Your profile URL is in — the Spotify button on your About page is live now. Still need: one playlist per dosha (mood framing is already sketched: Vata = "slow, warm, grounding," Pitta = "cool and easy," Kapha = "something that moves you"), and an answer to the open question in the file: do you want playlists organized by dosha only, or also by season / energetic state?
 
 ---
 
