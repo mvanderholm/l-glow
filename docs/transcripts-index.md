@@ -1,6 +1,6 @@
-# Transcripts — Master Index by Topic
+# Transcripts — Topic Index
 
-Fast-scan reference for "which transcript covers X." For the file-by-file list in recording order (with Whisper transcription notes and filename conventions), see `docs/transcripts/README.md`. Both point at the same 29 files — nothing here is a copy of the content, just a map to it.
+Fast-scan reference for "which transcript covers X." For the file-by-file list in recording order (with Whisper transcription notes and filename conventions), see `docs/transcripts/README.md`. For the full text of everything in one file, see `docs/transcripts-master.txt`. This doc and the README both point at the same 29 source files — nothing here is a copy of the content, just a map to it; the master file is the one actual copy, generated, not hand-maintained.
 
 ---
 

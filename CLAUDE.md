@@ -147,9 +147,10 @@ At the start of any session where you're reviewing open work, cross-check the ro
 2. **If the number's taken**, don't cascade-renumber every later file — suffix it (`15b_...`) the way `15b_gunas_mental.txt` was resolved. Cascading renumbers break every existing "transcript N" citation across the other docs; a suffix breaks nothing.
 3. **Add it to `docs/transcripts/README.md`'s numbered list**, in recording order, matching the existing entry format (one paragraph: what it covers, what it's the source for, any Whisper transcription quirks).
 4. **Add it to `docs/transcripts-index.md`** under the relevant topic heading(s) — a transcript can appear under more than one topic if it covers multiple things.
-5. **Check whether its content is cited elsewhere** (`docs/roadmap.md`, `docs/voice-guide.md`, `docs/content-review-thea.md`) and make sure any "source: transcript N" references added around this work use the correct number and stay consistent with the README/index.
+5. **Append it to `docs/transcripts-master.txt`** — the single-file concatenation of everything in `docs/transcripts/`, in the same recording order. Add the new transcript's `==== FILE: filename ====` block at the correct position (end of file, unless it's a late addition that belongs earlier in sequence — match the order in `docs/transcripts/`). This file is a generated convenience copy, not hand-maintained prose — appending the new block is a mechanical step, not a rewrite.
+6. **Check whether its content is cited elsewhere** (`docs/roadmap.md`, `docs/voice-guide.md`, `docs/content-review-thea.md`) and make sure any "source: transcript N" references added around this work use the correct number and stay consistent with the README/index.
 
-Do not edit the transcript's own content when doing this — only the filename and the index docs. The transcripts are the historical record (see `docs/transcripts/README.md`).
+Do not edit the transcript's own content when doing this — only the filename and the index docs (including the master file's generated copy of that content, which must always match the source file exactly). The transcripts are the historical record (see `docs/transcripts/README.md`).
 
 ---
 

@@ -2,7 +2,7 @@
 
 Source material for the L. Glow voice guide and all clinical content. These are Thea's voice memos, transcribed locally with WhisperDesktop (ggml-medium model). They are the canonical record of her teaching in her own words and should be treated as primary source material — anything the app says clinically should be traceable back to one of these files (or to future transcripts that get added here).
 
-For a topic-first, fast-scan view of this same material (e.g. "which transcript covers X"), see `docs/transcripts-index.md`. This README is the file-by-file index in recording order; that doc is organized by subject instead.
+For a topic-first, fast-scan view of this same material (e.g. "which transcript covers X"), see `docs/transcripts-index.md`. This README is the file-by-file index in recording order; that doc is organized by subject instead. For the full text of every transcript in one file (e.g. to search across all of them at once), see `docs/transcripts-master.txt` — a generated concatenation, not a separate source; the individual files below remain canonical.
 
 ## Files
 
