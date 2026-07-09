@@ -2,6 +2,8 @@
 
 *Compiled July 2026. Everything below is either (a) written and just needs your yes / no / markup, or (b) empty and needs a voice memo from you. Organized so you can work through it in one sitting — mark it up however's easiest, same as the voice guide.*
 
+**Update — a TestFlight build went out today** with everything in this doc live in the app, plus one thing worth a special look: **the redesigned dosha quiz is live.** You already approved the question set itself (the 14-question physical → physiological → psychological redesign), but this is the first time you can actually take it in the real app rather than read the questions as text — worth a run-through as a final gut-check that it feels right in practice, not just on paper. Everything else below is unchanged from when this was compiled.
+
 **How this is organized:**
 - **Section 1** — written content, ready for you to read and approve or rewrite.
 - **Section 2** — gaps. Nothing's written yet; this is the list of what still needs a voice memo.
@@ -34,7 +36,7 @@ These already read as your voice — most are adapted directly from your voice m
 
 ### 1.2 Dosha quiz result screen — trait tables & archetypes
 
-Source: `data/content/quiz.js`. Shown after someone takes the dosha quiz — the constitution summary, the "grounding" language, the physical/mental trait table, and the archetype (Wanderer / Warrior / Keeper).
+Source: `data/content/quiz.js`. Shown after someone takes the dosha quiz — the constitution summary, the "grounding" language, the physical/mental trait table, and the archetype (Wanderer / Warrior / Keeper). (This is the *result* screen. The *questions* leading up to it are the redesigned set you already approved — now live, see the update note at the top of this doc.)
 
 **Vata — "The Wanderer"**
 > Vata is the force of movement — governing breath, circulation, nerve impulses, and the flow of thought. Vata types are naturally creative, quick-minded, and enthusiastic, but can drift toward anxiety, dryness, and scattered energy when out of balance. Grounding, warmth, and regular routine are your medicine.
@@ -180,7 +182,7 @@ One piece that's genuinely separate: the *seasonal engine* in that file (which m
 
 ## Getting this in front of you
 
-- **Sections 1.1–1.8** (Learn essays, quiz results, intake copy, journey copy, affirmations) are mostly things you can read right in the app — take each quiz once, or open the Learn tab — plus this doc for the ones that branch (guna/agni/tongue/dosha archetypes) so you're not re-taking quizzes to see every variant.
+- **A TestFlight build is on its way** — everything in Sections 1.1–1.8 (Learn essays, quiz results, intake copy, journey copy, affirmations) is live in it. Take the dosha quiz for real this time, open the Learn tab, run through a check-in — plus this doc for the results that branch (guna/agni/tongue/dosha archetypes) so you're not re-taking quizzes to see every variant.
 - **1.9 (welcome page)** is a real live web page — easiest to just open `lglow.vercel.app/welcome` directly rather than read it as text.
 - **Section 2** doesn't need reading at all — it's a "what to record next" list.
 - **Section 3.2** is the one item here that's genuinely new to your radar — worth a dedicated look when you have a few minutes.
