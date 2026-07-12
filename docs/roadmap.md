@@ -564,7 +564,7 @@ Mark 1 recommendations are organized primarily by dosha and season. That structu
 - **Vikriti visualization driven by daily check-in.** Note (Matt, July 2026): Prakriti and Vikriti are both dosha-based readings, but answer different questions — **Prakriti is the constitution you were born with** (fixed; this is what the dosha quiz measures) and **Vikriti is your current state** (changeable day to day; this is what the daily check-in and/or a dosha quiz retake would signal). The design goal: show Prakriti as something sticky/stable in the UI, and derive Vikriti from check-in data (and possibly quiz retakes) as the thing that visibly moves. A second color swatch alongside the Prakriti one, showing vikriti as derived from check-in responses over time. The visual gap between the two swatches makes prakriti vs. vikriti tangible — you can see how far you've drifted and which direction. Requires: (a) check-in questions revised to reliably signal dosha state (#19), (b) an algorithm to compute a running vikriti estimate from check-in data, (c) enough data from real users to validate the signal. Do not build the algorithm until the question set is locked.
 - Practitioner-side tools: Thea views a client's check-in history before a session.
 - "Book a session with Thea" CTA wired to scheduling software, or eventually in-app.
-- Account creation and cross-device sync (resist until real users ask for it).
+- ~~Account creation~~ — done, Supabase Auth (#29). Cross-device sync still deferred — depends on #30's data layer, which isn't built yet.
 - Content review pass by a second credentialed practitioner.
 - App Store / Play Store submission (year two or when Thea is ready for public exposure).
 
@@ -611,57 +611,78 @@ Personality archetype added to `doshaInfo` in `data/content/quiz.js` for each do
 ## Pre-launch requirements — must ship before public release
 
 **29. User authentication — login, logout, and account persistence.**
-~~Auth UI done~~ — login, signup, magic-link (passwordless), and Firebase session persistence all live. `context/AuthContext.js` wired through the app; You tab shows signed-in state and sign-out. Remaining: backend sync (AsyncStorage → ColdFusion API on first login) and the migration flow for existing local users. Depends on #30/#31.
+~~Auth fully rebuilt on Supabase~~ — architecture pivot, July 2026 (see below). Login, signup, magic-link, and session persistence all live on Supabase Auth. `context/AuthContext.js`, `config/supabase.js` wired through the app; You tab shows signed-in state and sign-out. Added a password-recovery completion screen (`app/login.js`'s `RecoveryForm`) that Firebase never needed — Supabase has no hosted reset page, so "set a new password" has to happen in-app. Remaining: backend sync (AsyncStorage → Supabase on first login) and the migration flow for existing local users — folded into #30 below.
 
-**Decided architecture: Firebase Auth + ColdFusion CFCs + MSSQL (see #30).**
-Firebase handles identity exclusively — login, logout, session management, JWT issuance. The existing panda-mobile ColdFusion API handles all data operations, with Firebase JWT verification in CF. MSSQL is the database. Planned upgrade to Supabase once the app is generating revenue — the API contract (#31) is written to be database-agnostic so the app layer won't change.
+**Architecture pivot, July 2026: Supabase only. ColdFusion/MSSQL plan dropped entirely, not deferred.**
+The original plan (Firebase Auth + ColdFusion CFCs + MSSQL, with a Supabase upgrade "once the app generates revenue") is superseded — Matt set up a Supabase project and decided to build directly on it instead of standing up the ColdFusion layer at all. Supabase now owns both identity (Supabase Auth, replacing Firebase Auth — a real rebuild, not a swap, since Firebase Auth was already shipped and working) and data (Postgres with Row Level Security, replacing MSSQL + CFC business-logic isolation).
 
-Scope:
-- Account creation — email + password to start; social login (Google, Apple) can follow
-- Login and logout flows with L. Glow design system screens (no Firebase default UI)
-- Session persistence — user stays logged in across app restarts via Firebase's onAuthStateChanged listener
-- Graceful unauthenticated state — app works fully offline/local before login, prompts to save progress when a user tries to preserve data
-- On first login after using the app locally, offer to migrate existing AsyncStorage data to the backend under their new account
+**What this simplifies:** Supabase auto-generates a REST API from the Postgres schema (PostgREST) and enforces per-user data isolation via RLS policies keyed on `auth.uid()`. There's no custom API layer to hand-build the way #31's ColdFusion route spec assumed — see the superseded-note on that item. The app talks to Supabase directly via `@supabase/supabase-js`.
 
-Design constraints: auth screens must match the L. Glow card/shadow/typography design system. No Firebase branding visible to users.
+**Behavioral differences worth knowing, not just a drop-in swap:**
+- Magic link can't be completed on a different device than the one that requested it (Supabase's PKCE flow needs a code verifier that only exists in the requesting device's local storage). Firebase had the same real limitation but surfaced it as a recoverable "confirm your email" prompt; Supabase just fails the exchange, so the UI now says "request a new one from this device" instead of pretending recovery is possible.
+- `signUp` may or may not return an active session depending on the Supabase project's "Confirm email" setting — `AuthContext.signUp()` now returns `{ needsEmailConfirmation }` so `signup.js` can branch correctly instead of assuming immediate sign-in.
+
+**Still needed (Matt, in the Supabase dashboard — not something Claude Code can do remotely):**
+- Add `l-glow://login` to Authentication → URL Configuration → Redirect URLs, or magic link / signup confirmation / password reset emails won't complete
+- Confirm the "Confirm email" setting under Authentication → Providers → Email matches what you want (whether new signups need to click a confirmation link before they're signed in)
+- Live-device testing of the full auth flow — sign up, magic link, password reset — before trusting any of this in front of real users. None of this has been run on an actual device yet, only verified to parse correctly.
+
+Scope (updated from original Firebase-era list):
+- Account creation — email + password to start; social login (Google, Apple) can follow, Supabase supports both natively
+- Login and logout flows with L. Glow design system screens — no Supabase default UI, same constraint as before
+- Session persistence — Supabase's `onAuthStateChange` listener + AsyncStorage-backed session storage
+- Graceful unauthenticated state — unchanged, app still works fully offline/local before login
+- On first login after using the app locally, offer to migrate existing AsyncStorage data to Supabase under their new account — not yet built, see #30
 
 **30. Backend data layer — user data storage and practitioner reporting.**
 Thea needs to be able to see her clients' data — check-in history, dosha results, journal entries, practice completions — and draw clinical insight from it ahead of sessions. This is a core part of her practitioner value proposition and the app's long-term job.
 
-**Decided architecture: ColdFusion CFCs + MSSQL, Firebase JWT verified in CF.**
-All user-generated data is written to MSSQL via ColdFusion CFC endpoints on the existing panda-mobile server. JWT verification is handled in CF against Google's JWKS endpoint. User isolation is enforced in CFC business logic. Upgrade path to Supabase is planned once the app generates revenue; the API contract (#31) is database-agnostic so no app-side changes will be needed.
+**Architecture: Supabase Postgres + Row Level Security.** Replaces the ColdFusion/MSSQL plan entirely (see #29's pivot note). User data isolation is enforced by RLS policies keyed on `auth.uid()` — no CFC business logic layer, no separate JWT verification step to write, Supabase's own auth system and Postgres handle both natively.
 
-Scope — two surfaces, sequenced:
+Scope — two surfaces, sequenced (unchanged from the original plan, just a different foundation):
 
-*Phase 1 — User data persistence (depends on #29):*
-- Core tables: `users`, `dosha_results`, `checkins`, `journal_entries`, `intentions`, `practice_completions`
-- All AsyncStorage writes proxied through a thin service layer that writes to both AsyncStorage (local cache) and the CF API (source of truth once authenticated)
-- Data retained indefinitely — this is longitudinal health data
+~~*Phase 1 — User data persistence (depends on #29, which is done):*~~ **Schema + dual-write done, July 2026. Two real gaps remain — see below, not swept under "done."**
+- Tables live: `supabase/migrations/20260711000000_init_schema.sql` — `users` (auto-created via trigger on signup), `dosha_results`, `guna_results`, `agni_results`, `checkins`, `journal_entries`, `intentions`, `intake_forms`, `practice_completions`. More complete than the original bullet list (that one didn't name guna/agni/intake as separate tables, but the app persists all three, so they needed rows too). RLS: owner-only on every table via `auth.uid() = user_id` — no practitioner-read policies yet, deliberately, since Phase 2 needs Thea's input first.
+- `data/user/storage.js` writes to both AsyncStorage and Supabase now (`saveDoshaResult`, `saveGunaResult`, `saveAgniResult`, `saveCheckin`, `saveIntention`, `saveUserName`), plus `app/journal.js` and `app/intake.js` (which manage their own storage outside `storage.js`). Best-effort: a failed Supabase write is logged and swallowed, never blocks the local save — AsyncStorage stays the thing every `load*()` function actually reads from.
+- **Gap 1 — the app doesn't read from Supabase yet.** Dual-write means new data goes to both places from whichever device created it, but nothing hydrates AsyncStorage *from* Supabase — a second device still starts empty. Not the same thing as "cross-device sync" yet, just durable backup + a copy Thea's future practitioner view can query.
+- **Gap 2 — no AsyncStorage→Supabase migration for existing local users.** Someone with data from before they had an account won't have it pushed up retroactively; only writes going forward sync. This was always its own build-order step (see below), not forgotten, just not done today.
+- **Not yet run:** the migration SQL hasn't been executed against the live Supabase project — do that in the SQL Editor (Dashboard → SQL Editor → paste the migration file → run) before any of this actually works. Nothing has been tested against a real device either.
+- `practice_completions` exists as a table but nothing in the app writes to it — there's no "mark a practice complete" feature built yet. Scaffolded because the roadmap named it as a core table; flagged here so it doesn't look like an oversight that it's empty.
 
 *Phase 2 — Practitioner-facing reporting (Thea's view):*
-- Thea's account designated as `role: practitioner` in the `users` table
-- Per-client view: dosha result, check-in history and trends, vikriti drift over time, recent journal entries (if consented)
-- Start simple: a direct MSSQL/CF page she can access before building a polished UI
-- Consent model: explicit opt-in per user, stored in `practitioner_clients` with `consented_at` timestamp
 
-⚠️ **Still needed before building Phase 2:**
-- Conversation with Thea about what she actually wants to see before a session — do not design the practitioner view without her input
-- Consent language and privacy policy — Thea to provide; legal review required before any user data leaves the device
+~~A rough v1 exists now, July 2026 — built explicitly to react to, before the real design conversation.~~ Matt's call: don't wait for the conversation to build a first pass. Scope is deliberately narrow:
+- `app/practitioner.js` — client list (consented users only) → tap into one → read-only view of their intake form, using the same `SECTIONS` labels `app/intake.js` uses (exported from there so there's one source of truth for the form's structure, not two copies).
+- Drawer entry "Practitioner View," always visible — safe to leave unguarded in the nav since RLS is the actual gate, not the UI. A non-practitioner (or nobody signed in) just sees "This view is for practitioners only."
+- **Consent is a single boolean** (`users.consented_to_practitioner_view`), not the richer `practitioner_clients` join table with `consented_at` originally sketched — there's exactly one practitioner right now, and a join table for a 1:1 relationship was more structure than v1 needed. Revisit if/when there's ever a second practitioner.
+- `supabase/migrations/20260712000000_practitioner_view_v1.sql` adds the column and two RLS policies (practitioners can read a consented client's `users` row and `intake_forms` row — nothing else yet; dosha results, check-ins, journal entries have no practitioner-read policy, so the dashboard can't see those even if it tried).
+
+⚠️ **No UI exists yet for either role assignment or consent** — both are manual SQL for now (templates at the bottom of the migration file). Nobody can actually reach this dashboard with real data until someone runs those `update` statements by hand for a test account.
+
+**Deliberately not built, because this is v1-to-react-to, not the real design:**
+- Dosha result, check-in history/trends, vikriti drift, journal entries in the dashboard — intake form only for now
+- Any consent-granting flow a client could use themselves
+- The actual conversation with Thea about what she wants to see — still hasn't happened; treat everything above as a strawman for that conversation, not a finished feature
+- Email notification when a form is completed — explicitly deferred (see #33 discussion, July 2026); Thea checks the dashboard manually for now, no automated trigger exists
 
 **Build order:**
-1. ~~Firebase Auth integration + L. Glow auth screens (#29)~~ done
-2. MSSQL `lglow` schema deployed (see #31 for tables)
-3. ColdFusion CFC stubs for each `/lglow/` route with Firebase JWT verification
-4. Service layer in the app that writes to the CF API alongside AsyncStorage
-5. AsyncStorage migration flow for existing local users on first login
-6. Thea conversation → practitioner view design
-7. Practitioner dashboard (Phase 2)
-8. Consent flow and privacy policy
+1. ~~Supabase Auth integration + L. Glow auth screens (#29)~~ done, July 2026
+2. ~~Design the Postgres schema + RLS policies~~ done, July 2026 — `supabase/migrations/20260711000000_init_schema.sql`, run against the live project
+3. ~~Service layer in the app that writes to Supabase alongside AsyncStorage~~ done, July 2026 — see gaps noted above (write-only, no read-hydration yet)
+4. AsyncStorage migration flow for existing local users on first login ← **next actual step for Phase 1**
+5. Read-hydration from Supabase (not in the original build order, but a real gap found while building #3 — needed before this is genuinely "cross-device," not just "backed up")
+6. ~~Practitioner dashboard v1~~ done, July 2026 — rough pass, see above, built before rather than after the Thea conversation
+7. Thea conversation → real practitioner view design, reacting to v1
+8. Consent flow and privacy policy — real UI, not manual SQL
 9. End-to-end QA on real devices
 
 ---
 
 **31. API endpoint spec — lglow routes on the existing panda-mobile API.**
+
+⚠️ **SUPERSEDED, July 2026 — literal endpoint spec no longer applies, but the data model below is still useful.** This was written for the ColdFusion/MSSQL plan, which was dropped entirely in favor of Supabase (see #29/#30). Supabase auto-generates a REST API from the Postgres schema (PostgREST) and enforces isolation via Row Level Security — there's no hand-written route layer to build the way this section assumes, and no Firebase JWT to verify. **Don't build against this spec literally.** What's still worth reading it for: the table names, fields, and per-resource operations implied by each route below are a solid first draft of the Postgres schema #30 needs — treat this as data-model reference material, not a build spec.
+
+*(Original spec preserved below, unedited, for that reference value.)*
 
 All routes are prefixed `/lglow/`. Every route requires a valid Firebase JWT in the `Authorization: Bearer <token>` header. The middleware verifies the token, extracts `firebase_uid`, and resolves or creates the corresponding `lglow.Users` row before the handler runs. The resolved `user_id` (integer) is attached to the request context — handlers never deal with Firebase UIDs directly after the middleware layer.
 
@@ -890,8 +911,14 @@ Response: { synced: { dosha: bool, checkins: int, journal: int,
 ## Client intake form
 
 ~~**33. Clinical intake form — full pre-session questionnaire.**~~
-*Sections 1–14 built and live. Two items remain blocked: (a) signature/consent screen requires a privacy policy to exist first; (b) backend sync depends on #29/#30. Ship those when unblocked.*
-Source: voice memo 12 (`docs/transcripts/12_intake_form.txt`). A multi-section clinical intake form accessible from the hamburger menu. This is the form a user fills out before working with Thea — not part of onboarding, not gated to first launch. Anyone can access it from the drawer at any time.
+*Sections 1–14 built and live. Backend sync (b) is now done — see #30, `intake_forms` table, dual-write in `saveIntake()`. One item remains blocked: (a) the signature/consent screen still needs a privacy policy to exist first before it can be more than a single "I agree" checkbox.*
+
+**Fixes made during a July 2026 read-through of the actual file (not new content, implementation bugs against the already-agreed spec):**
+- **The literal string "DRAFT — Thea to review and rewrite before launch." was being shown to users** inside the consent screen's info text — it had been written into the displayed `text` field itself instead of as a code comment. Fixed; the DRAFT flag is now a comment above the field, same convention as everywhere else in the codebase.
+- **Multi-select Prakriti questions (physical function + psychological function, 15 fields total) had no "skip / I don't know" escape** — only the single-select physical-structure questions did. This wasn't just a missing affordance: since `sectionProgress()` counts empty arrays as unanswered, a user who wanted to skip one of these 15 questions could never get that section to 100%. Added the same skip pattern the single-select fields already use.
+- Renamed `CtaDisabledBlock` → `CoachingCtaBlock` (and `cta_disabled` → `coaching_cta`) — it stopped being disabled when #34 shipped the real booking link, the name never got updated.
+
+⚠️ **Found, not fixed — needs your call, not a guess on my part:** Section 12 (Reproductive Health) was always meant to be conditionally shown based on the gender identity field from Section 1 (see build-order step 7 below) — that logic was never built, so every user currently sees this section regardless of what they entered. Gender identity is a free-text field, and pattern-matching it to decide who sees a whole section felt like exactly the kind of judgment call that can misfire in a way that lands badly (misgendering, or guessing wrong in either direction) — didn't want to build that without checking how you want the matching to work first.
 
 **Entry point:** Hamburger menu → "My Intake Form" (or similar label — confirm wording with Thea). Routes to `app/intake.js`.
 
@@ -922,20 +949,20 @@ Full section details and question tables: `docs/notes-transcript-14.md`
 
 **Data handling:**
 - Stored locally in AsyncStorage under `@lglow/intake` as a single JSON object (partial saves valid — resume where left off)
-- Must sync to backend when #29/#30 are live — Thea needs to read this before sessions. This is the primary data source for her practitioner view.
+- ~~Must sync to backend~~ — done, July 2026. Dual-writes to the `intake_forms` table (`user_id`, `data` jsonb, upsert on `user_id`) alongside AsyncStorage. Note: this is still just the write path — Thea can't actually *read* it yet, that's Phase 2's practitioner view (#30), still gated on a conversation with her about what she wants to see.
 - The signature/consent block requires a privacy policy to be in place before this screen ships publicly. Thea to provide; do not launch this feature without legal sign-off on the confidentiality statement.
 
 **Build order:**
-1. Data structure + `data/user/storage.js` intake key (can do now)
-2. Route `app/intake.js` — multi-step form with section navigation, save-on-exit, resume state
-3. Add "My Intake Form" to `components/HamburgerDrawer.js`
-4. Scope-of-practice disclosure screen (copy from voice memo, flagged for Thea's final wording review)
-5. All 14 sections as distinct step screens
-6. 18+ gate screen before sections 11–12
-7. Reproductive health conditional display logic (gender identity field from section 1 drives visibility)
-8. Section 14 Prakriti assessment — single-select for physical structure, multi-select for physical function and psychological function; wrist test; face reference images + optional photo upload; coaching session CTA at section top (see #34)
-9. Signature/consent screen — requires privacy policy to exist first
-10. Backend sync when #29/#30 are live
+1. ~~Data structure + `data/user/storage.js` intake key~~ done
+2. ~~Route `app/intake.js` — multi-step form with section navigation, save-on-exit, resume state~~ done
+3. ~~Add "My Intake Form" to `components/HamburgerDrawer.js`~~ done
+4. ~~Scope-of-practice disclosure screen~~ done — content still flagged for Thea's final wording review, but no longer literally says "DRAFT" on-screen (fixed July 2026, see note above)
+5. ~~All 14 sections as distinct step screens~~ done
+6. ~~18+ gate screen before sections 11–12~~ done
+7. Reproductive health conditional display logic (gender identity field from section 1 drives visibility) — **still not built, see the flagged note above.** Needs your call on the matching approach before this is safe to build.
+8. ~~Section 14 Prakriti assessment~~ done — single-select for physical structure, multi-select for physical function and psychological function (both now have skip escapes, fixed July 2026), wrist test. Face reference images + optional photo upload still not built — not urgent, low priority.
+9. Signature/consent screen — still requires privacy policy to exist first
+10. ~~Backend sync~~ done, July 2026
 
 **Content dependency:** Section copy (question labels, options, explanatory text) must match Thea's voice — do not invent clinical language. The structure above maps directly from her voice memos. Run final wording past her before shipping.
 

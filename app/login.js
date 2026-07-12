@@ -11,14 +11,12 @@ import BackButton from '../components/BackButton';
 
 function friendlyError(code) {
   switch (code) {
-    case 'auth/invalid-email':          return 'That doesn\'t look like a valid email address.';
-    case 'auth/user-not-found':         return 'No account found with that email.';
-    case 'auth/wrong-password':         return 'Wrong password. Try again, or reset it below.';
-    case 'auth/invalid-credential':     return 'Email or password is incorrect.';
-    case 'auth/too-many-requests':      return 'Too many attempts. Try again in a few minutes.';
-    case 'auth/network-request-failed': return 'No connection. Check your internet and try again.';
-    case 'auth/invalid-action-code':    return 'That link has expired or already been used. Request a new one.';
-    default:                            return 'Something went wrong. Try again.';
+    case 'invalid_credentials':          return 'Email or password is incorrect.';
+    case 'email_not_confirmed':          return 'Confirm your email first — check your inbox for the link.';
+    case 'over_email_send_rate_limit':   return 'Too many attempts. Try again in a few minutes.';
+    case 'validation_failed':            return 'That doesn\'t look like a valid email address.';
+    case 'network_error':                return 'No connection. Check your internet and try again.';
+    default:                             return 'Something went wrong. Try again.';
   }
 }
 
@@ -113,18 +111,11 @@ function PasswordTab({ colors: c }) {
 // ── Magic link tab ─────────────────────────────────────────────────────────
 
 function MagicLinkTab({ colors: c }) {
-  const { sendMagicLink, completeMagicLink, pendingMagicUrl, clearPendingMagicUrl } = useAuth();
-  const router = useRouter();
+  const { sendMagicLink, magicLinkError, clearMagicLinkError } = useAuth();
   const [email, setEmail]       = useState('');
   const [sent, setSent]         = useState(false);
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
-  // "wrong device" — link opened here but email wasn't stored on this device
-  const [confirmEmail, setConfirmEmail] = useState('');
-
-  // If AuthContext surfaces a pending URL (link opened on a different device),
-  // switch to the confirm-email prompt automatically.
-  const needsEmailConfirm = !!pendingMagicUrl;
 
   async function handleSend() {
     if (!email.trim()) return;
@@ -139,49 +130,19 @@ function MagicLinkTab({ colors: c }) {
     }
   }
 
-  async function handleComplete() {
-    if (!confirmEmail.trim()) return;
-    setError(''); setLoading(true);
-    try {
-      await completeMagicLink(confirmEmail.trim());
-      router.replace('/');
-    } catch (e) {
-      setError(friendlyError(e.code));
-      setLoading(false);
-    }
-  }
-
-  // "Wrong device" confirm-email prompt
-  if (needsEmailConfirm) {
+  // The link was opened but couldn't be completed — most commonly because it
+  // was opened on a different device than the one that requested it. Unlike
+  // Firebase, there's no "just confirm your email" recovery here; the only
+  // path forward is requesting a fresh link from this device.
+  if (magicLinkError) {
     return (
       <View style={s.tabBody}>
-        <Text style={[s.magicHeading, { color: c.text }]}>One more thing</Text>
+        <Text style={[s.magicHeading, { color: c.text }]}>That link didn't work</Text>
         <Text style={[s.magicSub, { color: c.textMedium }]}>
-          You opened the sign-in link on a different device. Enter your email to finish signing in.
+          {magicLinkError} Request a new one below, from this device.
         </Text>
-        <View style={s.fieldWrap}>
-          <Text style={[s.label, { color: c.textMuted }]}>Your email address</Text>
-          <TextInput
-            style={[s.input, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
-            value={confirmEmail}
-            onChangeText={t => { setConfirmEmail(t); setError(''); }}
-            placeholder="your@email.com"
-            placeholderTextColor={c.textMuted}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoFocus
-          />
-        </View>
-        {error ? <Text style={[s.msg, { color: '#C97855' }]}>{error}</Text> : null}
-        <Pressable
-          style={[s.btn, { backgroundColor: confirmEmail.trim() ? c.accent : c.border }]}
-          onPress={handleComplete}
-          disabled={loading || !confirmEmail.trim()}
-        >
-          {loading ? <ActivityIndicator color="#FBF9F4" /> : <Text style={s.btnText}>FINISH SIGNING IN  ›</Text>}
-        </Pressable>
-        <Pressable style={s.forgotBtn} onPress={clearPendingMagicUrl}>
-          <Text style={[s.forgotText, { color: c.textMuted }]}>Cancel</Text>
+        <Pressable style={s.forgotBtn} onPress={clearMagicLinkError}>
+          <Text style={[s.forgotText, { color: c.textMuted }]}>Try again</Text>
         </Pressable>
       </View>
     );
@@ -240,10 +201,85 @@ function MagicLinkTab({ colors: c }) {
   );
 }
 
+// ── Password recovery — set new password ───────────────────────────────────
+// Shown when a PASSWORD_RECOVERY session is active (see AuthContext). Supabase
+// has no hosted reset page like Firebase did, so this in-app step is required.
+
+function RecoveryForm({ colors: c }) {
+  const { completeRecovery } = useAuth();
+  const router = useRouter();
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm]   = useState('');
+  const [error, setError]       = useState('');
+  const [loading, setLoading]   = useState(false);
+
+  const canSubmit = password.length >= 6 && password === confirm;
+
+  async function handleSubmit() {
+    if (!canSubmit) {
+      if (password !== confirm) { setError('Passwords don\'t match.'); return; }
+      if (password.length < 6)  { setError('Password must be at least 6 characters.'); return; }
+      return;
+    }
+    setError(''); setLoading(true);
+    try {
+      await completeRecovery(password);
+      router.replace('/');
+    } catch (e) {
+      setError(friendlyError(e.code));
+      setLoading(false);
+    }
+  }
+
+  return (
+    <View style={s.tabBody}>
+      <Text style={[s.magicHeading, { color: c.text }]}>Set a new password</Text>
+      <View style={[s.fieldWrap, { marginTop: 16 }]}>
+        <Text style={[s.label, { color: c.textMuted }]}>New password</Text>
+        <TextInput
+          style={[s.input, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+          value={password}
+          onChangeText={t => { setPassword(t); setError(''); }}
+          placeholder="6 characters minimum"
+          placeholderTextColor={c.textMuted}
+          secureTextEntry
+          autoComplete="new-password"
+          textContentType="newPassword"
+          autoFocus
+        />
+      </View>
+      <View style={s.fieldWrap}>
+        <Text style={[s.label, { color: c.textMuted }]}>Confirm new password</Text>
+        <TextInput
+          style={[s.input, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+          value={confirm}
+          onChangeText={t => { setConfirm(t); setError(''); }}
+          placeholder="Same password again"
+          placeholderTextColor={c.textMuted}
+          secureTextEntry
+          autoComplete="new-password"
+          textContentType="newPassword"
+          onSubmitEditing={handleSubmit}
+          returnKeyType="go"
+        />
+      </View>
+      {error ? <Text style={[s.msg, { color: '#C97855' }]}>{error}</Text> : null}
+      <Pressable
+        style={[s.btn, { backgroundColor: canSubmit ? c.accent : c.border }]}
+        onPress={handleSubmit}
+        disabled={loading}
+      >
+        {loading ? <ActivityIndicator color="#FBF9F4" /> : <Text style={s.btnText}>SET PASSWORD  ›</Text>}
+      </Pressable>
+    </View>
+  );
+}
+
 // ── Main screen ────────────────────────────────────────────────────────────
 
 export default function Login() {
   const { theme: { colors: c } } = useTheme();
+  const { pendingRecovery } = useAuth();
   const router = useRouter();
   const [tab, setTab] = useState('magic'); // 'password' | 'magic'
 
@@ -260,27 +296,34 @@ export default function Login() {
 
           {/* Header */}
           <Text style={[s.overline, { color: c.textMuted }]}>L. Glow</Text>
-          <Text style={[s.title, { color: c.text }]}>Welcome back.</Text>
+          <Text style={[s.title, { color: c.text }]}>{pendingRecovery ? 'Almost there.' : 'Welcome back.'}</Text>
 
-          {/* Tab switcher */}
-          <View style={[s.tabs, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
-            {[
-              { key: 'magic',    label: 'Magic link' },
-              { key: 'password', label: 'Password' },
-            ].map(t => (
-              <Pressable
-                key={t.key}
-                style={[s.tab, tab === t.key && { backgroundColor: c.surface, ...tabShadow }]}
-                onPress={() => setTab(t.key)}
-              >
-                <Text style={[s.tabText, { color: tab === t.key ? c.text : c.textMuted }]}>{t.label}</Text>
-              </Pressable>
-            ))}
-          </View>
+          {pendingRecovery ? (
+            <RecoveryForm colors={c} />
+          ) : (
+            <>
+              {/* Tab switcher */}
+              <View style={[s.tabs, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+                {[
+                  { key: 'magic',    label: 'Magic link' },
+                  { key: 'password', label: 'Password' },
+                ].map(t => (
+                  <Pressable
+                    key={t.key}
+                    style={[s.tab, tab === t.key && { backgroundColor: c.surface, ...tabShadow }]}
+                    onPress={() => setTab(t.key)}
+                  >
+                    <Text style={[s.tabText, { color: tab === t.key ? c.text : c.textMuted }]}>{t.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
 
-          {/* Tab content */}
-          {tab === 'magic' ? <MagicLinkTab colors={c} /> : <PasswordTab colors={c} />}
+              {/* Tab content */}
+              {tab === 'magic' ? <MagicLinkTab colors={c} /> : <PasswordTab colors={c} />}
+            </>
+          )}
 
+          {!pendingRecovery && (<>
           {/* Divider */}
           <View style={[s.divider, { backgroundColor: c.border }]} />
 
@@ -296,6 +339,7 @@ export default function Login() {
           <Pressable style={s.skipBtn} onPress={() => router.replace('/')}>
             <Text style={[s.skipText, { color: c.textMuted }]}>Continue without signing in</Text>
           </Pressable>
+          </>)}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
+import { supabase } from '../config/supabase';
+import { syncToSupabase } from '../data/user/storage';
 import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
@@ -38,6 +40,14 @@ export default function Journal() {
 
   async function save() {
     await AsyncStorage.setItem(KEY(today), JSON.stringify(answers));
+    const date = today.toISOString().slice(0, 10);
+    await syncToSupabase(userId => supabase.from('journal_entries').upsert({
+      user_id: userId,
+      date,
+      grateful: answers.grateful || null,
+      showed: answers.showed || null,
+      tomorrow: answers.tomorrow || null,
+    }, { onConflict: 'user_id,date' }));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }

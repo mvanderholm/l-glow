@@ -1,65 +1,55 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Linking } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import {
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-  sendPasswordResetEmail,
-  sendSignInLinkToEmail,
-  isSignInWithEmailLink,
-  signInWithEmailLink,
-} from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { supabase } from '../config/supabase';
 
 const AuthContext = createContext(null);
-const MAGIC_EMAIL_KEY = '@lglow/magic_link_email';
 
-// actionCodeSettings for email link sign-in.
-// The url must be authorized in Firebase console → Authentication → Settings → Authorized domains.
-// 'https://l-glow.firebaseapp.com' is authorized by default for every Firebase project.
-const ACTION_CODE_SETTINGS = {
-  url: 'https://l-glow.firebaseapp.com',
-  handleCodeInApp: true,
-  iOS:     { bundleId: 'com.lglow.app' },
-  android: { packageName: 'com.lglow.app', installApp: true },
-};
+const REDIRECT_URL = 'l-glow://login';
 
 // user states:
-//   undefined — still checking (Firebase resolves onAuthStateChanged async)
+//   undefined — still checking (initial getSession() hasn't resolved yet)
 //   null      — confirmed not signed in
-//   object    — Firebase User object (signed in)
+//   object    — Supabase User object (signed in)
 
 export function AuthProvider({ children }) {
-  const [user, setUser]                   = useState(undefined);
-  // If the magic link is opened on a device with no stored email, we surface
-  // this URL so the login screen can prompt the user to confirm their address.
-  const [pendingMagicUrl, setPendingMagicUrl] = useState(null);
+  const [user, setUser]           = useState(undefined);
+  const [pendingRecovery, setPendingRecovery] = useState(false);
+  // Set when an incoming auth link (magic link, email confirmation) fails to
+  // exchange for a session — most commonly because it was opened on a
+  // different device than the one that requested it. Unlike Firebase's email
+  // link flow, Supabase's PKCE links can't be completed with just an email on
+  // a second device — the code verifier only exists in the requesting
+  // device's local storage. So the recovery here is "request a new one from
+  // this device," not "confirm your email and continue."
+  const [magicLinkError, setMagicLinkError] = useState(null);
 
-  // Auth state listener
+  // Initial session + auth state listener
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, u => setUser(u ?? null));
-    return unsub;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        setPendingRecovery(true);
+        return; // hold off on treating this as a normal signed-in state
+      }
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Incoming URL listener — handles magic link taps
+  // Incoming URL listener — handles magic link / email confirmation / recovery taps.
+  // All three arrive as a `code` param under Supabase's PKCE flow; which
+  // onAuthStateChange event fires afterward (SIGNED_IN vs PASSWORD_RECOVERY)
+  // is what tells them apart, not the URL itself.
   useEffect(() => {
     async function handleUrl(url) {
-      if (!url || !isSignInWithEmailLink(auth, url)) return;
-      const stored = await AsyncStorage.getItem(MAGIC_EMAIL_KEY);
-      if (stored) {
-        // Happy path: email is cached on this device
-        try {
-          await signInWithEmailLink(auth, stored, url);
-          await AsyncStorage.removeItem(MAGIC_EMAIL_KEY);
-        } catch (_) {
-          // Link expired or already used — let user try again
-          setPendingMagicUrl(null);
-        }
-      } else {
-        // Link opened on a different device — surface so login screen can prompt
-        setPendingMagicUrl(url);
+      if (!url || !url.includes('code=')) return;
+      const { error } = await supabase.auth.exchangeCodeForSession(url);
+      if (error) {
+        setMagicLinkError('That link has expired or was opened on a different device than the one that requested it.');
       }
     }
 
@@ -69,48 +59,68 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function signIn(email, password) {
-    await signInWithEmailAndPassword(auth, email, password);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
   }
 
+  // Returns { needsEmailConfirmation: boolean } — Supabase projects default to
+  // requiring email confirmation before a session exists, so signup.js needs
+  // to know whether it can navigate the user straight in or should show a
+  // "check your email" state instead.
   async function signUp(email, password) {
-    await createUserWithEmailAndPassword(auth, email, password);
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: REDIRECT_URL },
+    });
+    if (error) throw error;
+    return { needsEmailConfirmation: !data.session };
   }
 
   async function signOut() {
-    await firebaseSignOut(auth);
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
   }
 
   async function resetPassword(email) {
-    await sendPasswordResetEmail(auth, email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: REDIRECT_URL,
+    });
+    if (error) throw error;
+  }
+
+  // Called from the in-app "set new password" form once a PASSWORD_RECOVERY
+  // session is active (see pendingRecovery above).
+  async function completeRecovery(newPassword) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    setPendingRecovery(false);
   }
 
   async function sendMagicLink(email) {
-    await sendSignInLinkToEmail(auth, email, ACTION_CODE_SETTINGS);
-    await AsyncStorage.setItem(MAGIC_EMAIL_KEY, email);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: REDIRECT_URL },
+    });
+    if (error) throw error;
   }
 
-  // Called by login screen when user confirms their email on the "wrong device" prompt
-  async function completeMagicLink(email, url) {
-    await signInWithEmailLink(auth, email, url ?? pendingMagicUrl);
-    await AsyncStorage.removeItem(MAGIC_EMAIL_KEY);
-    setPendingMagicUrl(null);
-  }
-
-  function clearPendingMagicUrl() {
-    setPendingMagicUrl(null);
+  function clearMagicLinkError() {
+    setMagicLinkError(null);
   }
 
   return (
     <AuthContext.Provider value={{
       user,
-      pendingMagicUrl,
+      pendingRecovery,
+      magicLinkError,
       signIn,
       signUp,
       signOut,
       resetPassword,
+      completeRecovery,
       sendMagicLink,
-      completeMagicLink,
-      clearPendingMagicUrl,
+      clearMagicLinkError,
     }}>
       {children}
     </AuthContext.Provider>

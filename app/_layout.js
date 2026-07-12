@@ -89,6 +89,7 @@ function AppNavigator() {
       <Stack.Screen name="meditation" />
       <Stack.Screen name="selfmassage" />
       <Stack.Screen name="intake"       options={{ headerShown: false }} />
+      <Stack.Screen name="practitioner" options={{ headerShown: false }} />
       <Stack.Screen name="guna-quiz"    options={{ headerShown: false }} />
       <Stack.Screen name="guna-result"  options={{ headerShown: false }} />
       <Stack.Screen name="agni-quiz"    options={{ headerShown: false }} />

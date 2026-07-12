@@ -89,6 +89,15 @@ export default function HamburgerDrawer() {
 
             <View style={[styles.sep, { backgroundColor: c.border }]} />
 
+            {/* Practitioner-only — v1, safe to always show since RLS is the
+                real gate; anyone without role='practitioner' just sees an
+                empty/not-authorized state on this screen. */}
+            <View style={styles.section}>
+              <DrawerItem icon={ClipboardIcon} label="Practitioner View" onPress={() => navigate('/practitioner')} c={c} />
+            </View>
+
+            <View style={[styles.sep, { backgroundColor: c.border }]} />
+
             {/* Placeholder items */}
             <View style={styles.section}>
               <DrawerItem icon={BellIcon}     label="Reminders"      onPress={close} c={c} soon />

@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import { BOOKING_URL } from '../data/booking';
+import { supabase } from '../config/supabase';
+import { syncToSupabase } from '../data/user/storage';
 import BackButton from '../components/BackButton';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -13,7 +15,9 @@ const INTAKE_KEY = '@lglow/intake';
 
 // ── Section definitions ────────────────────────────────────────────────────
 
-const SECTIONS = [
+// Exported so app/practitioner.js can render a read-only view of a client's
+// answers using the same section/field labels, without duplicating this list.
+export const SECTIONS = [
   {
     id: 'basic',
     title: 'Basic Information',
@@ -40,7 +44,10 @@ const SECTIONS = [
     title: 'Scope & Consent',
     description: 'Please read before continuing',
     fields: [
-      { type: 'info', text: 'DRAFT — Thea to review and rewrite before launch.\n\nWelcome. I am an ayurvedic practitioner and Registered Yoga Teacher. My work with you is rooted in the classical tradition of Ayurveda — a system of health that looks at you as a whole person, in your whole life, in this moment.\n\nI am not a medical doctor, naturopath, or licensed therapist. This practice is not a substitute for clinical care. I do not diagnose conditions, prescribe medications, or treat disease. If you have a serious health concern, please see a licensed provider.\n\nEverything you share with me is held in confidence. My notes and this intake form inform our work together and will not be shared without your explicit consent.\n\nBy agreeing below, you confirm that you understand the scope of this practice and consent to working with me under these terms.' },
+      // DRAFT — Thea to review and rewrite before launch. This flag must stay a
+      // code comment, never inside `text` below — it was previously part of the
+      // displayed string and shown to users verbatim. Fixed July 2026.
+      { type: 'info', text: 'Welcome. I am an ayurvedic practitioner and Registered Yoga Teacher. My work with you is rooted in the classical tradition of Ayurveda — a system of health that looks at you as a whole person, in your whole life, in this moment.\n\nI am not a medical doctor, naturopath, or licensed therapist. This practice is not a substitute for clinical care. I do not diagnose conditions, prescribe medications, or treat disease. If you have a serious health concern, please see a licensed provider.\n\nEverything you share with me is held in confidence. My notes and this intake form inform our work together and will not be shared without your explicit consent.\n\nBy agreeing below, you confirm that you understand the scope of this practice and consent to working with me under these terms.' },
       { type: 'check', key: 'consentAgreed', label: 'I have read this and I agree.' },
     ],
   },
@@ -208,7 +215,7 @@ const SECTIONS = [
     title: 'Your Constitution',
     description: 'Physical, functional, and psychological traits',
     fields: [
-      { type: 'cta_disabled' },
+      { type: 'coaching_cta' },
       { type: 'info', text: 'This section helps identify your original constitution — your prakriti. Answer based on how you naturally are, without outside influences. There are no right or wrong answers.\n\nSkip anything you\'re unsure about — you can always come back.' },
 
       { type: 'divider', label: 'Physical structure' },
@@ -405,6 +412,10 @@ async function loadIntake() {
 
 async function saveIntake(intake) {
   await AsyncStorage.setItem(INTAKE_KEY, JSON.stringify(intake));
+  await syncToSupabase(userId => supabase.from('intake_forms').upsert({
+    user_id: userId,
+    data: intake,
+  }, { onConflict: 'user_id' }));
 }
 
 // ── Field-level progress ───────────────────────────────────────────────────
@@ -564,20 +575,25 @@ function PrakritiSingleField({ field, value, onChange, colors: c }) {
 
 function PrakritiMultiField({ field, value = [], onChange, colors: c }) {
   const dc = DOSHA_COLORS(c);
+  const skipped = value.includes('skip');
   function toggle(dosha) {
-    onChange(value.includes(dosha) ? value.filter(v => v !== dosha) : [...value, dosha]);
+    const withoutSkip = value.filter(v => v !== 'skip'); // picking a real option clears skip
+    onChange(withoutSkip.includes(dosha) ? withoutSkip.filter(v => v !== dosha) : [...withoutSkip, dosha]);
+  }
+  function toggleSkip() {
+    onChange(skipped ? [] : ['skip']);
   }
   return (
     <View style={fs.fieldWrap}>
       <FieldLabel label={field.label} colors={c} />
       <View style={{ gap: 6 }}>
         {field.options.map(opt => {
-          const sel = value.includes(opt.dosha);
+          const sel = !skipped && value.includes(opt.dosha);
           const col = dc[opt.dosha] || c.accent;
           return (
             <Pressable
               key={opt.dosha}
-              style={[fs.prakRow, { backgroundColor: sel ? col + '1A' : c.surfaceAlt, borderColor: sel ? col : c.border }]}
+              style={[fs.prakRow, { backgroundColor: sel ? col + '1A' : c.surfaceAlt, borderColor: sel ? col : c.border, opacity: skipped ? 0.5 : 1 }]}
               onPress={() => toggle(opt.dosha)}
             >
               <View style={[fs.prakCheck, { backgroundColor: sel ? col : 'transparent', borderColor: sel ? col : c.border }]}>
@@ -590,13 +606,21 @@ function PrakritiMultiField({ field, value = [], onChange, colors: c }) {
             </Pressable>
           );
         })}
+        <Pressable
+          style={[fs.prakSkip, { borderColor: skipped ? c.accent : c.border }]}
+          onPress={toggleSkip}
+        >
+          <Text style={[fs.prakSkipText, { color: skipped ? c.accent : c.textMuted }]}>
+            {skipped ? '✓ Skipped' : 'Skip / I don\'t know'}
+          </Text>
+        </Pressable>
       </View>
       <Text style={[fs.prakHint, { color: c.textMuted }]}>Select all that apply</Text>
     </View>
   );
 }
 
-function CtaDisabledBlock({ colors: c }) {
+function CoachingCtaBlock({ colors: c }) {
   return (
     <Pressable
       style={({ pressed }) => [fs.ctaCard, { backgroundColor: c.surfaceAlt, borderColor: c.accent, opacity: pressed ? 0.8 : 1 }]}
@@ -627,7 +651,7 @@ function renderField(field, intake, update, colors) {
     case 'divider':         return <Divider            key={field.label} label={field.label} colors={colors} />;
     case 'prakriti_single': return <PrakritiSingleField key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
     case 'prakriti_multi':  return <PrakritiMultiField  key={field.key} field={field} value={v} onChange={onChange} colors={colors} />;
-    case 'cta_disabled':    return <CtaDisabledBlock    key="cta_disabled" colors={colors} />;
+    case 'coaching_cta':    return <CoachingCtaBlock    key="coaching_cta" colors={colors} />;
     default:                return null;
   }
 }

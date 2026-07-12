@@ -88,8 +88,8 @@ The authoritative voice and philosophy document is at `docs/voice-guide.md`. Rea
 - Expo SDK 54, React 19, React Native 0.81
 - expo-router for file-based routing (`app/` directory)
 - `react-native-svg` for rendering the logo components
-- `@react-native-async-storage/async-storage` for local persistence (installed, being introduced for the first time)
-- No backend yet. No auth yet. No analytics. Mark 1 is local-only.
+- `@react-native-async-storage/async-storage` for local persistence — still the source of truth for all user data
+- `@supabase/supabase-js` for auth (Supabase Auth — email/password, magic link, session persistence; see `context/AuthContext.js`, `config/supabase.js`). No Firebase anymore — fully replaced July 2026. Backend data layer (Postgres + RLS) not built yet; AsyncStorage remains the only place user data actually lives until that lands. No analytics.
 
 When adding features, prefer: local state + AsyncStorage over network calls; built-in React Native components over new dependencies; one file changes over sprawling refactors.
 

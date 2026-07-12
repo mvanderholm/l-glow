@@ -5,13 +5,25 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import BackButton from '../components/BackButton';
+import Svg, { Path, Circle } from 'react-native-svg';
+
+function EyeIcon({ color, visible }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M1.5 12S5.5 5 12 5s10.5 7 10.5 7-4 7-10.5 7S1.5 12 1.5 12Z" stroke={color} strokeWidth={1.6} strokeLinejoin="round" />
+      <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth={1.6} />
+      {!visible && <Path d="M3 3l18 18" stroke={color} strokeWidth={1.6} strokeLinecap="round" />}
+    </Svg>
+  );
+}
 
 function friendlyError(code) {
   switch (code) {
-    case 'auth/email-already-in-use':    return 'An account with that email already exists. Try signing in.';
-    case 'auth/invalid-email':           return 'That doesn\'t look like a valid email address.';
-    case 'auth/weak-password':           return 'Password must be at least 6 characters.';
-    case 'auth/network-request-failed':  return 'No connection. Check your internet and try again.';
+    case 'user_already_exists':          return 'An account with that email already exists. Try signing in.';
+    case 'validation_failed':            return 'That doesn\'t look like a valid email address.';
+    case 'weak_password':                return 'Password must be at least 6 characters.';
+    case 'over_email_send_rate_limit':   return 'Too many attempts. Try again in a few minutes.';
+    case 'network_error':                return 'No connection. Check your internet and try again.';
     default:                             return 'Something went wrong. Try again.';
   }
 }
@@ -25,6 +37,9 @@ export default function Signup() {
   const [confirm, setConfirm]     = useState('');
   const [error, setError]         = useState('');
   const [loading, setLoading]     = useState(false);
+  const [confirmSent, setConfirmSent] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm]   = useState(false);
 
   const canSubmit = email.trim() && password.length >= 6 && password === confirm;
 
@@ -37,13 +52,36 @@ export default function Signup() {
     setError('');
     setLoading(true);
     try {
-      await signUp(email.trim(), password);
-      router.replace('/');
+      const { needsEmailConfirmation } = await signUp(email.trim(), password);
+      if (needsEmailConfirmation) {
+        setConfirmSent(true);
+      } else {
+        router.replace('/');
+      }
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
       setLoading(false);
     }
+  }
+
+  if (confirmSent) {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
+        <ScrollView contentContainerStyle={[s.scroll, { alignItems: 'center', justifyContent: 'center' }]}>
+          <Text style={{ fontSize: 44, marginBottom: 16 }}>✉️</Text>
+          <Text style={[s.title, { color: c.text, textAlign: 'center', fontSize: 26 }]}>Confirm your email</Text>
+          <Text style={[s.sub, { color: c.textMedium, textAlign: 'center' }]}>
+            We sent a confirmation link to{'\n'}
+            <Text style={{ color: c.text, fontFamily: 'Inter_600SemiBold' }}>{email}</Text>
+            {'\n\n'}Tap it on this device to finish creating your account.
+          </Text>
+          <Pressable style={s.skipBtn} onPress={() => router.replace('/')}>
+            <Text style={[s.skipText, { color: c.textMuted }]}>Continue without signing in</Text>
+          </Pressable>
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
 
   return (
@@ -80,33 +118,43 @@ export default function Signup() {
 
             <View style={s.fieldWrap}>
               <Text style={[s.label, { color: c.textMuted }]}>Password</Text>
-              <TextInput
-                style={[s.input, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
-                value={password}
-                onChangeText={t => { setPassword(t); setError(''); }}
-                placeholder="6 characters minimum"
-                placeholderTextColor={c.textMuted}
-                secureTextEntry
-                autoComplete="new-password"
-                textContentType="newPassword"
-              />
+              <View style={s.inputRow}>
+                <TextInput
+                  style={[s.input, s.inputWithIcon, { backgroundColor: c.surface, borderColor: c.border, color: c.text }]}
+                  value={password}
+                  onChangeText={t => { setPassword(t); setError(''); }}
+                  placeholder="6 characters minimum"
+                  placeholderTextColor={c.textMuted}
+                  secureTextEntry={!showPassword}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                />
+                <Pressable style={s.eyeBtn} onPress={() => setShowPassword(v => !v)} hitSlop={8}>
+                  <EyeIcon color={c.textMuted} visible={showPassword} />
+                </Pressable>
+              </View>
             </View>
 
             <View style={s.fieldWrap}>
               <Text style={[s.label, { color: c.textMuted }]}>Confirm password</Text>
-              <TextInput
-                style={[s.input, { backgroundColor: c.surface, borderColor: c.border, color: c.text,
-                  borderColor: confirm && password !== confirm ? (c.terracotta || '#C97855') : c.border }]}
-                value={confirm}
-                onChangeText={t => { setConfirm(t); setError(''); }}
-                placeholder="Same password again"
-                placeholderTextColor={c.textMuted}
-                secureTextEntry
-                autoComplete="new-password"
-                textContentType="newPassword"
-                onSubmitEditing={handleSignUp}
-                returnKeyType="go"
-              />
+              <View style={s.inputRow}>
+                <TextInput
+                  style={[s.input, s.inputWithIcon, { backgroundColor: c.surface, borderColor: c.border, color: c.text,
+                    borderColor: confirm && password !== confirm ? (c.terracotta || '#C97855') : c.border }]}
+                  value={confirm}
+                  onChangeText={t => { setConfirm(t); setError(''); }}
+                  placeholder="Same password again"
+                  placeholderTextColor={c.textMuted}
+                  secureTextEntry={!showConfirm}
+                  autoComplete="new-password"
+                  textContentType="newPassword"
+                  onSubmitEditing={handleSignUp}
+                  returnKeyType="go"
+                />
+                <Pressable style={s.eyeBtn} onPress={() => setShowConfirm(v => !v)} hitSlop={8}>
+                  <EyeIcon color={c.textMuted} visible={showConfirm} />
+                </Pressable>
+              </View>
             </View>
 
             {error ? (
@@ -161,6 +209,9 @@ const s = StyleSheet.create({
   fieldWrap: { marginBottom: 16 },
   label:     { fontFamily: 'Inter_600SemiBold', fontSize: 11.5, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 },
   input:     { borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: 'Inter_400Regular' },
+  inputRow:  { position: 'relative', justifyContent: 'center' },
+  inputWithIcon: { paddingRight: 48 },
+  eyeBtn:    { position: 'absolute', right: 14, height: '100%', justifyContent: 'center', alignItems: 'center' },
   error:     { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20, marginTop: 4, marginBottom: 8 },
   btn:       { borderRadius: 999, paddingVertical: 16, alignItems: 'center', marginTop: 8,
                shadowColor: '#9A5151', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.22, shadowRadius: 14, elevation: 3 },
