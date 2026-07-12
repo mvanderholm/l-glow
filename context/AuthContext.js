@@ -1,10 +1,19 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { supabase } from '../config/supabase';
 
 const AuthContext = createContext(null);
 
-const REDIRECT_URL = 'l-glow://login';
+// Native builds open the app via the custom l-glow:// scheme. Browsers have no
+// handler for that, so web needs a real https URL on the same site instead —
+// otherwise Supabase's post-verification redirect goes nowhere (confirmed via
+// a live signup: the email link itself works, but lands on a dead redirect).
+function getRedirectUrl() {
+  if (Platform.OS === 'web') {
+    return typeof window !== 'undefined' ? `${window.location.origin}/login` : 'https://l-glow.vercel.app/login';
+  }
+  return 'l-glow://login';
+}
 
 // user states:
 //   undefined — still checking (initial getSession() hasn't resolved yet)
@@ -71,7 +80,7 @@ export function AuthProvider({ children }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: REDIRECT_URL },
+      options: { emailRedirectTo: getRedirectUrl() },
     });
     if (error) throw error;
     return { needsEmailConfirmation: !data.session };
@@ -84,7 +93,7 @@ export function AuthProvider({ children }) {
 
   async function resetPassword(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: REDIRECT_URL,
+      redirectTo: getRedirectUrl(),
     });
     if (error) throw error;
   }
@@ -100,7 +109,7 @@ export function AuthProvider({ children }) {
   async function sendMagicLink(email) {
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: REDIRECT_URL },
+      options: { emailRedirectTo: getRedirectUrl() },
     });
     if (error) throw error;
   }
