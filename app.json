@@ -20,7 +20,7 @@
     "web": {
       "favicon": "./assets/icon.png",
       "bundler": "metro",
-      "output": "static",
+      "output": "single",
       "backgroundColor": "#ECE7DD",
       "themeColor": "#ECE7DD"
     },
