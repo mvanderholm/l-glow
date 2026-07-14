@@ -421,10 +421,11 @@ async function saveIntake(intake) {
 // ── Field-level progress ───────────────────────────────────────────────────
 
 function sectionProgress(section, intake) {
-  const fields = section.fields.filter(f => f.key && f.type !== 'info' && f.type !== 'divider' && f.type !== 'check');
+  const fields = section.fields.filter(f => f.key && f.type !== 'info' && f.type !== 'divider');
   if (!fields.length) return null;
   const filled = fields.filter(f => {
     const v = intake[f.key];
+    if (f.type === 'check') return v === true;
     return Array.isArray(v) ? v.length > 0 : (v !== '' && v !== null && v !== undefined);
   }).length;
   return { filled, total: fields.length };
