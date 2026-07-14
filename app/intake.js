@@ -418,6 +418,17 @@ async function saveIntake(intake) {
   }, { onConflict: 'user_id' }));
 }
 
+// Pulls an existing intake form down from Supabase on a fresh device — only
+// if there's no local record at all yet, so it never clobbers in-progress
+// local edits. Exported for AuthContext to call alongside the other
+// hydrate*() functions in data/user/storage.js.
+export async function hydrateIntake(userId) {
+  const raw = await AsyncStorage.getItem(INTAKE_KEY);
+  if (raw) return; // local already has something — leave it alone
+  const { data } = await supabase.from('intake_forms').select('data').eq('user_id', userId).maybeSingle();
+  if (data?.data) await AsyncStorage.setItem(INTAKE_KEY, JSON.stringify(data.data));
+}
+
 // ── Field-level progress ───────────────────────────────────────────────────
 
 function sectionProgress(section, intake) {

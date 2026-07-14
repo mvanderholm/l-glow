@@ -211,6 +211,98 @@ export async function loadTodayIntention() {
   return AsyncStorage.getItem(key);
 }
 
+// --- Cross-device hydration ---
+// Pulls existing Supabase data down to a fresh device's AsyncStorage. Only
+// fills in what's missing locally — never overwrites existing local data, so
+// a device with its own history is left alone and only gains what it
+// genuinely doesn't have yet. Call whenever a signed-in session is confirmed
+// (app boot already-logged-in, or right after a fresh sign-in).
+export async function hydrateFromSupabase() {
+  const userId = await currentUserId();
+  if (!userId) return;
+  try {
+    await Promise.all([
+      hydrateDoshaResult(userId),
+      hydrateGunaResult(userId),
+      hydrateAgniResult(userId),
+      hydrateUserName(userId),
+      hydrateCheckins(userId),
+      hydrateIntention(userId),
+    ]);
+  } catch (err) {
+    console.warn('Hydration from Supabase failed:', err.message);
+  }
+}
+
+async function hydrateDoshaResult(userId) {
+  if (await loadDoshaResult()) return;
+  const { data } = await supabase.from('dosha_results')
+    .select('dosha, vata_score, pitta_score, kapha_score')
+    .eq('user_id', userId).order('taken_at', { ascending: false }).limit(1).maybeSingle();
+  if (!data) return;
+  await AsyncStorage.multiSet([
+    [KEYS.PRIMARY_DOSHA, data.dosha],
+    [KEYS.DOSHA_SCORES, JSON.stringify({ vata: data.vata_score, pitta: data.pitta_score, kapha: data.kapha_score })],
+  ]);
+}
+
+async function hydrateGunaResult(userId) {
+  if (await loadGunaResult()) return;
+  const { data } = await supabase.from('guna_results')
+    .select('dominant, sattva_score, rajas_score, tamas_score')
+    .eq('user_id', userId).order('taken_at', { ascending: false }).limit(1).maybeSingle();
+  if (!data) return;
+  await AsyncStorage.multiSet([
+    [KEYS.GUNA_DOMINANT, data.dominant],
+    [KEYS.GUNA_SCORES, JSON.stringify({ sattva: data.sattva_score, rajas: data.rajas_score, tamas: data.tamas_score })],
+  ]);
+}
+
+async function hydrateAgniResult(userId) {
+  if (await loadAgniResult()) return;
+  const { data } = await supabase.from('agni_results')
+    .select('agni_type, sama_count, vishama_count, tikshna_count, manda_count')
+    .eq('user_id', userId).order('taken_at', { ascending: false }).limit(1).maybeSingle();
+  if (!data) return;
+  await AsyncStorage.multiSet([
+    [KEYS.AGNI_TYPE, data.agni_type],
+    [KEYS.AGNI_COUNTS, JSON.stringify({ sama: data.sama_count, vishama: data.vishama_count, tikshna: data.tikshna_count, manda: data.manda_count })],
+  ]);
+}
+
+async function hydrateUserName(userId) {
+  if (await loadUserName()) return;
+  const { data } = await supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
+  if (data?.display_name) await AsyncStorage.setItem(KEYS.USER_NAME, data.display_name);
+}
+
+async function hydrateCheckins(userId) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 365);
+  const { data } = await supabase.from('checkins')
+    .select('date, physical, mental, emotional, hunger, tongue, note, saved_at')
+    .eq('user_id', userId).gte('date', cutoff.toISOString().slice(0, 10));
+  if (!data?.length) return;
+  const pairs = [];
+  for (const row of data) {
+    const key = checkinKey(row.date);
+    if (await AsyncStorage.getItem(key)) continue; // local already has this day
+    pairs.push([key, JSON.stringify({
+      values: { physical: row.physical, mental: row.mental, emotional: row.emotional, hunger: row.hunger, tongue: row.tongue },
+      note: row.note || '',
+      savedAt: row.saved_at,
+    })]);
+  }
+  if (pairs.length) await AsyncStorage.multiSet(pairs);
+}
+
+async function hydrateIntention(userId) {
+  const date = new Date().toISOString().slice(0, 10);
+  if (await loadTodayIntention()) return;
+  const { data } = await supabase.from('intentions').select('text').eq('user_id', userId).eq('date', date).maybeSingle();
+  if (data?.text) await AsyncStorage.setItem(KEYS.INTENTION_PREFIX + date, data.text);
+}
+
 // --- Session summary (plain text for sharing) ---
 
 export async function buildSessionSummary() {

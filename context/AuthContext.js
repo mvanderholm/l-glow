@@ -1,8 +1,21 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 import { supabase } from '../config/supabase';
+import { hydrateFromSupabase } from '../data/user/storage';
+import { hydrateIntake } from '../app/intake';
+import { hydrateJournal } from '../app/journal';
 
 const AuthContext = createContext(null);
+
+// Pulls existing Supabase data down into a fresh device's AsyncStorage —
+// only fills in what's missing locally, never overwrites. Fire-and-forget:
+// never blocks sign-in, and any failure is swallowed inside each hydrate
+// helper (same best-effort spirit as the write path in data/user/storage.js).
+function hydrateAll(userId) {
+  hydrateFromSupabase();
+  hydrateIntake(userId);
+  hydrateJournal(userId);
+}
 
 // Native builds open the app via the custom l-glow:// scheme. Browsers have no
 // handler for that, so web needs a real https URL on the same site instead —
@@ -36,6 +49,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      if (session?.user) hydrateAll(session.user.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -44,6 +58,7 @@ export function AuthProvider({ children }) {
         return; // hold off on treating this as a normal signed-in state
       }
       setUser(session?.user ?? null);
+      if (session?.user) hydrateAll(session.user.id);
     });
 
     return () => subscription.unsubscribe();

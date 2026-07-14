@@ -13,6 +13,25 @@ import Svg, { Path } from 'react-native-svg';
 const KEY = (d = new Date()) => `@lglow/journal2_${d.toISOString().slice(0, 10)}`;
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
+// Pulls the last 90 days of journal entries down from Supabase on a fresh
+// device — only fills dates with no local entry yet, never overwrites.
+// Exported for AuthContext to call alongside the other hydrate*() functions.
+export async function hydrateJournal(userId) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const { data } = await supabase.from('journal_entries')
+    .select('date, grateful, showed, tomorrow')
+    .eq('user_id', userId).gte('date', cutoff.toISOString().slice(0, 10));
+  if (!data?.length) return;
+  for (const row of data) {
+    const key = KEY(new Date(row.date + 'T12:00:00'));
+    if (await AsyncStorage.getItem(key)) continue; // local already has this day
+    await AsyncStorage.setItem(key, JSON.stringify({
+      grateful: row.grateful || '', showed: row.showed || '', tomorrow: row.tomorrow || '',
+    }));
+  }
+}
+
 const PROMPTS = [
   { id: 'grateful', label: "Today I'm grateful for…" },
   { id: 'showed',   label: "I showed up for myself by…" },
