@@ -164,7 +164,8 @@ export default function Practitioner() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) { setAuthorized(null); return; }
-      const { data } = await supabase.from('users').select('role').eq('id', session.user.id).single();
+      const { data, error } = await supabase.from('users').select('role').eq('id', session.user.id).single();
+      if (error) console.error('Practitioner role check failed:', error.message, error);
       setAuthorized(data?.role === 'practitioner');
     });
   }, []);
