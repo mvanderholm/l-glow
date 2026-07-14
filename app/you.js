@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import { loadDoshaResult, loadGunaResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
@@ -37,7 +38,6 @@ function computeStats(checkins) {
 
 const SETTINGS = [
   { label: 'Reminders',           Icon: BellIcon,     soon: true  },
-  { label: 'My Dosha',            Icon: LeafIcon,     soon: false },
   { label: 'Help & guidance',     Icon: QuestionIcon, soon: true  },
 ];
 
@@ -50,6 +50,7 @@ export default function You() {
   const [gunaResult, setGunaResult] = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
+  const [isPractitioner, setIsPractitioner] = useState(false);
 
   useEffect(() => {
     loadDoshaResult().then(r => setResult(r || false));
@@ -59,6 +60,12 @@ export default function You() {
       setStats(computeStats(list));
     });
   }, []);
+
+  useEffect(() => {
+    if (!user) { setIsPractitioner(false); return; }
+    supabase.from('users').select('role').eq('id', user.id).single()
+      .then(({ data }) => setIsPractitioner(data?.role === 'practitioner'));
+  }, [user]);
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -87,6 +94,11 @@ export default function You() {
           </View>
           <Text style={[styles.name, { color: c.text }]}>{userName || 'You'}</Text>
           <Text style={[styles.tagline, { color: c.textMedium }]}>Wellness is a return to you.</Text>
+          {user && (
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, color: c.textMuted, marginTop: 4 }} numberOfLines={1}>
+              {user.email}
+            </Text>
+          )}
         </View>
 
         {/* Dosha wheel — only shown after quiz is taken */}
@@ -141,13 +153,13 @@ export default function You() {
           ))}
         </View>
 
-        {/* Settings */}
-        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Settings</Text>
+        {/* Your Assessments — dosha/guna results + intake form live here now, not just the drawer */}
+        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Your Assessments</Text>
         {(() => {
-          // All visible settings rows — Guna Assessment un-gated July 2026, now in nav too (see HamburgerDrawer)
           const rows = [
-            ...SETTINGS,
-            { label: 'Guna Assessment', Icon: GunaIcon, soon: false, guna: true },
+            { label: 'My Dosha',        Icon: LeafIcon, dosha: true },
+            { label: 'Guna Assessment', Icon: GunaIcon, guna: true },
+            { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
           ];
           return (
             <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
@@ -156,8 +168,8 @@ export default function You() {
                   key={item.label}
                   style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
                   onPress={() => {
-                    if (item.soon) return;
-                    if (item.label === 'My Dosha') router.push('/quiz');
+                    if (item.dosha) router.push('/quiz');
+                    if (item.intake) router.push('/intake');
                     if (item.guna) {
                       if (gunaResult) {
                         router.push({
@@ -179,13 +191,42 @@ export default function You() {
                     <item.Icon color={c.textMuted} size={15} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text, flex: 0 }]}>{item.label}</Text>
+                    <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>{item.label}</Text>
                     {item.guna && gunaResult && (
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
                         {gunaResult.dominant.charAt(0).toUpperCase() + gunaResult.dominant.slice(1)} dominant
                       </Text>
                     )}
                   </View>
+                  <ChevronIcon color={c.textMuted} />
+                </Pressable>
+              ))}
+            </View>
+          );
+        })()}
+
+        {/* Settings */}
+        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Settings</Text>
+        {(() => {
+          const rows = [
+            ...(isPractitioner ? [{ label: 'Practitioner View', Icon: ClipboardIcon, practitioner: true }] : []),
+            ...SETTINGS,
+          ];
+          return (
+            <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
+              {rows.map((item, idx) => (
+                <Pressable
+                  key={item.label}
+                  style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+                  onPress={() => {
+                    if (item.soon) return;
+                    if (item.practitioner) router.push('/practitioner');
+                  }}
+                >
+                  <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                    <item.Icon color={c.textMuted} size={15} />
+                  </View>
+                  <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text }]}>{item.label}</Text>
                   {item.soon
                     ? <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
                     : <ChevronIcon color={c.textMuted} />}
@@ -199,26 +240,15 @@ export default function You() {
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Account</Text>
         <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
           {user ? (
-            <>
-              <View style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}>
-                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                  <PersonIcon color={c.textMuted} size={15} />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.settingsLabel, { color: c.text }]}>Signed in</Text>
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }} numberOfLines={1}>{user.email}</Text>
-                </View>
+            <Pressable
+              style={styles.settingsRow}
+              onPress={signOut}
+            >
+              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                <SignOutIcon color={c.textMuted} size={15} />
               </View>
-              <Pressable
-                style={styles.settingsRow}
-                onPress={signOut}
-              >
-                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                  <SignOutIcon color={c.textMuted} size={15} />
-                </View>
-                <Text style={[styles.settingsLabel, { color: c.text }]}>Sign out</Text>
-              </Pressable>
-            </>
+              <Text style={[styles.settingsLabel, { color: c.text }]}>Sign out</Text>
+            </Pressable>
           ) : (
             <>
               <Pressable
@@ -335,6 +365,13 @@ function GunaIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
+  </Svg>;
+}
+function ClipboardIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2Z" stroke={color} strokeWidth={1.4} />
+    <Path d="M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
 function SignOutIcon({ color, size }) {

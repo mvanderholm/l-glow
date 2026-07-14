@@ -81,31 +81,6 @@ export default function HamburgerDrawer() {
                 <DrawerItem icon={CalendarIcon} label="Book a Session"   onPress={openBooking}  c={c} />
               </View>
 
-              <View style={[styles.sep, { backgroundColor: c.border }]} />
-
-              <View style={styles.section}>
-                <DrawerItem icon={LeafIcon}     label="Dosha Quiz"       onPress={() => navigate('/quiz')}   c={c} />
-                <DrawerItem icon={GunaIcon}     label="Guna Quiz"        onPress={() => navigate('/guna-quiz')} c={c} />
-                <DrawerItem icon={ClipboardIcon} label="My Intake Form"  onPress={() => navigate('/intake')} c={c} />
-              </View>
-
-              <View style={[styles.sep, { backgroundColor: c.border }]} />
-
-              {/* Practitioner-only — v1, safe to always show since RLS is the
-                  real gate; anyone without role='practitioner' just sees an
-                  empty/not-authorized state on this screen. */}
-              <View style={styles.section}>
-                <DrawerItem icon={ClipboardIcon} label="Practitioner View" onPress={() => navigate('/practitioner')} c={c} />
-              </View>
-
-              <View style={[styles.sep, { backgroundColor: c.border }]} />
-
-              {/* Placeholder items */}
-              <View style={styles.section}>
-                <DrawerItem icon={BellIcon}     label="Reminders"      onPress={close} c={c} soon />
-                <DrawerItem icon={QuestionIcon} label="Help & guidance" onPress={close} c={c} soon />
-              </View>
-
               <View style={styles.footerInline}>
                 <Text style={[styles.footerText, { color: c.textMuted }]}>L. Glow · v0.1</Text>
               </View>
@@ -162,43 +137,11 @@ function PersonIcon({ color, size }) {
     </Svg>
   );
 }
-function LeafIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} />
-      <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    </Svg>
-  );
-}
 function CalendarIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M4 9.5A2.5 2.5 0 0 1 6.5 7h11A2.5 2.5 0 0 1 20 9.5v9A2.5 2.5 0 0 1 17.5 21h-11A2.5 2.5 0 0 1 4 18.5v-9Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
       <Path d="M4 10.5h16M8 4v4M16 4v4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function GunaIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
-    </Svg>
-  );
-}
-function BellIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 10a6 6 0 0 1 12 0c0 3 1.5 5 2 6H4c.5-1 2-3 2-6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M10 20a2 2 0 0 0 4 0" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function QuestionIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.4} />
-      <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
     </Svg>
   );
 }
@@ -240,15 +183,6 @@ function PenIcon({ color, size }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke={color} strokeWidth={1.4} />
       <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function ClipboardIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2Z" stroke={color} strokeWidth={1.4} />
-      <Path d="M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
     </Svg>
   );
 }
