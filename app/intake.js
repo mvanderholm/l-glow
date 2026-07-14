@@ -698,6 +698,10 @@ function SectionForm({ section, intake, update, onBack, colors: c }) {
         showsVerticalScrollIndicator={false}
       >
         {section.fields.map(f => renderField(f, intake, update, c))}
+
+        <Pressable style={[fs.gateBtn, { backgroundColor: c.accent, marginTop: 8 }]} onPress={onBack}>
+          <Text style={fs.gateBtnText}>Back to sections</Text>
+        </Pressable>
       </ScrollView>
     </SafeAreaView>
   );
