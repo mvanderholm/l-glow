@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Animated, Modal, StyleSheet, Dimensions, Linking } from 'react-native';
+import { View, Text, Pressable, Animated, Modal, StyleSheet, Dimensions, Linking, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
@@ -63,50 +63,54 @@ export default function HamburgerDrawer() {
               </Pressable>
             </View>
 
-            {/* Primary nav items */}
-            <View style={styles.section}>
-              <DrawerItem icon={HomeIcon}     label="Home"             onPress={() => navigate('/')}       c={c} />
-              <DrawerItem icon={YouIcon}      label="Your Profile"     onPress={() => navigate('/you')}    c={c} />
-              <DrawerItem icon={JourneyIcon}  label="My Journey"       onPress={() => navigate('/journey')} c={c} />
-            </View>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
 
-            <View style={[styles.sep, { backgroundColor: c.border }]} />
+              {/* Primary nav items */}
+              <View style={styles.section}>
+                <DrawerItem icon={HomeIcon}     label="Home"             onPress={() => navigate('/')}       c={c} />
+                <DrawerItem icon={YouIcon}      label="Your Profile"     onPress={() => navigate('/you')}    c={c} />
+                <DrawerItem icon={JourneyIcon}  label="My Journey"       onPress={() => navigate('/journey')} c={c} />
+              </View>
 
-            <View style={styles.section}>
-              <DrawerItem icon={BookIcon}     label="Learn"            onPress={() => navigate('/learn')}  c={c} />
-              <DrawerItem icon={PenIcon}      label="Journal"          onPress={() => navigate('/journal')} c={c} />
-              <DrawerItem icon={PersonIcon}   label="About Thea"       onPress={() => navigate('/about')}  c={c} />
-              <DrawerItem icon={CalendarIcon} label="Book a Session"   onPress={openBooking}  c={c} />
-            </View>
+              <View style={[styles.sep, { backgroundColor: c.border }]} />
 
-            <View style={[styles.sep, { backgroundColor: c.border }]} />
+              <View style={styles.section}>
+                <DrawerItem icon={BookIcon}     label="Learn"            onPress={() => navigate('/learn')}  c={c} />
+                <DrawerItem icon={PenIcon}      label="Journal"          onPress={() => navigate('/journal')} c={c} />
+                <DrawerItem icon={PersonIcon}   label="About Thea"       onPress={() => navigate('/about')}  c={c} />
+                <DrawerItem icon={CalendarIcon} label="Book a Session"   onPress={openBooking}  c={c} />
+              </View>
 
-            <View style={styles.section}>
-              <DrawerItem icon={LeafIcon}     label="Dosha Quiz"       onPress={() => navigate('/quiz')}   c={c} />
-              <DrawerItem icon={GunaIcon}     label="Guna Quiz"        onPress={() => navigate('/guna-quiz')} c={c} />
-              <DrawerItem icon={ClipboardIcon} label="My Intake Form"  onPress={() => navigate('/intake')} c={c} />
-            </View>
+              <View style={[styles.sep, { backgroundColor: c.border }]} />
 
-            <View style={[styles.sep, { backgroundColor: c.border }]} />
+              <View style={styles.section}>
+                <DrawerItem icon={LeafIcon}     label="Dosha Quiz"       onPress={() => navigate('/quiz')}   c={c} />
+                <DrawerItem icon={GunaIcon}     label="Guna Quiz"        onPress={() => navigate('/guna-quiz')} c={c} />
+                <DrawerItem icon={ClipboardIcon} label="My Intake Form"  onPress={() => navigate('/intake')} c={c} />
+              </View>
 
-            {/* Practitioner-only — v1, safe to always show since RLS is the
-                real gate; anyone without role='practitioner' just sees an
-                empty/not-authorized state on this screen. */}
-            <View style={styles.section}>
-              <DrawerItem icon={ClipboardIcon} label="Practitioner View" onPress={() => navigate('/practitioner')} c={c} />
-            </View>
+              <View style={[styles.sep, { backgroundColor: c.border }]} />
 
-            <View style={[styles.sep, { backgroundColor: c.border }]} />
+              {/* Practitioner-only — v1, safe to always show since RLS is the
+                  real gate; anyone without role='practitioner' just sees an
+                  empty/not-authorized state on this screen. */}
+              <View style={styles.section}>
+                <DrawerItem icon={ClipboardIcon} label="Practitioner View" onPress={() => navigate('/practitioner')} c={c} />
+              </View>
 
-            {/* Placeholder items */}
-            <View style={styles.section}>
-              <DrawerItem icon={BellIcon}     label="Reminders"      onPress={close} c={c} soon />
-              <DrawerItem icon={QuestionIcon} label="Help & guidance" onPress={close} c={c} soon />
-            </View>
+              <View style={[styles.sep, { backgroundColor: c.border }]} />
 
-            <View style={styles.footer}>
-              <Text style={[styles.footerText, { color: c.textMuted }]}>L. Glow · v0.1</Text>
-            </View>
+              {/* Placeholder items */}
+              <View style={styles.section}>
+                <DrawerItem icon={BellIcon}     label="Reminders"      onPress={close} c={c} soon />
+                <DrawerItem icon={QuestionIcon} label="Help & guidance" onPress={close} c={c} soon />
+              </View>
+
+              <View style={styles.footerInline}>
+                <Text style={[styles.footerText, { color: c.textMuted }]}>L. Glow · v0.1</Text>
+              </View>
+
+            </ScrollView>
 
           </SafeAreaView>
         </Animated.View>
@@ -313,10 +317,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_400Regular',
     fontSize: 11,
   },
-  footer: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
+  footerInline: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
   },
   footerText: {
     fontFamily: 'Inter_400Regular',
