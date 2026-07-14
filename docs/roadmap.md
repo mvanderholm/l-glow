@@ -622,10 +622,13 @@ The original plan (Firebase Auth + ColdFusion CFCs + MSSQL, with a Supabase upgr
 - Magic link can't be completed on a different device than the one that requested it (Supabase's PKCE flow needs a code verifier that only exists in the requesting device's local storage). Firebase had the same real limitation but surfaced it as a recoverable "confirm your email" prompt; Supabase just fails the exchange, so the UI now says "request a new one from this device" instead of pretending recovery is possible.
 - `signUp` may or may not return an active session depending on the Supabase project's "Confirm email" setting — `AuthContext.signUp()` now returns `{ needsEmailConfirmation }` so `signup.js` can branch correctly instead of assuming immediate sign-in.
 
+~~**Redirect URL bug, found + fixed July 2026:**~~ `REDIRECT_URL` was hardcoded to the native `l-glow://login` deep link scheme for every platform, including web — a browser has no handler for that, so Supabase's post-verification redirect dead-ended after a real signup (confirmed live: the email link itself worked, verification succeeded server-side, but the browser landed nowhere). Fixed in `context/AuthContext.js` — web now redirects to a same-origin `https://` URL (`window.location.origin + '/login'`), native keeps the custom scheme. Matt added `https://l-glow.vercel.app/login` to Authentication → URL Configuration → Redirect URLs in the dashboard to match.
+
 **Still needed (Matt, in the Supabase dashboard — not something Claude Code can do remotely):**
-- Add `l-glow://login` to Authentication → URL Configuration → Redirect URLs, or magic link / signup confirmation / password reset emails won't complete
 - Confirm the "Confirm email" setting under Authentication → Providers → Email matches what you want (whether new signups need to click a confirmation link before they're signed in)
-- Live-device testing of the full auth flow — sign up, magic link, password reset — before trusting any of this in front of real users. None of this has been run on an actual device yet, only verified to parse correctly.
+- Native-device testing of the full auth flow — sign up, magic link, password reset. The web flow (signup → confirm → login → password reset) has now been exercised live end-to-end on `l-glow.vercel.app`, including finding and fixing the redirect bug above — but nothing has been run on an actual iOS/Android device yet.
+
+⚠️ **New gap found during live testing, July 2026 — custom SMTP needed before real users sign up.** Supabase's default built-in mailer (no custom SMTP configured) has a very low shared rate limit — a handful of test signups/resets in one session was enough to trigger "too many attempts, try again in a few minutes" project-wide, not per-address. This will hit real users at launch. See #49 below.
 
 Scope (updated from original Firebase-era list):
 - Account creation — email + password to start; social login (Google, Apple) can follow, Supabase supports both natively
@@ -646,7 +649,7 @@ Scope — two surfaces, sequenced (unchanged from the original plan, just a diff
 - `data/user/storage.js` writes to both AsyncStorage and Supabase now (`saveDoshaResult`, `saveGunaResult`, `saveAgniResult`, `saveCheckin`, `saveIntention`, `saveUserName`), plus `app/journal.js` and `app/intake.js` (which manage their own storage outside `storage.js`). Best-effort: a failed Supabase write is logged and swallowed, never blocks the local save — AsyncStorage stays the thing every `load*()` function actually reads from.
 - **Gap 1 — the app doesn't read from Supabase yet.** Dual-write means new data goes to both places from whichever device created it, but nothing hydrates AsyncStorage *from* Supabase — a second device still starts empty. Not the same thing as "cross-device sync" yet, just durable backup + a copy Thea's future practitioner view can query.
 - **Gap 2 — no AsyncStorage→Supabase migration for existing local users.** Someone with data from before they had an account won't have it pushed up retroactively; only writes going forward sync. This was always its own build-order step (see below), not forgotten, just not done today.
-- **Not yet run:** the migration SQL hasn't been executed against the live Supabase project — do that in the SQL Editor (Dashboard → SQL Editor → paste the migration file → run) before any of this actually works. Nothing has been tested against a real device either.
+- ~~**Not yet run**~~ — migration confirmed run against the live project July 12, 2026 (all 9 tables verified live, anonymous insert correctly rejected with RLS error 42501). Read/write now confirmed working end-to-end via real usage, July 13: an intake form filled out as a signed-in test user synced to `intake_forms` and was readable through the practitioner dashboard (#30 Phase 2). Still not tested on a real native device, only web.
 - `practice_completions` exists as a table but nothing in the app writes to it — there's no "mark a practice complete" feature built yet. Scaffolded because the roadmap named it as a core table; flagged here so it doesn't look like an oversight that it's empty.
 
 *Phase 2 — Practitioner-facing reporting (Thea's view):*
@@ -657,7 +660,13 @@ Scope — two surfaces, sequenced (unchanged from the original plan, just a diff
 - **Consent is a single boolean** (`users.consented_to_practitioner_view`), not the richer `practitioner_clients` join table with `consented_at` originally sketched — there's exactly one practitioner right now, and a join table for a 1:1 relationship was more structure than v1 needed. Revisit if/when there's ever a second practitioner.
 - `supabase/migrations/20260712000000_practitioner_view_v1.sql` adds the column and two RLS policies (practitioners can read a consented client's `users` row and `intake_forms` row — nothing else yet; dosha results, check-ins, journal entries have no practitioner-read policy, so the dashboard can't see those even if it tried).
 
-⚠️ **No UI exists yet for either role assignment or consent** — both are manual SQL for now (templates at the bottom of the migration file). Nobody can actually reach this dashboard with real data until someone runs those `update` statements by hand for a test account.
+⚠️ **No UI exists yet for either role assignment or consent** — both are manual SQL for now (templates at the bottom of the migration file).
+
+**Verified end-to-end, July 13 2026:** the `20260712000000_practitioner_view_v1.sql` migration (consent column + policies) had actually never been run against the live project despite existing in the repo — run for the first time this session. Test accounts configured by hand: `mvanderholm@yahoo.com` set to `role = 'practitioner'`, `mvanderholm@gmail.com` left as `role = 'user'` with `consented_to_practitioner_view = true`. That test surfaced two real bugs, both fixed:
+- **RLS infinite recursion** — "infinite recursion detected in policy for relation users." Both practitioner-read policies checked the caller's role via a subquery on `public.users` from within a policy defined *on* `public.users`, which forces Postgres to re-apply that same policy recursively. Fixed via `supabase/migrations/20260713000000_fix_users_rls_recursion.sql` — a `SECURITY DEFINER` function (`public.is_practitioner()`) checks the role without re-triggering RLS, breaking the cycle. This is the standard Supabase-documented pattern for this exact class of bug — worth remembering if any future policy needs to check a role stored in the same RLS-protected table.
+- The authorization check in `app/practitioner.js` was silently swallowing query errors (only destructuring `data`, never `error`), making a failing query indistinguishable from a legitimate "not a practitioner" result. Now logs the error.
+
+With both fixed, the full loop is confirmed working: client fills out intake form while genuinely signed in → syncs to `intake_forms` → practitioner account sees it in the dashboard. (One test-session gotcha worth remembering for next time: filling out "My Intake Form" from the drawer saves under *whatever account is currently signed in* — it doesn't check role. Testing with two accounts in the same browser tab, without confirming which one is actually active, silently wrote data to the wrong account's row. Two separate browsers avoided the mix-up.)
 
 **Deliberately not built, because this is v1-to-react-to, not the real design:**
 - Dosha result, check-in history/trends, vikriti drift, journal entries in the dashboard — intake form only for now
@@ -675,6 +684,11 @@ Scope — two surfaces, sequenced (unchanged from the original plan, just a diff
 7. Thea conversation → real practitioner view design, reacting to v1
 8. Consent flow and privacy policy — real UI, not manual SQL
 9. End-to-end QA on real devices
+
+---
+
+**49. Configure custom SMTP for Supabase Auth emails — pre-launch blocker.**
+Found live, July 13 2026: Supabase's default built-in mailer (no custom SMTP configured) has a very low rate limit shared across the whole project, not per-recipient — a handful of test signups and password resets in one session was enough to trigger "too many attempts, try again in a few minutes." This will hit real users during launch signups, not just testing. Authentication → Rate Limits in the dashboard can raise the number, but the built-in mailer stays capped low regardless — the actual fix is wiring up a real SMTP provider (Resend, Postmark, SendGrid, etc.) under Authentication → Settings → SMTP Settings. Needs to happen before the August 17th launch, not after the first real user hits it.
 
 ---
 
@@ -918,6 +932,10 @@ Response: { synced: { dosha: bool, checkins: int, journal: int,
 - **Multi-select Prakriti questions (physical function + psychological function, 15 fields total) had no "skip / I don't know" escape** — only the single-select physical-structure questions did. This wasn't just a missing affordance: since `sectionProgress()` counts empty arrays as unanswered, a user who wanted to skip one of these 15 questions could never get that section to 100%. Added the same skip pattern the single-select fields already use.
 - Renamed `CtaDisabledBlock` → `CoachingCtaBlock` (and `cta_disabled` → `coaching_cta`) — it stopped being disabled when #34 shipped the real booking link, the name never got updated.
 
+**More fixes found during live testing, July 2026 (not a read-through this time — found by actually filling out the form):**
+- **No way to finish a section.** Every field auto-saves on change, but the only way out of a `SectionForm` was the small back arrow in the header — easy to miss after scrolling through a long section (Basic Information has 14 fields). Added an explicit "Back to sections" button at the bottom of each section.
+- **"Scope & Consent" could never mark complete.** `sectionProgress()` explicitly excluded `type: 'check'` fields from its count — since that section's only keyed field is the consent checkbox, it always had zero countable fields and showed as permanently incomplete no matter what the user toggled. Also fixed a second bug hiding underneath: the "filled" test would have treated an *unchecked* box as filled too (`false !== '' /null/undefined` is true), had it ever been reached. Both fixed in the same pass.
+
 ⚠️ **Found, not fixed — needs your call, not a guess on my part:** Section 12 (Reproductive Health) was always meant to be conditionally shown based on the gender identity field from Section 1 (see build-order step 7 below) — that logic was never built, so every user currently sees this section regardless of what they entered. Gender identity is a free-text field, and pattern-matching it to decide who sees a whole section felt like exactly the kind of judgment call that can misfire in a way that lands badly (misgendering, or guessing wrong in either direction) — didn't want to build that without checking how you want the matching to work first.
 
 **Entry point:** Hamburger menu → "My Intake Form" (or similar label — confirm wording with Thea). Routes to `app/intake.js`.
@@ -1156,6 +1174,10 @@ She recorded a full disclaimer in her own voice (transcript 27, lines 9–54). K
 ## Routing audit findings (July 2026)
 
 Full audit: every route file cross-checked against `_layout.js` registrations, every `router.push`/`router.replace`/`href` target checked for validity, every screen checked for a way back out. Result: all 31 routes match 1:1 (no orphaned registrations, no broken links). Two real bugs found and fixed same session — `app/today.js` had no back/menu navigation at all (added `BackButton`); `app/you.js`'s "My dosha & intake" settings row only ever routed to `/quiz`, never `/intake` (relabeled to "My Dosha" to match actual behavior, since a correctly-wired "My Intake Form" already exists separately in the hamburger drawer). Dead code (`PRIMARY_ROUTES` in `components/BottomNav.js`, declared but never read) also removed.
+
+**More nav bugs found live, July 13 2026 (while testing the practitioner dashboard end-to-end — not a re-audit, just surfaced along the way):**
+- **`app/checkin.js` had no hamburger drawer trigger at all** — the only one of the 5 bottom-nav tabs missing it, so a user landing on Check In had no way to reach account/settings or the new Practitioner View without switching tabs first. Added a menu icon matching the pattern already used on Lifestyle/Movement/Herbs/Nourishment.
+- **Hamburger drawer content could get silently clipped.** The drawer's nav sections were plain `View`s inside a panel with `overflow: 'hidden'` and no `ScrollView` — on a short enough viewport, the bottom items (Practitioner View, Reminders, Help) were cut off with no scrollbar and no indication they existed. Wrapped the nav content in a `ScrollView`; footer moved from absolute-positioned to inline so it scrolls with the rest instead of overlapping.
 
 **46. `app/tools.js` is fully built but completely unreachable.**
 Registered in `_layout.js`, has real content (Recipes, Herbs, Breathwork, Meditation, Self Massage, Journaling, Tongue Check, Learn, About Thea tiles) — but nothing anywhere in the app links to `/tools`. Not the hamburger drawer, not the bottom nav, not any screen's CTA. Likely a leftover from before the Lifestyle/Movement/Herbs/Nourishment bottom-nav restructure (see the "legacy screens" comment in `_layout.js` for journey/journal/you, which *are* still linked from the drawer — tools isn't even that).
