@@ -303,6 +303,120 @@ async function hydrateIntention(userId) {
   if (data?.text) await AsyncStorage.setItem(KEYS.INTENTION_PREFIX + date, data.text);
 }
 
+// --- One-time local→Supabase migration ---
+// Someone who used the app before creating an account has local history that
+// predates any Supabase account — syncToSupabase() no-ops when signed out,
+// so none of it was ever pushed up. Runs once per device (tracked by a local
+// flag, not per-account — the local backlog belongs to whichever account
+// claims it first) on first sign-in: pushes full local history up, but only
+// fills gaps, mirroring hydrateFromSupabase()'s "never overwrite" policy in
+// the opposite direction. A same day/result that exists independently on
+// both sides is left as-is on both — this closes the "never synced at all"
+// gap, not a full two-way merge.
+const MIGRATED_KEY = '@lglow/migrated_to_supabase';
+
+export async function migrateLocalToSupabase() {
+  if (await AsyncStorage.getItem(MIGRATED_KEY)) return;
+  const userId = await currentUserId();
+  if (!userId) return;
+  try {
+    await Promise.all([
+      migrateDoshaResult(userId),
+      migrateGunaResult(userId),
+      migrateAgniResult(userId),
+      migrateUserName(userId),
+      migrateCheckins(userId),
+      migrateIntentions(userId),
+    ]);
+    await AsyncStorage.setItem(MIGRATED_KEY, 'true');
+  } catch (err) {
+    console.warn('Migration to Supabase failed (will retry next sign-in):', err.message);
+    // deliberately not setting MIGRATED_KEY — retry next sign-in
+  }
+}
+
+async function migrateDoshaResult(userId) {
+  const local = await loadDoshaResult();
+  if (!local) return;
+  const { count } = await supabase.from('dosha_results').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+  if (count > 0) return; // Supabase already has history for this user — don't guess which is newer
+  await supabase.from('dosha_results').insert({
+    user_id: userId, dosha: local.dosha,
+    vata_score: local.scores?.vata ?? 0, pitta_score: local.scores?.pitta ?? 0, kapha_score: local.scores?.kapha ?? 0,
+  });
+}
+
+async function migrateGunaResult(userId) {
+  const local = await loadGunaResult();
+  if (!local) return;
+  const { count } = await supabase.from('guna_results').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+  if (count > 0) return;
+  await supabase.from('guna_results').insert({
+    user_id: userId, dominant: local.dominant,
+    sattva_score: local.scores?.sattva ?? 0, rajas_score: local.scores?.rajas ?? 0, tamas_score: local.scores?.tamas ?? 0,
+  });
+}
+
+async function migrateAgniResult(userId) {
+  const local = await loadAgniResult();
+  if (!local) return;
+  const { count } = await supabase.from('agni_results').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+  if (count > 0) return;
+  await supabase.from('agni_results').insert({
+    user_id: userId, agni_type: local.agniType,
+    sama_count: local.counts?.sama ?? 0, vishama_count: local.counts?.vishama ?? 0,
+    tikshna_count: local.counts?.tikshna ?? 0, manda_count: local.counts?.manda ?? 0,
+  });
+}
+
+async function migrateUserName(userId) {
+  const local = await loadUserName();
+  if (!local) return;
+  const { data } = await supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
+  if (data?.display_name) return; // Supabase already has a name — don't overwrite
+  await supabase.from('users').update({ display_name: local }).eq('id', userId);
+}
+
+async function migrateCheckins(userId) {
+  const allKeys = await AsyncStorage.getAllKeys();
+  const checkinKeys = allKeys.filter(k => k.startsWith(KEYS.CHECKIN_PREFIX));
+  if (!checkinKeys.length) return;
+  const pairs = await AsyncStorage.multiGet(checkinKeys);
+  const { data: existing } = await supabase.from('checkins').select('date').eq('user_id', userId);
+  const existingDates = new Set((existing || []).map(r => r.date));
+  const rows = [];
+  for (const [key, raw] of pairs) {
+    if (!raw) continue;
+    const date = key.replace(KEYS.CHECKIN_PREFIX, '');
+    if (existingDates.has(date)) continue; // Supabase already has this day
+    const entry = JSON.parse(raw);
+    rows.push({
+      user_id: userId, date,
+      physical: entry.values.physical, mental: entry.values.mental, emotional: entry.values.emotional,
+      hunger: entry.values.hunger ?? null, tongue: entry.values.tongue ?? null,
+      note: entry.note || null, saved_at: entry.savedAt,
+    });
+  }
+  if (rows.length) await supabase.from('checkins').upsert(rows, { onConflict: 'user_id,date' });
+}
+
+async function migrateIntentions(userId) {
+  const allKeys = await AsyncStorage.getAllKeys();
+  const intentionKeys = allKeys.filter(k => k.startsWith(KEYS.INTENTION_PREFIX));
+  if (!intentionKeys.length) return;
+  const pairs = await AsyncStorage.multiGet(intentionKeys);
+  const { data: existing } = await supabase.from('intentions').select('date').eq('user_id', userId);
+  const existingDates = new Set((existing || []).map(r => r.date));
+  const rows = [];
+  for (const [key, text] of pairs) {
+    if (!text) continue;
+    const date = key.replace(KEYS.INTENTION_PREFIX, '');
+    if (existingDates.has(date)) continue;
+    rows.push({ user_id: userId, date, text });
+  }
+  if (rows.length) await supabase.from('intentions').upsert(rows, { onConflict: 'user_id,date' });
+}
+
 // --- Session summary (plain text for sharing) ---
 
 export async function buildSessionSummary() {

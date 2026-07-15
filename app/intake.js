@@ -429,6 +429,18 @@ export async function hydrateIntake(userId) {
   if (data?.data) await AsyncStorage.setItem(INTAKE_KEY, JSON.stringify(data.data));
 }
 
+// Pushes an existing local intake form up to Supabase on first sign-in, if
+// Supabase doesn't already have one for this user — the reverse of
+// hydrateIntake(). Part of the one-time local→Supabase migration, called
+// from AuthContext alongside data/user/storage.js's migrateLocalToSupabase().
+export async function migrateIntake(userId) {
+  const raw = await AsyncStorage.getItem(INTAKE_KEY);
+  if (!raw) return;
+  const { data } = await supabase.from('intake_forms').select('user_id').eq('user_id', userId).maybeSingle();
+  if (data) return; // Supabase already has one — don't overwrite
+  await supabase.from('intake_forms').upsert({ user_id: userId, data: JSON.parse(raw) }, { onConflict: 'user_id' });
+}
+
 // ── Field-level progress ───────────────────────────────────────────────────
 
 function sectionProgress(section, intake) {

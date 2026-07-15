@@ -10,7 +10,8 @@ import { syncToSupabase } from '../data/user/storage';
 import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
-const KEY = (d = new Date()) => `@lglow/journal2_${d.toISOString().slice(0, 10)}`;
+const JOURNAL_PREFIX = '@lglow/journal2_';
+const KEY = (d = new Date()) => `${JOURNAL_PREFIX}${d.toISOString().slice(0, 10)}`;
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
 // Pulls the last 90 days of journal entries down from Supabase on a fresh
@@ -30,6 +31,29 @@ export async function hydrateJournal(userId) {
       grateful: row.grateful || '', showed: row.showed || '', tomorrow: row.tomorrow || '',
     }));
   }
+}
+
+// Pushes existing local journal entries up to Supabase on first sign-in —
+// only for dates Supabase doesn't already have. Reverse of hydrateJournal(),
+// scans full local history (not a bounded window) since this is a one-time
+// backlog catch-up, not an ongoing sync. Part of the local→Supabase
+// migration, called from AuthContext.
+export async function migrateJournal(userId) {
+  const allKeys = await AsyncStorage.getAllKeys();
+  const journalKeys = allKeys.filter(k => k.startsWith(JOURNAL_PREFIX));
+  if (!journalKeys.length) return;
+  const pairs = await AsyncStorage.multiGet(journalKeys);
+  const { data: existing } = await supabase.from('journal_entries').select('date').eq('user_id', userId);
+  const existingDates = new Set((existing || []).map(r => r.date));
+  const rows = [];
+  for (const [key, raw] of pairs) {
+    if (!raw) continue;
+    const date = key.replace(JOURNAL_PREFIX, '');
+    if (existingDates.has(date)) continue;
+    const entry = JSON.parse(raw);
+    rows.push({ user_id: userId, date, grateful: entry.grateful || null, showed: entry.showed || null, tomorrow: entry.tomorrow || null });
+  }
+  if (rows.length) await supabase.from('journal_entries').upsert(rows, { onConflict: 'user_id,date' });
 }
 
 const PROMPTS = [

@@ -1,9 +1,9 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Linking, Platform } from 'react-native';
 import { supabase } from '../config/supabase';
-import { hydrateFromSupabase } from '../data/user/storage';
-import { hydrateIntake } from '../app/intake';
-import { hydrateJournal } from '../app/journal';
+import { hydrateFromSupabase, migrateLocalToSupabase } from '../data/user/storage';
+import { hydrateIntake, migrateIntake } from '../app/intake';
+import { hydrateJournal, migrateJournal } from '../app/journal';
 
 const AuthContext = createContext(null);
 
@@ -15,6 +15,16 @@ function hydrateAll(userId) {
   hydrateFromSupabase();
   hydrateIntake(userId);
   hydrateJournal(userId);
+}
+
+// Reverse direction: pushes pre-existing local data (from before this device
+// ever had an account) up to Supabase. Runs once per device — see
+// migrateLocalToSupabase()'s own comment for the completion-flag and
+// never-overwrite details. Fire-and-forget, same as hydrateAll above.
+function migrateAll(userId) {
+  migrateLocalToSupabase();
+  migrateIntake(userId);
+  migrateJournal(userId);
 }
 
 // Native builds open the app via the custom l-glow:// scheme. Browsers have no
@@ -49,7 +59,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
-      if (session?.user) hydrateAll(session.user.id);
+      if (session?.user) { hydrateAll(session.user.id); migrateAll(session.user.id); }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -58,7 +68,7 @@ export function AuthProvider({ children }) {
         return; // hold off on treating this as a normal signed-in state
       }
       setUser(session?.user ?? null);
-      if (session?.user) hydrateAll(session.user.id);
+      if (session?.user) { hydrateAll(session.user.id); migrateAll(session.user.id); }
     });
 
     return () => subscription.unsubscribe();
