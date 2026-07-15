@@ -443,7 +443,10 @@ export async function migrateIntake(userId) {
 
 // ── Field-level progress ───────────────────────────────────────────────────
 
-function sectionProgress(section, intake) {
+// Exported alongside SECTIONS so app/practitioner.js can compute the same
+// completeness numbers (e.g. for an "intake incomplete" attention flag)
+// without duplicating this logic.
+export function sectionProgress(section, intake) {
   const fields = section.fields.filter(f => f.key && f.type !== 'info' && f.type !== 'divider');
   if (!fields.length) return null;
   const filled = fields.filter(f => {
