@@ -662,7 +662,7 @@ Scope — two surfaces, sequenced (unchanged from the original plan, just a diff
 - **Consent is a single boolean** (`users.consented_to_practitioner_view`), not the richer `practitioner_clients` join table with `consented_at` originally sketched — there's exactly one practitioner right now, and a join table for a 1:1 relationship was more structure than v1 needed. Revisit if/when there's ever a second practitioner.
 - `supabase/migrations/20260712000000_practitioner_view_v1.sql` adds the column and two RLS policies (practitioners can read a consented client's `users` row and `intake_forms` row — nothing else yet; dosha results, check-ins, journal entries have no practitioner-read policy, so the dashboard can't see those even if it tried).
 
-⚠️ **No UI exists yet for either role assignment or consent** — both are manual SQL for now (templates at the bottom of the migration file).
+⚠️ **No UI exists yet for role assignment** — still manual SQL (template at the bottom of the migration file), intentionally: a user should never be able to self-grant practitioner access. ~~No UI exists yet for consent~~ — **closed July 14 2026:** a "Share with Thea" toggle in the You tab's Assessments section lets a signed-in user flip `consented_to_practitioner_view` themselves. No new RLS policy needed — the existing "users can update their own row" owner policy already covered it.
 
 **Verified end-to-end, July 13 2026:** the `20260712000000_practitioner_view_v1.sql` migration (consent column + policies) had actually never been run against the live project despite existing in the repo — run for the first time this session. Test accounts configured by hand: `mvanderholm@yahoo.com` set to `role = 'practitioner'`, `mvanderholm@gmail.com` left as `role = 'user'` with `consented_to_practitioner_view = true`. That test surfaced two real bugs, both fixed:
 - **RLS infinite recursion** — "infinite recursion detected in policy for relation users." Both practitioner-read policies checked the caller's role via a subquery on `public.users` from within a policy defined *on* `public.users`, which forces Postgres to re-apply that same policy recursively. Fixed via `supabase/migrations/20260713000000_fix_users_rls_recursion.sql` — a `SECURITY DEFINER` function (`public.is_practitioner()`) checks the role without re-triggering RLS, breaking the cycle. This is the standard Supabase-documented pattern for this exact class of bug — worth remembering if any future policy needs to check a role stored in the same RLS-protected table.
@@ -672,7 +672,6 @@ With both fixed, the full loop is confirmed working: client fills out intake for
 
 **Deliberately not built, because this is v1-to-react-to, not the real design:**
 - Dosha result, check-in history/trends, vikriti drift, journal entries in the dashboard — intake form only for now
-- Any consent-granting flow a client could use themselves
 - The actual conversation with Thea about what she wants to see — still hasn't happened; treat everything above as a strawman for that conversation, not a finished feature
 - Email notification when a form is completed — explicitly deferred (see #33 discussion, July 2026); Thea checks the dashboard manually for now, no automated trigger exists
 
@@ -684,7 +683,7 @@ With both fixed, the full loop is confirmed working: client fills out intake for
 5. ~~Read-hydration from Supabase~~ done, July 14 2026 — see Gap 1 above
 6. ~~Practitioner dashboard v1~~ done, July 2026 — rough pass, see above, built before rather than after the Thea conversation
 7. Thea conversation → real practitioner view design, reacting to v1
-8. Consent flow and privacy policy — real UI, not manual SQL
+8. ~~Consent flow~~ done, July 14 2026 — "Share with Thea" toggle in You tab. Privacy policy for the intake form's signature screen still needed from Thea before that screen can ship publicly (see #33).
 9. End-to-end QA on real devices
 
 ---
