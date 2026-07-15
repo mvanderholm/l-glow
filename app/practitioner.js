@@ -327,12 +327,13 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
             )}
 
             {activeTab === 'checkins' && (
-              <SectionCard title={`Check-ins (${clientData.checkins.length})`} colors={c}>
+              <>
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>{`Check-ins (${clientData.checkins.length})`}</Text>
                 {clientData.checkins.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No check-ins yet.</Text>}
                 {clientData.checkins.map(ci => (
-                  <View key={ci.date} style={s.logRow}>
+                  <View key={ci.date} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
                     <Text style={[s.logDate, { color: c.text }]}>
-                      {new Date(ci.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(ci.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                     </Text>
                     <Text style={[s.logDetail, { color: c.textMuted }]}>
                       P{ci.physical} M{ci.mental} E{ci.emotional}{ci.hunger != null ? ` H${ci.hunger}` : ''}{ci.tongue != null ? ` T${ci.tongue}` : ''}
@@ -340,23 +341,24 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     {ci.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{ci.note}"</Text> : null}
                   </View>
                 ))}
-              </SectionCard>
+              </>
             )}
 
             {activeTab === 'journal' && (
-              <SectionCard title={`Journal (${clientData.journal.length})`} colors={c}>
+              <>
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>{`Journal (${clientData.journal.length})`}</Text>
                 {clientData.journal.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No journal entries yet.</Text>}
                 {clientData.journal.map(j => (
-                  <View key={j.date} style={s.logRow}>
+                  <View key={j.date} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
                     <Text style={[s.logDate, { color: c.text }]}>
-                      {new Date(j.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                      {new Date(j.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                     </Text>
                     {j.grateful ? <Text style={[s.logDetail, { color: c.textMuted }]}>Grateful: {j.grateful}</Text> : null}
                     {j.showed ? <Text style={[s.logDetail, { color: c.textMuted }]}>Showed up: {j.showed}</Text> : null}
                     {j.tomorrow ? <Text style={[s.logDetail, { color: c.textMuted }]}>Tomorrow: {j.tomorrow}</Text> : null}
                   </View>
                 ))}
-              </SectionCard>
+              </>
             )}
 
             {activeTab === 'intake' && (
@@ -522,6 +524,7 @@ const s = StyleSheet.create({
   answerLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 2 },
   answerValue: { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 20 },
 
+  entryCard: { borderRadius: 14, padding: 14, marginBottom: 8 },
   logRow:    { marginBottom: 12 },
   logDate:   { fontFamily: 'Inter_600SemiBold', fontSize: 12.5, marginBottom: 2 },
   logDetail: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19 },
