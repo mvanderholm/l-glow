@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -51,6 +51,8 @@ export default function You() {
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
   const [isPractitioner, setIsPractitioner] = useState(false);
+  const [consented, setConsented]   = useState(false);
+  const [consentBusy, setConsentBusy] = useState(false);
 
   useEffect(() => {
     loadDoshaResult().then(r => setResult(r || false));
@@ -62,10 +64,21 @@ export default function You() {
   }, []);
 
   useEffect(() => {
-    if (!user) { setIsPractitioner(false); return; }
-    supabase.from('users').select('role').eq('id', user.id).single()
-      .then(({ data }) => setIsPractitioner(data?.role === 'practitioner'));
+    if (!user) { setIsPractitioner(false); setConsented(false); return; }
+    supabase.from('users').select('role, consented_to_practitioner_view').eq('id', user.id).single()
+      .then(({ data }) => {
+        setIsPractitioner(data?.role === 'practitioner');
+        setConsented(!!data?.consented_to_practitioner_view);
+      });
   }, [user]);
+
+  async function toggleConsent(next) {
+    setConsented(next); // optimistic — RLS already lets a user update their own row
+    setConsentBusy(true);
+    const { error } = await supabase.from('users').update({ consented_to_practitioner_view: next }).eq('id', user.id);
+    if (error) setConsented(!next); // revert on failure
+    setConsentBusy(false);
+  }
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -160,6 +173,7 @@ export default function You() {
             { label: 'My Dosha',        Icon: LeafIcon, dosha: true },
             { label: 'Guna Assessment', Icon: GunaIcon, guna: true },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
+            ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
           ];
           return (
             <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
@@ -167,6 +181,7 @@ export default function You() {
                 <Pressable
                   key={item.label}
                   style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+                  disabled={item.share}
                   onPress={() => {
                     if (item.dosha) router.push('/quiz');
                     if (item.intake) router.push('/intake');
@@ -197,8 +212,15 @@ export default function You() {
                         {gunaResult.dominant.charAt(0).toUpperCase() + gunaResult.dominant.slice(1)} dominant
                       </Text>
                     )}
+                    {item.share && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                        {consented ? 'Thea can see your intake form' : 'Your intake form stays private'}
+                      </Text>
+                    )}
                   </View>
-                  <ChevronIcon color={c.textMuted} />
+                  {item.share
+                    ? <Switch value={consented} onValueChange={toggleConsent} disabled={consentBusy} />
+                    : <ChevronIcon color={c.textMuted} />}
                 </Pressable>
               ))}
             </View>
@@ -365,6 +387,14 @@ function GunaIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
+  </Svg>;
+}
+function ShareIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="6" cy="12" r="2.5" stroke={color} strokeWidth={1.4} />
+    <Circle cx="18" cy="6" r="2.5" stroke={color} strokeWidth={1.4} />
+    <Circle cx="18" cy="18" r="2.5" stroke={color} strokeWidth={1.4} />
+    <Path d="M8.2 10.8 15.8 7.2M8.2 13.2 15.8 16.8" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
 function ClipboardIcon({ color, size }) {
