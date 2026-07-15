@@ -161,13 +161,32 @@ function AnswerRow({ label, value, colors: c }) {
   );
 }
 
+const CLIENT_TABS = [
+  { key: 'summary',     label: 'Summary' },
+  { key: 'assessments', label: 'Assessments' },
+  { key: 'checkins',    label: 'Check-ins' },
+  { key: 'journal',     label: 'Journal' },
+  { key: 'intake',      label: 'Intake' },
+  { key: 'notes',       label: 'Notes' },
+];
+
+function StatCard({ label, value, colors: c }) {
+  return (
+    <View style={[s.statCard, { backgroundColor: c.surface, ...card }]}>
+      <Text style={[s.statValue, { color: c.text }]}>{value}</Text>
+      <Text style={[s.statLabel, { color: c.textMuted }]}>{label}</Text>
+    </View>
+  );
+}
+
 function ClientDetail({ client, practitionerId, colors: c, onBack }) {
   const [clientData, setClientData] = useState(null);
   const [error, setError] = useState(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [activeTab, setActiveTab] = useState('summary');
 
-  useEffect(() => { load(); }, [client.id]);
+  useEffect(() => { setActiveTab('summary'); load(); }, [client.id]);
 
   async function load() {
     const [doshaRes, gunaRes, agniRes, tongueRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
@@ -208,6 +227,13 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
 
   const attentionReasons = clientData ? computeAttention(clientData.checkins, clientData.intakeRow?.data) : [];
 
+  const daysSinceLastCheckin = clientData?.checkins[0]
+    ? Math.floor((Date.now() - new Date(clientData.checkins[0].date + 'T00:00:00').getTime()) / 86400000)
+    : null;
+  const intakeFilled = clientData?.intakeRow ? SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, clientData.intakeRow.data)?.filled || 0), 0) : 0;
+  const intakeTotal  = clientData?.intakeRow ? SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, clientData.intakeRow.data)?.total  || 0), 0) : 0;
+  const intakePct = intakeTotal ? Math.round((intakeFilled / intakeTotal) * 100) : 0;
+
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
       <View style={[s.detailHeader, { borderBottomColor: c.border }]}>
@@ -229,10 +255,9 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
       )}
 
       {clientData && (
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
-
+        <>
           {attentionReasons.length > 0 && (
-            <View style={s.attentionRow}>
+            <View style={[s.attentionRow, { paddingHorizontal: 16, paddingTop: 12 }]}>
               {attentionReasons.map(reason => (
                 <View key={reason} style={[s.attentionChip, { backgroundColor: c.terracotta ? c.terracotta + '22' : '#C9785522', borderColor: c.terracotta || '#C97855' }]}>
                   <Text style={[s.attentionChipText, { color: c.terracotta || '#C97855' }]}>{reason}</Text>
@@ -241,94 +266,154 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
             </View>
           )}
 
-          <SectionCard title="Assessments" colors={c}>
-            <AnswerRow label="Dosha" colors={c} value={clientData.dosha
-              ? `${cap(clientData.dosha.dosha)} · V${clientData.dosha.vata_score} P${clientData.dosha.pitta_score} K${clientData.dosha.kapha_score}`
-              : 'Not yet taken'} />
-            <AnswerRow label="Guna" colors={c} value={clientData.guna
-              ? `${cap(clientData.guna.dominant)} · S${clientData.guna.sattva_score} R${clientData.guna.rajas_score} T${clientData.guna.tamas_score}`
-              : 'Not yet taken'} />
-            <AnswerRow label="Agni" colors={c} value={clientData.agni ? cap(clientData.agni.agni_type) : 'Not yet taken'} />
-            <AnswerRow label="Tongue check" colors={c} value={clientData.tongue ? cap(clientData.tongue.reading) : 'Not yet taken'} />
-          </SectionCard>
-
-          <SectionCard title={`Check-ins (${clientData.checkins.length})`} colors={c}>
-            {clientData.checkins.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No check-ins yet.</Text>}
-            {clientData.checkins.map(ci => (
-              <View key={ci.date} style={s.logRow}>
-                <Text style={[s.logDate, { color: c.text }]}>
-                  {new Date(ci.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </Text>
-                <Text style={[s.logDetail, { color: c.textMuted }]}>
-                  P{ci.physical} M{ci.mental} E{ci.emotional}{ci.hunger != null ? ` H${ci.hunger}` : ''}{ci.tongue != null ? ` T${ci.tongue}` : ''}
-                </Text>
-                {ci.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{ci.note}"</Text> : null}
-              </View>
+          <View style={[s.tabBar, { borderBottomColor: c.border }]}>
+            {CLIENT_TABS.map(tab => (
+              <Pressable
+                key={tab.key}
+                onPress={() => setActiveTab(tab.key)}
+                style={[s.tabBtn, activeTab === tab.key && { borderBottomColor: c.accent, borderBottomWidth: 2 }]}
+              >
+                <Text style={[s.tabBtnText, { color: activeTab === tab.key ? c.text : c.textMuted }]}>{tab.label}</Text>
+              </Pressable>
             ))}
-          </SectionCard>
+          </View>
 
-          <SectionCard title={`Journal (${clientData.journal.length})`} colors={c}>
-            {clientData.journal.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No journal entries yet.</Text>}
-            {clientData.journal.map(j => (
-              <View key={j.date} style={s.logRow}>
-                <Text style={[s.logDate, { color: c.text }]}>
-                  {new Date(j.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                </Text>
-                {j.grateful ? <Text style={[s.logDetail, { color: c.textMuted }]}>Grateful: {j.grateful}</Text> : null}
-                {j.showed ? <Text style={[s.logDetail, { color: c.textMuted }]}>Showed up: {j.showed}</Text> : null}
-                {j.tomorrow ? <Text style={[s.logDetail, { color: c.textMuted }]}>Tomorrow: {j.tomorrow}</Text> : null}
-              </View>
-            ))}
-          </SectionCard>
+          <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
 
-          <Text style={[s.updatedText, { color: c.textMuted }]}>
-            Intake form {clientData.intakeRow ? `— last updated ${new Date(clientData.intakeRow.updated_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}` : ''}
-          </Text>
-          {!clientData.intakeRow && (
-            <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 12 }]}>This client hasn't started their intake form yet.</Text>
-          )}
-          {clientData.intakeRow && SECTIONS.map(section => {
-            const dataFields = section.fields.filter(f => f.key);
-            if (dataFields.length === 0) return null;
-            return (
-              <SectionCard key={section.id} title={section.title} colors={c}>
-                {dataFields.map(field => (
-                  <AnswerRow key={field.key} label={field.label} colors={c} value={fieldDisplayValue(clientData.intakeRow.data[field.key])} />
+            {activeTab === 'summary' && (
+              <>
+                <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
+                  <StatCard colors={c} label="Last check-in" value={daysSinceLastCheckin != null ? `${daysSinceLastCheckin}d ago` : '—'} />
+                  <StatCard colors={c} label="Check-ins" value={clientData.checkins.length} />
+                  <StatCard colors={c} label="Intake" value={`${intakePct}%`} />
+                </View>
+
+                <SectionCard title="Current snapshot" colors={c}>
+                  <AnswerRow label="Dosha" colors={c} value={clientData.dosha
+                    ? `${cap(clientData.dosha.dosha)} · V${clientData.dosha.vata_score} P${clientData.dosha.pitta_score} K${clientData.dosha.kapha_score}`
+                    : 'Not yet taken'} />
+                  <AnswerRow label="Guna" colors={c} value={clientData.guna
+                    ? `${cap(clientData.guna.dominant)} · S${clientData.guna.sattva_score} R${clientData.guna.rajas_score} T${clientData.guna.tamas_score}`
+                    : 'Not yet taken'} />
+                  <AnswerRow label="Agni" colors={c} value={clientData.agni ? cap(clientData.agni.agni_type) : 'Not yet taken'} />
+                  <AnswerRow label="Tongue check" colors={c} value={clientData.tongue ? cap(clientData.tongue.reading) : 'Not yet taken'} />
+                </SectionCard>
+
+                {clientData.notes.length > 0 && (
+                  <Pressable onPress={() => setActiveTab('notes')}>
+                    <SectionCard title="Latest follow-up note" colors={c}>
+                      <Text style={[s.noteDate, { color: c.textMuted }]}>
+                        {new Date(clientData.notes[0].created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      </Text>
+                      <Text style={[s.noteText, { color: c.text }]} numberOfLines={3}>{clientData.notes[0].note}</Text>
+                      <Text style={[s.mutedNote, { color: c.accent, marginTop: 8 }]}>See all notes →</Text>
+                    </SectionCard>
+                  </Pressable>
+                )}
+              </>
+            )}
+
+            {activeTab === 'assessments' && (
+              <SectionCard title="Assessments" colors={c}>
+                <AnswerRow label="Dosha" colors={c} value={clientData.dosha
+                  ? `${cap(clientData.dosha.dosha)} · V${clientData.dosha.vata_score} P${clientData.dosha.pitta_score} K${clientData.dosha.kapha_score}`
+                  : 'Not yet taken'} />
+                <AnswerRow label="Guna" colors={c} value={clientData.guna
+                  ? `${cap(clientData.guna.dominant)} · S${clientData.guna.sattva_score} R${clientData.guna.rajas_score} T${clientData.guna.tamas_score}`
+                  : 'Not yet taken'} />
+                <AnswerRow label="Agni" colors={c} value={clientData.agni ? cap(clientData.agni.agni_type) : 'Not yet taken'} />
+                <AnswerRow label="Tongue check" colors={c} value={clientData.tongue ? cap(clientData.tongue.reading) : 'Not yet taken'} />
+              </SectionCard>
+            )}
+
+            {activeTab === 'checkins' && (
+              <SectionCard title={`Check-ins (${clientData.checkins.length})`} colors={c}>
+                {clientData.checkins.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No check-ins yet.</Text>}
+                {clientData.checkins.map(ci => (
+                  <View key={ci.date} style={s.logRow}>
+                    <Text style={[s.logDate, { color: c.text }]}>
+                      {new Date(ci.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </Text>
+                    <Text style={[s.logDetail, { color: c.textMuted }]}>
+                      P{ci.physical} M{ci.mental} E{ci.emotional}{ci.hunger != null ? ` H${ci.hunger}` : ''}{ci.tongue != null ? ` T${ci.tongue}` : ''}
+                    </Text>
+                    {ci.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{ci.note}"</Text> : null}
+                  </View>
                 ))}
               </SectionCard>
-            );
-          })}
+            )}
 
-          <SectionCard title="Follow-up notes" colors={c}>
-            <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 10 }]}>
-              Private — only you can see these. Not shared with the client.
-            </Text>
-            <TextInput
-              style={[s.noteInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
-              value={noteDraft}
-              onChangeText={setNoteDraft}
-              placeholder="Add a follow-up note…"
-              placeholderTextColor={c.textMuted}
-              multiline
-            />
-            <Pressable
-              style={[s.addNoteBtn, { backgroundColor: noteDraft.trim() ? c.accent : c.border }]}
-              onPress={addNote}
-              disabled={!noteDraft.trim() || savingNote}
-            >
-              <Text style={s.addNoteBtnText}>{savingNote ? 'Saving…' : 'Add note'}</Text>
-            </Pressable>
-            {clientData.notes.map(note => (
-              <View key={note.id} style={[s.noteRow, { borderTopColor: c.border }]}>
-                <Text style={[s.noteDate, { color: c.textMuted }]}>
-                  {new Date(note.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+            {activeTab === 'journal' && (
+              <SectionCard title={`Journal (${clientData.journal.length})`} colors={c}>
+                {clientData.journal.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No journal entries yet.</Text>}
+                {clientData.journal.map(j => (
+                  <View key={j.date} style={s.logRow}>
+                    <Text style={[s.logDate, { color: c.text }]}>
+                      {new Date(j.date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                    </Text>
+                    {j.grateful ? <Text style={[s.logDetail, { color: c.textMuted }]}>Grateful: {j.grateful}</Text> : null}
+                    {j.showed ? <Text style={[s.logDetail, { color: c.textMuted }]}>Showed up: {j.showed}</Text> : null}
+                    {j.tomorrow ? <Text style={[s.logDetail, { color: c.textMuted }]}>Tomorrow: {j.tomorrow}</Text> : null}
+                  </View>
+                ))}
+              </SectionCard>
+            )}
+
+            {activeTab === 'intake' && (
+              <>
+                <Text style={[s.updatedText, { color: c.textMuted }]}>
+                  Intake form {clientData.intakeRow ? `— last updated ${new Date(clientData.intakeRow.updated_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}` : ''}
                 </Text>
-                <Text style={[s.noteText, { color: c.text }]}>{note.note}</Text>
-              </View>
-            ))}
-          </SectionCard>
+                {!clientData.intakeRow && (
+                  <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 12 }]}>This client hasn't started their intake form yet.</Text>
+                )}
+                {clientData.intakeRow && SECTIONS.map(section => {
+                  const dataFields = section.fields.filter(f => f.key);
+                  if (dataFields.length === 0) return null;
+                  return (
+                    <SectionCard key={section.id} title={section.title} colors={c}>
+                      {dataFields.map(field => (
+                        <AnswerRow key={field.key} label={field.label} colors={c} value={fieldDisplayValue(clientData.intakeRow.data[field.key])} />
+                      ))}
+                    </SectionCard>
+                  );
+                })}
+              </>
+            )}
 
-        </ScrollView>
+            {activeTab === 'notes' && (
+              <SectionCard title="Follow-up notes" colors={c}>
+                <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 10 }]}>
+                  Private — only you can see these. Not shared with the client.
+                </Text>
+                <TextInput
+                  style={[s.noteInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+                  value={noteDraft}
+                  onChangeText={setNoteDraft}
+                  placeholder="Add a follow-up note…"
+                  placeholderTextColor={c.textMuted}
+                  multiline
+                />
+                <Pressable
+                  style={[s.addNoteBtn, { backgroundColor: noteDraft.trim() ? c.accent : c.border }]}
+                  onPress={addNote}
+                  disabled={!noteDraft.trim() || savingNote}
+                >
+                  <Text style={s.addNoteBtnText}>{savingNote ? 'Saving…' : 'Add note'}</Text>
+                </Pressable>
+                {clientData.notes.map(note => (
+                  <View key={note.id} style={[s.noteRow, { borderTopColor: c.border }]}>
+                    <Text style={[s.noteDate, { color: c.textMuted }]}>
+                      {new Date(note.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                    </Text>
+                    <Text style={[s.noteText, { color: c.text }]}>{note.note}</Text>
+                  </View>
+                ))}
+              </SectionCard>
+            )}
+
+          </ScrollView>
+        </>
       )}
     </SafeAreaView>
   );
@@ -419,6 +504,14 @@ const s = StyleSheet.create({
   detailHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, gap: 10 },
   detailTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 18 },
   detailSub:    { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
+
+  tabBar:     { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 8 },
+  tabBtn:     { paddingVertical: 12, paddingHorizontal: 10, marginRight: 4 },
+  tabBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+
+  statCard:  { flex: 1, borderRadius: 18, paddingVertical: 14, alignItems: 'center', gap: 2 },
+  statValue: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20, lineHeight: 26 },
+  statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, textAlign: 'center' },
 
   updatedText: { fontFamily: 'Inter_400Regular', fontSize: 12, fontStyle: 'italic', marginBottom: 16, marginTop: 4 },
   mutedNote:   { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19 },
