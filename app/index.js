@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Share, Platform, TextInput, Linking, Image, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
@@ -7,7 +7,8 @@ import { useDrawer } from '../context/DrawerContext';
 import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, saveUserName, loadOnboarded } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded } from '../data/user/storage';
+import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { playlistForDosha } from '../data/content/music';
@@ -37,32 +38,32 @@ function todayLabel() {
 export default function Home() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { open: openDrawer } = useDrawer();
+  const { user } = useAuth();
   const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
   const [userName, setUserName] = useState(null);
-  const [showNamePrompt, setShowNamePrompt] = useState(false);
-  const [nameDraft, setNameDraft] = useState('');
   const scrollRef = useRef(null);
 
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
-    loadUserName().then(n => {
-      if (n) { setUserName(n); return; }
-      // New user — send to welcome screen instead of showing name prompt in-place
-      loadOnboarded().then(flag => {
-        if (flag) setShowNamePrompt(true);
-        else router.replace('/welcome');
-      });
-    });
+    loadOnboarded().then(flag => { if (!flag) router.replace('/welcome'); });
   }, []);
 
-  async function submitName() {
-    const n = nameDraft.trim();
-    if (!n) return;
-    await saveUserName(n);
-    setUserName(n);
-    setShowNamePrompt(false);
-  }
+  // No more anonymous "what's your name" prompt — name only shows once
+  // there's an actual signed-in account. `display_name` (set via loadUserName,
+  // hydrated from Supabase) wins if it's ever been set; otherwise fall back
+  // to a friendly version of the email's local-part.
+  useEffect(() => {
+    loadUserName().then(n => {
+      if (n) { setUserName(n); return; }
+      if (user?.email) {
+        const local = user.email.split('@')[0];
+        setUserName(local.charAt(0).toUpperCase() + local.slice(1));
+      } else {
+        setUserName(null);
+      }
+    });
+  }, [user]);
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -131,31 +132,6 @@ export default function Home() {
         ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
-
-      <Modal visible={showNamePrompt} transparent animationType="fade">
-        <KeyboardAvoidingView style={{ flex: 1, justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.45)', padding: 28 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <View style={{ backgroundColor: c.surface, borderRadius: 28, padding: 28 }}>
-            <Text style={[styles.greetLine, { color: c.textMuted, marginBottom: 4 }]}>Welcome to L. Glow.</Text>
-            <Text style={[styles.greetSub, { color: c.text, marginBottom: 20 }]}>What should we call you?</Text>
-            <TextInput
-              style={{ backgroundColor: c.surfaceAlt, borderRadius: 14, padding: 14, fontSize: 18, fontFamily: 'PlayfairDisplay_400Regular', color: c.text, marginBottom: 16 }}
-              placeholder="Your name…"
-              placeholderTextColor={c.textMuted}
-              value={nameDraft}
-              onChangeText={setNameDraft}
-              onSubmitEditing={submitName}
-              returnKeyType="done"
-              autoFocus
-            />
-            <Pressable
-              style={[styles.ctaBtn, { backgroundColor: nameDraft.trim() ? c.accent : c.border }]}
-              onPress={submitName}
-            >
-              <Text style={styles.ctaBtnText}>LET'S GO  ›</Text>
-            </Pressable>
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
     </SafeAreaView>
   );
 }

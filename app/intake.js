@@ -798,6 +798,28 @@ function SectionList({ intake, onSelect, colors: c }) {
   );
 }
 
+// Whole-form completion, same reduce used for the "intake incomplete"
+// attention flag on the practitioner dashboard — kept here since it's also
+// needed to detect the complete→notify transition below.
+function isFullyComplete(intake) {
+  const totalFilled = SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, intake)?.filled || 0), 0);
+  const totalFields = SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, intake)?.total  || 0), 0);
+  return totalFields > 0 && totalFilled === totalFields;
+}
+
+// Best-effort, fire-and-forget — same spirit as syncToSupabase. Silently
+// no-ops if signed out (functions.invoke will 401, which is fine: no
+// account means no one for the practitioner dashboard to notify about
+// anyway). The Edge Function itself is idempotent (checks notified_at), so
+// it's safe to call this more than once for the same completion.
+async function notifyIntakeComplete() {
+  try {
+    await supabase.functions.invoke('notify-intake-complete', { body: {} });
+  } catch (err) {
+    console.warn('Intake completion notification failed:', err.message);
+  }
+}
+
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function Intake() {
@@ -813,6 +835,9 @@ export default function Intake() {
     setIntake(prev => {
       const next = { ...prev, [key]: val };
       saveIntake(next);
+      if (!isFullyComplete(prev) && isFullyComplete(next)) {
+        notifyIntakeComplete();
+      }
       return next;
     });
   }, []);
