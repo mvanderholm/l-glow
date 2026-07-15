@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import { loadDoshaResult, loadGunaResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
+import { loadDoshaResult, loadGunaResult, loadTongueResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
+import { tongueReadings } from '../data/content/tongueCheck';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
@@ -48,6 +49,7 @@ export default function You() {
   const { user, signOut } = useAuth();
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
+  const [tongueResult, setTongueResult] = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
   const [isPractitioner, setIsPractitioner] = useState(false);
@@ -57,6 +59,7 @@ export default function You() {
   useEffect(() => {
     loadDoshaResult().then(r => setResult(r || false));
     loadGunaResult().then(r => setGunaResult(r));
+    loadTongueResult().then(r => setTongueResult(r));
     loadUserName().then(n => { if (n) setUserName(n); });
     loadRecentCheckins(365).then(list => {
       setStats(computeStats(list));
@@ -172,6 +175,7 @@ export default function You() {
           const rows = [
             { label: 'My Dosha',        Icon: LeafIcon, dosha: true },
             { label: 'Guna Assessment', Icon: GunaIcon, guna: true },
+            { label: 'Tongue Check',    Icon: TongueIcon, tongue: true },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
           ];
@@ -200,6 +204,21 @@ export default function You() {
                         router.push('/guna-quiz');
                       }
                     }
+                    if (item.tongue) {
+                      if (tongueResult) {
+                        router.push({
+                          pathname: '/tongue-result',
+                          params: {
+                            shape: tongueResult.details?.shape, size: tongueResult.details?.size,
+                            color: tongueResult.details?.color, coating: tongueResult.details?.coating,
+                            ama: tongueResult.details?.amaLevel ?? 0,
+                            signs: (tongueResult.details?.signs ?? []).join(','),
+                          },
+                        });
+                      } else {
+                        router.push('/tongue-check');
+                      }
+                    }
                   }}
                 >
                   <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
@@ -215,6 +234,11 @@ export default function You() {
                     {item.share && (
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
                         {consented ? 'Thea can see your intake form' : 'Your intake form stays private'}
+                      </Text>
+                    )}
+                    {item.tongue && tongueResult && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                        {(tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).name}
                       </Text>
                     )}
                   </View>
@@ -387,6 +411,12 @@ function GunaIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
+  </Svg>;
+}
+function TongueIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 3c3 0 5 2 5 5.5S15.5 19 12 21C8.5 19 7 12.5 7 8.5S9 3 12 3Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M12 9v9" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
 function ShareIcon({ color, size }) {

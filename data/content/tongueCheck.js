@@ -1,6 +1,18 @@
 // Source: transcript 27 (062426_01), June 2026.
 // DRAFT — adapted from Thea's voice memo. Awaiting her review before treating as final.
 
+// Shared by tongue-check.js (saves the result) and tongue-result.js (displays
+// it) so the reading logic lives in one place, not duplicated across screens.
+export function computeReading(shape, size, color) {
+  const votes = [shape, size, color].filter(s => s && s !== 'unclear' && s !== 'none');
+  if (votes.length === 0) return 'balanced';
+  const counts = votes.reduce((acc, s) => ({ ...acc, [s]: (acc[s] || 0) + 1 }), {});
+  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (sorted.length === 1) return sorted[0][0];
+  if (sorted[0][1] > sorted[1][1]) return sorted[0][0];
+  return 'mixed';
+}
+
 export const tongueSteps = [
   {
     id: 'shape',

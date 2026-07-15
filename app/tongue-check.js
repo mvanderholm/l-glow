@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { tongueSteps, tongueSignList } from '../data/content/tongueCheck';
+import { tongueSteps, tongueSignList, computeReading } from '../data/content/tongueCheck';
+import { saveTongueResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
 import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
@@ -41,17 +42,20 @@ export default function TongueCheck() {
     setSigns(next);
   }
 
-  function finish() {
+  async function finish() {
+    const shape   = answers.shape?.signal   ?? 'unclear';
+    const size    = answers.size?.signal    ?? 'unclear';
+    const color   = answers.color?.signal   ?? 'unclear';
+    const coating = answers.coating?.signal ?? 'none';
+    const amaLevel = answers.coating?.ama   ?? 0;
+    const signList = [...signs];
+    const reading = computeReading(shape, size, color);
+
+    await saveTongueResult(reading, { shape, size, color, coating, amaLevel, signs: signList });
+
     router.replace({
       pathname: '/tongue-result',
-      params: {
-        shape:   answers.shape?.signal   ?? 'unclear',
-        size:    answers.size?.signal    ?? 'unclear',
-        color:   answers.color?.signal   ?? 'unclear',
-        coating: answers.coating?.signal ?? 'none',
-        ama:     answers.coating?.ama    ?? 0,
-        signs:   [...signs].join(','),
-      },
+      params: { shape, size, color, coating, ama: amaLevel, signs: signList.join(',') },
     });
   }
 

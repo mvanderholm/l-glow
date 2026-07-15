@@ -30,6 +30,8 @@ const KEYS = {
   GUNA_SCORES:    '@lglow/guna_scores',
   AGNI_TYPE:      '@lglow/agni_type',
   AGNI_COUNTS:    '@lglow/agni_counts',
+  TONGUE_READING: '@lglow/tongue_reading',
+  TONGUE_DETAILS: '@lglow/tongue_details',
   CHECKIN_PREFIX: '@lglow/checkins/',
   INTENTION_PREFIX: '@lglow/intentions/',
   USER_NAME:      '@lglow/user_name',
@@ -118,6 +120,39 @@ export async function loadAgniResult() {
   return {
     agniType,
     counts: countsRaw ? JSON.parse(countsRaw) : null,
+  };
+}
+
+// --- Tongue check result ---
+// Found during a July 2026 sync audit: this self-assessment computed a
+// reading and threw it away — not even saved to AsyncStorage, let alone
+// synced. `details` holds the raw shape/size/color/coating signals plus the
+// selected "other signs" list, so the full assessment can be reconstructed
+// later, same spirit as the agni/guna/dosha result shape.
+
+export async function saveTongueResult(reading, details) {
+  await AsyncStorage.multiSet([
+    [KEYS.TONGUE_READING, reading],
+    [KEYS.TONGUE_DETAILS, JSON.stringify(details)],
+  ]);
+  await syncToSupabase(userId => supabase.from('tongue_checks').insert({
+    user_id: userId,
+    reading,
+    shape: details.shape, size: details.size, color: details.color, coating: details.coating,
+    ama_level: details.amaLevel ?? 0,
+    signs: details.signs ?? [],
+  }));
+}
+
+export async function loadTongueResult() {
+  const [[, reading], [, detailsRaw]] = await AsyncStorage.multiGet([
+    KEYS.TONGUE_READING,
+    KEYS.TONGUE_DETAILS,
+  ]);
+  if (!reading) return null;
+  return {
+    reading,
+    details: detailsRaw ? JSON.parse(detailsRaw) : null,
   };
 }
 
@@ -225,6 +260,7 @@ export async function hydrateFromSupabase() {
       hydrateDoshaResult(userId),
       hydrateGunaResult(userId),
       hydrateAgniResult(userId),
+      hydrateTongueResult(userId),
       hydrateUserName(userId),
       hydrateCheckins(userId),
       hydrateIntention(userId),
@@ -267,6 +303,18 @@ async function hydrateAgniResult(userId) {
   await AsyncStorage.multiSet([
     [KEYS.AGNI_TYPE, data.agni_type],
     [KEYS.AGNI_COUNTS, JSON.stringify({ sama: data.sama_count, vishama: data.vishama_count, tikshna: data.tikshna_count, manda: data.manda_count })],
+  ]);
+}
+
+async function hydrateTongueResult(userId) {
+  if (await loadTongueResult()) return;
+  const { data } = await supabase.from('tongue_checks')
+    .select('reading, shape, size, color, coating, ama_level, signs')
+    .eq('user_id', userId).order('taken_at', { ascending: false }).limit(1).maybeSingle();
+  if (!data) return;
+  await AsyncStorage.multiSet([
+    [KEYS.TONGUE_READING, data.reading],
+    [KEYS.TONGUE_DETAILS, JSON.stringify({ shape: data.shape, size: data.size, color: data.color, coating: data.coating, amaLevel: data.ama_level, signs: data.signs })],
   ]);
 }
 
@@ -324,6 +372,7 @@ export async function migrateLocalToSupabase() {
       migrateDoshaResult(userId),
       migrateGunaResult(userId),
       migrateAgniResult(userId),
+      migrateTongueResult(userId),
       migrateUserName(userId),
       migrateCheckins(userId),
       migrateIntentions(userId),
@@ -366,6 +415,18 @@ async function migrateAgniResult(userId) {
     user_id: userId, agni_type: local.agniType,
     sama_count: local.counts?.sama ?? 0, vishama_count: local.counts?.vishama ?? 0,
     tikshna_count: local.counts?.tikshna ?? 0, manda_count: local.counts?.manda ?? 0,
+  });
+}
+
+async function migrateTongueResult(userId) {
+  const local = await loadTongueResult();
+  if (!local) return;
+  const { count } = await supabase.from('tongue_checks').select('id', { count: 'exact', head: true }).eq('user_id', userId);
+  if (count > 0) return;
+  await supabase.from('tongue_checks').insert({
+    user_id: userId, reading: local.reading,
+    shape: local.details?.shape, size: local.details?.size, color: local.details?.color, coating: local.details?.coating,
+    ama_level: local.details?.amaLevel ?? 0, signs: local.details?.signs ?? [],
   });
 }
 

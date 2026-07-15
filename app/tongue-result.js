@@ -2,19 +2,9 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { tongueReadings, amaReadings, tongueMap, tongueSignList } from '../data/content/tongueCheck';
+import { tongueReadings, amaReadings, tongueMap, tongueSignList, computeReading } from '../data/content/tongueCheck';
 
 // Source: transcript 27 (062426_01), June 2026. Content is DRAFT — Thea to review.
-
-function computeReading(shape, size, color) {
-  const votes = [shape, size, color].filter(s => s && s !== 'unclear' && s !== 'none');
-  if (votes.length === 0) return 'balanced';
-  const counts = votes.reduce((acc, s) => ({ ...acc, [s]: (acc[s] || 0) + 1 }), {});
-  const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-  if (sorted.length === 1) return sorted[0][0];
-  if (sorted[0][1] > sorted[1][1]) return sorted[0][0];
-  return 'mixed';
-}
 
 function Bullet({ text, color }) {
   const { theme: { colors: c } } = useTheme();
