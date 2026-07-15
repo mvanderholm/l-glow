@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
@@ -65,7 +65,7 @@ function computeAttention(checkins = [], intakeData) {
   return reasons;
 }
 
-function ClientList({ colors: c, onSelect }) {
+function ClientList({ colors: c, onSelect, selectedId }) {
   const [clients, setClients] = useState(null);
   const [error, setError] = useState(null);
 
@@ -117,7 +117,11 @@ function ClientList({ colors: c, onSelect }) {
       {clients.map(client => (
         <Pressable
           key={client.id}
-          style={({ pressed }) => [s.clientRow, { backgroundColor: c.surface, ...card, opacity: pressed ? 0.8 : 1 }]}
+          style={({ pressed }) => [
+            s.clientRow,
+            { backgroundColor: c.surface, ...card, opacity: pressed ? 0.8 : 1 },
+            client.id === selectedId && { borderWidth: 1.5, borderColor: c.accent },
+          ]}
           onPress={() => onSelect(client)}
         >
           <Text style={[s.clientName, { color: c.text }]}>{client.display_name || client.email || 'Unnamed client'}</Text>
@@ -330,8 +334,16 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
   );
 }
 
+// Two-pane list+detail layout kicks in above this width — roughly "wide
+// enough that a fixed-width client list plus a readable detail pane both
+// fit," matching the room the app's Web View mode actually gives this
+// screen (viewport minus WebLayout's 240px sidebar).
+const WIDE_BREAKPOINT = 800;
+
 export default function Practitioner() {
   const { theme: { colors: c } } = useTheme();
+  const { width } = useWindowDimensions();
+  const isWide = width >= WIDE_BREAKPOINT;
   const [authorized, setAuthorized] = useState(undefined); // undefined = checking, null = no, true = yes
   const [practitionerId, setPractitionerId] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -348,7 +360,7 @@ export default function Practitioner() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {!selectedClient && (
+      {(isWide || !selectedClient) && (
         <View style={[s.header, { borderBottomColor: c.border }]}>
           <BackButton onPress={() => router.back()} color={c.text} />
           <Text style={[s.headerTitle, { color: c.text }]}>Practitioner View</Text>
@@ -367,9 +379,22 @@ export default function Practitioner() {
       )}
 
       {authorized === true && (
-        selectedClient
-          ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
-          : <ClientList colors={c} onSelect={setSelectedClient} />
+        isWide ? (
+          <View style={{ flex: 1, flexDirection: 'row' }}>
+            <View style={[s.listPane, { borderRightColor: c.border }]}>
+              <ClientList colors={c} onSelect={setSelectedClient} selectedId={selectedClient?.id} />
+            </View>
+            <View style={{ flex: 1 }}>
+              {selectedClient
+                ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
+                : <View style={s.centerPad}><Text style={[s.emptyText, { color: c.textMuted }]}>Select a client to view their details.</Text></View>}
+            </View>
+          </View>
+        ) : (
+          selectedClient
+            ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
+            : <ClientList colors={c} onSelect={setSelectedClient} />
+        )
       )}
     </SafeAreaView>
   );
@@ -377,6 +402,7 @@ export default function Practitioner() {
 
 const s = StyleSheet.create({
   header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  listPane:    { width: 340, borderRightWidth: StyleSheet.hairlineWidth },
   headerTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
 
   centerPad: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
