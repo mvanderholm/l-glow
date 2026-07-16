@@ -52,7 +52,6 @@ export default function You() {
   const [tongueResult, setTongueResult] = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
-  const [isPractitioner, setIsPractitioner] = useState(false);
   const [consented, setConsented]   = useState(false);
   const [consentBusy, setConsentBusy] = useState(false);
 
@@ -67,12 +66,9 @@ export default function You() {
   }, []);
 
   useEffect(() => {
-    if (!user) { setIsPractitioner(false); setConsented(false); return; }
-    supabase.from('users').select('role, consented_to_practitioner_view').eq('id', user.id).single()
-      .then(({ data }) => {
-        setIsPractitioner(data?.role === 'practitioner');
-        setConsented(!!data?.consented_to_practitioner_view);
-      });
+    if (!user) { setConsented(false); return; }
+    supabase.from('users').select('consented_to_practitioner_view').eq('id', user.id).single()
+      .then(({ data }) => setConsented(!!data?.consented_to_practitioner_view));
   }, [user]);
 
   async function toggleConsent(next) {
@@ -253,34 +249,21 @@ export default function You() {
 
         {/* Settings */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Settings</Text>
-        {(() => {
-          const rows = [
-            ...(isPractitioner ? [{ label: 'Practitioner View', Icon: ClipboardIcon, practitioner: true }] : []),
-            ...SETTINGS,
-          ];
-          return (
-            <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
-              {rows.map((item, idx) => (
-                <Pressable
-                  key={item.label}
-                  style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-                  onPress={() => {
-                    if (item.soon) return;
-                    if (item.practitioner) router.push('/practitioner');
-                  }}
-                >
-                  <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                    <item.Icon color={c.textMuted} size={15} />
-                  </View>
-                  <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text }]}>{item.label}</Text>
-                  {item.soon
-                    ? <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
-                    : <ChevronIcon color={c.textMuted} />}
-                </Pressable>
-              ))}
-            </View>
-          );
-        })()}
+        <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
+          {SETTINGS.map((item, idx) => (
+            <Pressable
+              key={item.label}
+              style={[styles.settingsRow, idx < SETTINGS.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+              onPress={() => {}}
+            >
+              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                <item.Icon color={c.textMuted} size={15} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: c.textMuted }]}>{item.label}</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
+            </Pressable>
+          ))}
+        </View>
 
         {/* Account */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Account</Text>
