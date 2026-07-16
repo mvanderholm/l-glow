@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { key: 'clients',      label: 'Clients',      href: '/practitioner' },
   { key: 'mythbusters',  label: 'Mythbusters',  href: '/practitioner/mythbusters' },
   { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
+  { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
 ];
 
 export default function PractitionerLayout() {

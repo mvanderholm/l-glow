@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { saveCheckin } from '../data/user/storage';
+import { loadCheckinDimensions, refreshCheckinDimensions } from '../data/content/remote';
 import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
@@ -16,14 +17,6 @@ function MenuIcon({ color }) {
   );
 }
 
-const dimensions = [
-  { key: 'physical', label: 'Physical', desc: 'Energy, digestion, body' },
-  { key: 'mental', label: 'Mental', desc: 'Focus, clarity, sharpness' },
-  { key: 'emotional', label: 'Emotional', desc: 'Mood, calm, openness' },
-  { key: 'hunger', label: 'Morning hunger', desc: 'One of the cleanest signals of your digestive fire.', hint: { low: 'none at all', high: 'genuinely hungry' } },
-  { key: 'tongue', label: 'Tongue coating', desc: 'Check before eating or drinking anything. That coating is information.', hint: { low: 'clear', high: 'heavy coating' } },
-];
-
 const scale = [1, 2, 3, 4, 5];
 
 export default function CheckIn() {
@@ -32,7 +25,13 @@ export default function CheckIn() {
   const insets = useSafeAreaInsets();
   const [values, setValues] = useState({ physical: 3, mental: 3, emotional: 3, hunger: 3, tongue: 3 });
   const [note, setNote] = useState('');
+  const [dimensions, setDimensions] = useState([]);
   const styles = makeStyles(colors, spacing, radius);
+
+  useEffect(() => {
+    loadCheckinDimensions().then(setDimensions);
+    refreshCheckinDimensions().then(loadCheckinDimensions).then(setDimensions);
+  }, []);
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>

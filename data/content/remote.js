@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../config/supabase';
 import { mythbusters as staticMythbusters } from './mythbusters';
 import { affirmations as staticAffirmations } from './affirmations';
+import { checkinDimensions as staticCheckinDimensions } from './checkinDimensions';
 
 // Admin-editable content — lives in Supabase so Thea can edit it live from
 // the practitioner hub, but is cached to AsyncStorage so the app keeps
@@ -17,8 +18,9 @@ import { affirmations as staticAffirmations } from './affirmations';
 // the fallback — don't delete it when a content type moves here.
 
 const CACHE_KEYS = {
-  mythbusters:   '@lglow/content_cache/mythbusters',
-  affirmations:  '@lglow/content_cache/affirmations',
+  mythbusters:        '@lglow/content_cache/mythbusters',
+  affirmations:       '@lglow/content_cache/affirmations',
+  checkinDimensions:  '@lglow/content_cache/checkin_dimensions',
 };
 
 function rowToMythbuster(row) {
@@ -72,5 +74,29 @@ export async function refreshAffirmations() {
     await AsyncStorage.setItem(CACHE_KEYS.affirmations, JSON.stringify(data.map(rowToAffirmation)));
   } catch (err) {
     console.warn('Refresh affirmations failed (using cached/static):', err.message);
+  }
+}
+
+function rowToCheckinDimension(row) {
+  const dim = { key: row.key, label: row.label, desc: row.description };
+  if (row.hint_low || row.hint_high) dim.hint = { low: row.hint_low, high: row.hint_high };
+  return dim;
+}
+
+export async function loadCheckinDimensions() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.checkinDimensions);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticCheckinDimensions;
+}
+
+export async function refreshCheckinDimensions() {
+  try {
+    const { data, error } = await supabase.from('checkin_dimensions').select('*').order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.checkinDimensions, JSON.stringify(data.map(rowToCheckinDimension)));
+  } catch (err) {
+    console.warn('Refresh checkin dimensions failed (using cached/static):', err.message);
   }
 }
