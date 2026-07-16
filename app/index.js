@@ -11,6 +11,7 @@ import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention
 import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
+import { loadMythbusters, refreshMythbusters } from '../data/content/remote';
 import { playlistForDosha } from '../data/content/music';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 
@@ -164,7 +165,15 @@ function MusicCard({ dosha, colors: c }) {
 }
 
 function MythbusterCard({ colors: c, spacing }) {
-  const myth = currentMythbuster();
+  const [list, setList] = useState(null);
+
+  useEffect(() => {
+    loadMythbusters().then(setList);
+    refreshMythbusters().then(() => loadMythbusters()).then(fresh => setList(fresh));
+  }, []);
+
+  if (!list) return null;
+  const myth = currentMythbuster(list);
 
   if (myth) {
     return (

@@ -1,23 +1,21 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import { router } from 'expo-router';
-import { useTheme } from '../context/ThemeContext';
-import { card } from '../theme/index';
-import { supabase } from '../config/supabase';
-import { SECTIONS, sectionProgress } from './intake';
-import BackButton from '../components/BackButton';
+import { useTheme } from '../../context/ThemeContext';
+import { card } from '../../theme/index';
+import { supabase } from '../../config/supabase';
+import { SECTIONS, sectionProgress } from '../intake';
 
-// Practitioner dashboard — v2, still built ahead of the real conversation
-// with Thea about what she wants to see (see roadmap #30 Phase 2). v1 was
-// intake-form-only; this pass shows everything the app has on a consented
-// client (assessment results, check-in history, journal) plus a private
-// follow-up notes log Thea writes herself. Deliberately does NOT generate
-// suggested follow-up actions or clinical guidance — that's fabricating
-// exactly the kind of content CLAUDE.md's authorship rules forbid. The
-// "needs attention" flagging below is limited to objective, computed facts
-// (staleness, a numeric trend, incompleteness) — descriptive, not
-// diagnostic. Access is enforced by RLS, not by this screen.
+// Practitioner "Clients" screen — v2, still built ahead of the real
+// conversation with Thea about what she wants to see (see roadmap #30 Phase
+// 2). Shows everything the app has on a consented client (assessment
+// results, check-in history, journal) plus a private follow-up notes log
+// Thea writes herself. Deliberately does NOT generate suggested follow-up
+// actions or clinical guidance — that's fabricating exactly the kind of
+// content CLAUDE.md's authorship rules forbid. The "needs attention"
+// flagging below is limited to objective, computed facts (staleness, a
+// numeric trend, incompleteness) — descriptive, not diagnostic. Access is
+// enforced by RLS; the role check itself lives in the parent _layout.js,
+// gating every /practitioner/* screen, not just this one.
 
 function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
@@ -291,9 +289,9 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
   const intakePct = intakeTotal ? Math.round((intakeFilled / intakeTotal) * 100) : 0;
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1 }}>
+    <View style={{ flex: 1 }}>
       <View style={[s.detailHeader, { borderBottomColor: c.border }]}>
-        <BackButton onPress={onBack} color={c.text} />
+        <Pressable onPress={onBack} hitSlop={8} style={s.backBtn}><Text style={{ color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>← Back</Text></Pressable>
         <View style={{ flex: 1 }}>
           <Text style={[s.detailTitle, { color: c.text }]}>{client.display_name || client.email}</Text>
           <Text style={[s.detailSub, { color: c.textMuted }]}>{client.email}</Text>
@@ -376,7 +374,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
               <>
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>Dosha history</Text>
                 {clientData.doshaResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
-                {clientData.doshaResults.map((r, i) => (
+                {clientData.doshaResults.map(r => (
                   <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
                     <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
                     <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dosha)} · V{r.vata_score} P{r.pitta_score} K{r.kapha_score}</Text>
@@ -530,7 +528,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
           </ScrollView>
         </>
       )}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -540,70 +538,41 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
 // screen (viewport minus WebLayout's 240px sidebar).
 const WIDE_BREAKPOINT = 800;
 
-export default function Practitioner() {
+export default function PractitionerClients() {
   const { theme: { colors: c } } = useTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
-  const [authorized, setAuthorized] = useState(undefined); // undefined = checking, null = no, true = yes
   const [practitionerId, setPractitionerId] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) { setAuthorized(null); return; }
-      const { data, error } = await supabase.from('users').select('role').eq('id', session.user.id).single();
-      if (error) console.error('Practitioner role check failed:', error.message, error);
-      setAuthorized(data?.role === 'practitioner');
-      setPractitionerId(session.user.id);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setPractitionerId(session?.user?.id ?? null);
     });
   }, []);
 
-  return (
-    <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {(isWide || !selectedClient) && (
-        <View style={[s.header, { borderBottomColor: c.border }]}>
-          <BackButton onPress={() => router.back()} color={c.text} />
-          <Text style={[s.headerTitle, { color: c.text }]}>Practitioner View</Text>
-          <View style={{ width: 40 }} />
+  if (isWide) {
+    return (
+      <View style={{ flex: 1, flexDirection: 'row' }}>
+        <View style={[s.listPane, { borderRightColor: c.border }]}>
+          <ClientList colors={c} onSelect={setSelectedClient} selectedId={selectedClient?.id} />
         </View>
-      )}
-
-      {authorized === undefined && (
-        <View style={s.centerPad}><ActivityIndicator color={c.accent} /></View>
-      )}
-
-      {(authorized === null || authorized === false) && (
-        <View style={s.centerPad}>
-          <Text style={[s.emptyText, { color: c.textMuted }]}>This view is for practitioners only.</Text>
-        </View>
-      )}
-
-      {authorized === true && (
-        isWide ? (
-          <View style={{ flex: 1, flexDirection: 'row' }}>
-            <View style={[s.listPane, { borderRightColor: c.border }]}>
-              <ClientList colors={c} onSelect={setSelectedClient} selectedId={selectedClient?.id} />
-            </View>
-            <View style={{ flex: 1 }}>
-              {selectedClient
-                ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
-                : <View style={s.centerPad}><Text style={[s.emptyText, { color: c.textMuted }]}>Select a client to view their details.</Text></View>}
-            </View>
-          </View>
-        ) : (
-          selectedClient
+        <View style={{ flex: 1 }}>
+          {selectedClient
             ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
-            : <ClientList colors={c} onSelect={setSelectedClient} />
-        )
-      )}
-    </SafeAreaView>
-  );
+            : <View style={s.centerPad}><Text style={[s.emptyText, { color: c.textMuted }]}>Select a client to view their details.</Text></View>}
+        </View>
+      </View>
+    );
+  }
+
+  return selectedClient
+    ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
+    : <ClientList colors={c} onSelect={setSelectedClient} />;
 }
 
 const s = StyleSheet.create({
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   listPane:    { width: 340, borderRightWidth: StyleSheet.hairlineWidth },
-  headerTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
 
   centerPad: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, textAlign: 'center' },
@@ -620,6 +589,7 @@ const s = StyleSheet.create({
   attentionChip:     { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
   attentionChipText: { fontFamily: 'Inter_500Medium', fontSize: 11.5 },
 
+  backBtn:      { marginRight: 10 },
   detailHeader: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, gap: 10 },
   detailTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 18 },
   detailSub:    { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
@@ -642,7 +612,6 @@ const s = StyleSheet.create({
   answerValue: { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 20 },
 
   entryCard: { borderRadius: 14, padding: 14, marginBottom: 8 },
-  logRow:    { marginBottom: 12 },
   logDate:   { fontFamily: 'Inter_600SemiBold', fontSize: 12.5, marginBottom: 2 },
   logDetail: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19 },
   logNote:   { fontFamily: 'Inter_400Regular', fontSize: 13, fontStyle: 'italic', marginTop: 2, lineHeight: 18 },

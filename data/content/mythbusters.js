@@ -215,9 +215,11 @@ export const mythbusters = [
 export const agniEditionClose = `Your body isn't broken.\n\nIt's communicating.\n\nThe question isn't: "What food should I eliminate next?"\n\nThe question is: "What is my body trying to tell me?"\n\nAnd that's where the magic starts.`;
 
 // Returns the current week's entry only when it has content. Null otherwise.
-export function currentMythbuster() {
+// Takes the list explicitly (rather than always reading the static array
+// above) so callers can pass the live/cached list from data/content/remote.js.
+export function currentMythbuster(list = mythbusters) {
   const today = new Date();
-  return mythbusters.find(({ weekStart, take }) => {
+  return list.find(({ weekStart, take }) => {
     if (!take) return false;
     const start = new Date(weekStart);
     const end = new Date(weekStart);
