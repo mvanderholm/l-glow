@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { loadDoshaResult } from '../data/user/storage';
 import { affirmationsForDosha } from '../data/content/affirmations';
+import { loadAffirmations, refreshAffirmations } from '../data/content/remote';
 
 // Picks a starting index from the pool that changes each day but is stable within a day.
 function dailyStartIndex(len) {
@@ -20,11 +21,14 @@ export default function Affirmations() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    loadDoshaResult().then(result => {
-      const pool = affirmationsForDosha(result?.dosha ?? null);
+    async function build(list) {
+      const result = await loadDoshaResult();
+      const pool = affirmationsForDosha(result?.dosha ?? null, { list });
       setPool(pool);
       setIndex(dailyStartIndex(pool.length));
-    });
+    }
+    loadAffirmations().then(build);
+    refreshAffirmations().then(loadAffirmations).then(build);
   }, []);
 
   const affirmation = pool[index] ?? null;

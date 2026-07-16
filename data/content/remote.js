@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '../../config/supabase';
 import { mythbusters as staticMythbusters } from './mythbusters';
+import { affirmations as staticAffirmations } from './affirmations';
 
 // Admin-editable content — lives in Supabase so Thea can edit it live from
 // the practitioner hub, but is cached to AsyncStorage so the app keeps
@@ -16,7 +17,8 @@ import { mythbusters as staticMythbusters } from './mythbusters';
 // the fallback — don't delete it when a content type moves here.
 
 const CACHE_KEYS = {
-  mythbusters: '@lglow/content_cache/mythbusters',
+  mythbusters:   '@lglow/content_cache/mythbusters',
+  affirmations:  '@lglow/content_cache/affirmations',
 };
 
 function rowToMythbuster(row) {
@@ -48,5 +50,27 @@ export async function refreshMythbusters() {
     await AsyncStorage.setItem(CACHE_KEYS.mythbusters, JSON.stringify(data.map(rowToMythbuster)));
   } catch (err) {
     console.warn('Refresh mythbusters failed (using cached/static):', err.message);
+  }
+}
+
+function rowToAffirmation(row) {
+  return { id: row.id, text: row.text, dosha: row.dosha, season: row.season ?? undefined, state: row.state ?? undefined };
+}
+
+export async function loadAffirmations() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.affirmations);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticAffirmations;
+}
+
+export async function refreshAffirmations() {
+  try {
+    const { data, error } = await supabase.from('affirmations').select('*');
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.affirmations, JSON.stringify(data.map(rowToAffirmation)));
+  } catch (err) {
+    console.warn('Refresh affirmations failed (using cached/static):', err.message);
   }
 }

@@ -14,8 +14,9 @@ import BackButton from '../../components/BackButton';
 // of each screen re-checking it.
 
 const NAV_ITEMS = [
-  { key: 'clients',     label: 'Clients',     href: '/practitioner' },
-  { key: 'mythbusters', label: 'Mythbusters',  href: '/practitioner/mythbusters' },
+  { key: 'clients',      label: 'Clients',      href: '/practitioner' },
+  { key: 'mythbusters',  label: 'Mythbusters',  href: '/practitioner/mythbusters' },
+  { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
 ];
 
 export default function PractitionerLayout() {

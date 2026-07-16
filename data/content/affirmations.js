@@ -84,10 +84,12 @@ export const affirmations = [
 // Returns the pool for a given dosha: dosha-specific entries first, then universals.
 // Seasonal and state entries are excluded from the default pool — pass filters to include them.
 // Prakriti-based for now — swap dosha source for vikriti when check-in signal is reliable.
-export function affirmationsForDosha(dosha, { season, state } = {}) {
-  const specific  = dosha ? affirmations.filter(a => a.dosha === dosha && !a.season && !a.state) : [];
-  const universal = affirmations.filter(a => a.dosha === 'universal' && !a.season && !a.state);
-  const seasonal  = season ? affirmations.filter(a => a.season === season) : [];
-  const stated    = state  ? affirmations.filter(a => a.state  === state)  : [];
+// Takes the list explicitly (rather than always reading the static array above) so callers
+// can pass the live/cached list from data/content/remote.js.
+export function affirmationsForDosha(dosha, { season, state, list = affirmations } = {}) {
+  const specific  = dosha ? list.filter(a => a.dosha === dosha && !a.season && !a.state) : [];
+  const universal = list.filter(a => a.dosha === 'universal' && !a.season && !a.state);
+  const seasonal  = season ? list.filter(a => a.season === season) : [];
+  const stated    = state  ? list.filter(a => a.state  === state)  : [];
   return [...specific, ...universal, ...seasonal, ...stated];
 }
