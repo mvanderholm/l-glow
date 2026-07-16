@@ -3,6 +3,7 @@ import { supabase } from '../../config/supabase';
 import { mythbusters as staticMythbusters } from './mythbusters';
 import { affirmations as staticAffirmations } from './affirmations';
 import { checkinDimensions as staticCheckinDimensions } from './checkinDimensions';
+import { gunaQuestions as staticGunaQuestions } from './gunaQuiz';
 
 // Admin-editable content — lives in Supabase so Thea can edit it live from
 // the practitioner hub, but is cached to AsyncStorage so the app keeps
@@ -21,6 +22,7 @@ const CACHE_KEYS = {
   mythbusters:        '@lglow/content_cache/mythbusters',
   affirmations:       '@lglow/content_cache/affirmations',
   checkinDimensions:  '@lglow/content_cache/checkin_dimensions',
+  gunaQuestions:      '@lglow/content_cache/guna_questions',
 };
 
 function rowToMythbuster(row) {
@@ -98,5 +100,35 @@ export async function refreshCheckinDimensions() {
     await AsyncStorage.setItem(CACHE_KEYS.checkinDimensions, JSON.stringify(data.map(rowToCheckinDimension)));
   } catch (err) {
     console.warn('Refresh checkin dimensions failed (using cached/static):', err.message);
+  }
+}
+
+function rowToGunaQuestion(row) {
+  return {
+    id: row.id,
+    prompt: row.prompt,
+    options: [
+      { label: row.sattva_label, guna: 'sattva' },
+      { label: row.rajas_label, guna: 'rajas' },
+      { label: row.tamas_label, guna: 'tamas' },
+    ],
+  };
+}
+
+export async function loadGunaQuestions() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.gunaQuestions);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticGunaQuestions;
+}
+
+export async function refreshGunaQuestions() {
+  try {
+    const { data, error } = await supabase.from('guna_questions').select('*').order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.gunaQuestions, JSON.stringify(data.map(rowToGunaQuestion)));
+  } catch (err) {
+    console.warn('Refresh guna questions failed (using cached/static):', err.message);
   }
 }

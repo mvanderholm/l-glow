@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { key: 'mythbusters',  label: 'Mythbusters',  href: '/practitioner/mythbusters' },
   { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
   { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
+  { key: 'guna',         label: 'Guna Quiz',    href: '/practitioner/guna-questions' },
 ];
 
 export default function PractitionerLayout() {

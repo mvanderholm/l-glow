@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { gunaQuestions } from '../data/content/gunaQuiz';
+import { gunaQuestions as staticGunaQuestions } from '../data/content/gunaQuiz';
+import { loadGunaQuestions, refreshGunaQuestions } from '../data/content/remote';
 import { saveGunaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
 import BackButton from '../components/BackButton';
@@ -11,9 +12,17 @@ export default function GunaQuiz() {
   const { theme: { colors: c } } = useTheme();
   const [index, setIndex]     = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [gunaQuestions, setGunaQuestions] = useState(staticGunaQuestions);
+
+  useEffect(() => {
+    loadGunaQuestions().then(setGunaQuestions);
+    refreshGunaQuestions().then(loadGunaQuestions).then(setGunaQuestions);
+  }, []);
 
   const q        = gunaQuestions[index];
   const progress = (index / gunaQuestions.length) * 100;
+
+  if (!q) return <SafeAreaView style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.accent} /></SafeAreaView>;
 
   async function pick(guna) {
     const next = [...answers, guna];
