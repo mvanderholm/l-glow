@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
@@ -68,6 +68,8 @@ function computeAttention(checkins = [], intakeData) {
 function ClientList({ colors: c, onSelect, selectedId }) {
   const [clients, setClients] = useState(null);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState('');
+  const [attentionOnly, setAttentionOnly] = useState(false);
 
   useEffect(() => {
     supabase
@@ -112,9 +114,34 @@ function ClientList({ colors: c, onSelect, selectedId }) {
     );
   }
 
+  const q = search.trim().toLowerCase();
+  const filtered = clients.filter(client => {
+    if (attentionOnly && client.attentionReasons.length === 0) return false;
+    if (!q) return true;
+    return (client.display_name || '').toLowerCase().includes(q) || (client.email || '').toLowerCase().includes(q);
+  });
+
   return (
     <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
-      {clients.map(client => (
+      <TextInput
+        style={[s.searchInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+        value={search}
+        onChangeText={setSearch}
+        placeholder="Search clients…"
+        placeholderTextColor={c.textMuted}
+      />
+      <Pressable
+        style={[s.attentionToggle, { borderColor: attentionOnly ? c.accent : c.border, backgroundColor: attentionOnly ? (c.accent + '18') : 'transparent' }]}
+        onPress={() => setAttentionOnly(v => !v)}
+      >
+        <Text style={[s.attentionToggleText, { color: attentionOnly ? c.accent : c.textMuted }]}>Needs attention only</Text>
+      </Pressable>
+
+      {filtered.length === 0 && (
+        <Text style={[s.mutedNote, { color: c.textMuted, textAlign: 'center', marginTop: 24 }]}>No clients match.</Text>
+      )}
+
+      {filtered.map(client => (
         <Pressable
           key={client.id}
           style={({ pressed }) => [
@@ -184,16 +211,18 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
   const [error, setError] = useState(null);
   const [noteDraft, setNoteDraft] = useState('');
   const [savingNote, setSavingNote] = useState(false);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [editDraft, setEditDraft] = useState('');
   const [activeTab, setActiveTab] = useState('summary');
 
   useEffect(() => { setActiveTab('summary'); load(); }, [client.id]);
 
   async function load() {
     const [doshaRes, gunaRes, agniRes, tongueRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
-      supabase.from('dosha_results').select('dosha, vata_score, pitta_score, kapha_score').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('guna_results').select('dominant, sattva_score, rajas_score, tamas_score').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('agni_results').select('agni_type').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(1).maybeSingle(),
-      supabase.from('tongue_checks').select('reading').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(1).maybeSingle(),
+      supabase.from('dosha_results').select('dosha, vata_score, pitta_score, kapha_score, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('guna_results').select('dominant, sattva_score, rajas_score, tamas_score, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('agni_results').select('agni_type, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('tongue_checks').select('reading, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
       supabase.from('journal_entries').select('date, grateful, showed, tomorrow').eq('user_id', client.id).order('date', { ascending: false }).limit(10),
       supabase.from('intake_forms').select('data, updated_at').eq('user_id', client.id).maybeSingle(),
@@ -204,7 +233,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
     if (firstError) { setError(firstError.message); return; }
 
     setClientData({
-      dosha: doshaRes.data, guna: gunaRes.data, agni: agniRes.data, tongue: tongueRes.data,
+      doshaResults: doshaRes.data ?? [], gunaResults: gunaRes.data ?? [], agniResults: agniRes.data ?? [], tongueResults: tongueRes.data ?? [],
       checkins: checkinsRes.data ?? [], journal: journalRes.data ?? [],
       intakeRow: intakeRes.data, notes: notesRes.data ?? [],
     });
@@ -223,6 +252,33 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
       setNoteDraft('');
     }
     setSavingNote(false);
+  }
+
+  function startEditNote(note) {
+    setEditingNoteId(note.id);
+    setEditDraft(note.note);
+  }
+
+  async function saveEditNote(id) {
+    const text = editDraft.trim();
+    if (!text) return;
+    const { error } = await supabase.from('practitioner_notes').update({ note: text }).eq('id', id);
+    if (!error) {
+      setClientData(prev => ({ ...prev, notes: prev.notes.map(n => n.id === id ? { ...n, note: text } : n) }));
+      setEditingNoteId(null);
+    }
+  }
+
+  function deleteNote(id) {
+    Alert.alert('Delete this note?', 'This can\'t be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete', style: 'destructive', onPress: async () => {
+          const { error } = await supabase.from('practitioner_notes').delete().eq('id', id);
+          if (!error) setClientData(prev => ({ ...prev, notes: prev.notes.filter(n => n.id !== id) }));
+        },
+      },
+    ]);
   }
 
   const attentionReasons = clientData ? computeAttention(clientData.checkins, clientData.intakeRow?.data) : [];
@@ -288,16 +344,19 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                   <StatCard colors={c} label="Intake" value={`${intakePct}%`} />
                 </View>
 
-                <SectionCard title="Current snapshot" colors={c}>
-                  <AnswerRow label="Dosha" colors={c} value={clientData.dosha
-                    ? `${cap(clientData.dosha.dosha)} · V${clientData.dosha.vata_score} P${clientData.dosha.pitta_score} K${clientData.dosha.kapha_score}`
-                    : 'Not yet taken'} />
-                  <AnswerRow label="Guna" colors={c} value={clientData.guna
-                    ? `${cap(clientData.guna.dominant)} · S${clientData.guna.sattva_score} R${clientData.guna.rajas_score} T${clientData.guna.tamas_score}`
-                    : 'Not yet taken'} />
-                  <AnswerRow label="Agni" colors={c} value={clientData.agni ? cap(clientData.agni.agni_type) : 'Not yet taken'} />
-                  <AnswerRow label="Tongue check" colors={c} value={clientData.tongue ? cap(clientData.tongue.reading) : 'Not yet taken'} />
-                </SectionCard>
+                <Pressable onPress={() => setActiveTab('assessments')}>
+                  <SectionCard title="Current snapshot" colors={c}>
+                    <AnswerRow label="Dosha" colors={c} value={clientData.doshaResults[0]
+                      ? `${cap(clientData.doshaResults[0].dosha)} · V${clientData.doshaResults[0].vata_score} P${clientData.doshaResults[0].pitta_score} K${clientData.doshaResults[0].kapha_score}`
+                      : 'Not yet taken'} />
+                    <AnswerRow label="Guna" colors={c} value={clientData.gunaResults[0]
+                      ? `${cap(clientData.gunaResults[0].dominant)} · S${clientData.gunaResults[0].sattva_score} R${clientData.gunaResults[0].rajas_score} T${clientData.gunaResults[0].tamas_score}`
+                      : 'Not yet taken'} />
+                    <AnswerRow label="Agni" colors={c} value={clientData.agniResults[0] ? cap(clientData.agniResults[0].agni_type) : 'Not yet taken'} />
+                    <AnswerRow label="Tongue check" colors={c} value={clientData.tongueResults[0] ? cap(clientData.tongueResults[0].reading) : 'Not yet taken'} />
+                    <Text style={[s.mutedNote, { color: c.accent, marginTop: 4 }]}>See full history →</Text>
+                  </SectionCard>
+                </Pressable>
 
                 {clientData.notes.length > 0 && (
                   <Pressable onPress={() => setActiveTab('notes')}>
@@ -314,16 +373,43 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
             )}
 
             {activeTab === 'assessments' && (
-              <SectionCard title="Assessments" colors={c}>
-                <AnswerRow label="Dosha" colors={c} value={clientData.dosha
-                  ? `${cap(clientData.dosha.dosha)} · V${clientData.dosha.vata_score} P${clientData.dosha.pitta_score} K${clientData.dosha.kapha_score}`
-                  : 'Not yet taken'} />
-                <AnswerRow label="Guna" colors={c} value={clientData.guna
-                  ? `${cap(clientData.guna.dominant)} · S${clientData.guna.sattva_score} R${clientData.guna.rajas_score} T${clientData.guna.tamas_score}`
-                  : 'Not yet taken'} />
-                <AnswerRow label="Agni" colors={c} value={clientData.agni ? cap(clientData.agni.agni_type) : 'Not yet taken'} />
-                <AnswerRow label="Tongue check" colors={c} value={clientData.tongue ? cap(clientData.tongue.reading) : 'Not yet taken'} />
-              </SectionCard>
+              <>
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>Dosha history</Text>
+                {clientData.doshaResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
+                {clientData.doshaResults.map((r, i) => (
+                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
+                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
+                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dosha)} · V{r.vata_score} P{r.pitta_score} K{r.kapha_score}</Text>
+                  </View>
+                ))}
+
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Guna history</Text>
+                {clientData.gunaResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
+                {clientData.gunaResults.map(r => (
+                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
+                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
+                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dominant)} · S{r.sattva_score} R{r.rajas_score} T{r.tamas_score}</Text>
+                  </View>
+                ))}
+
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Agni history</Text>
+                {clientData.agniResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
+                {clientData.agniResults.map(r => (
+                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
+                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
+                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.agni_type)}</Text>
+                  </View>
+                ))}
+
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Tongue check history</Text>
+                {clientData.tongueResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>Not yet taken.</Text>}
+                {clientData.tongueResults.map(r => (
+                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
+                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
+                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.reading)}</Text>
+                  </View>
+                ))}
+              </>
             )}
 
             {activeTab === 'checkins' && (
@@ -405,10 +491,37 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                 </Pressable>
                 {clientData.notes.map(note => (
                   <View key={note.id} style={[s.noteRow, { borderTopColor: c.border }]}>
-                    <Text style={[s.noteDate, { color: c.textMuted }]}>
-                      {new Date(note.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
-                    </Text>
-                    <Text style={[s.noteText, { color: c.text }]}>{note.note}</Text>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <Text style={[s.noteDate, { color: c.textMuted, marginBottom: 0 }]}>
+                        {new Date(note.created_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                      </Text>
+                      {editingNoteId !== note.id && (
+                        <View style={{ flexDirection: 'row', gap: 14 }}>
+                          <Pressable onPress={() => startEditNote(note)}><Text style={[s.noteActionText, { color: c.accent }]}>Edit</Text></Pressable>
+                          <Pressable onPress={() => deleteNote(note.id)}><Text style={[s.noteActionText, { color: c.terracotta || '#C97855' }]}>Delete</Text></Pressable>
+                        </View>
+                      )}
+                    </View>
+                    {editingNoteId === note.id ? (
+                      <>
+                        <TextInput
+                          style={[s.noteInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border, marginTop: 6 }]}
+                          value={editDraft}
+                          onChangeText={setEditDraft}
+                          multiline
+                        />
+                        <View style={{ flexDirection: 'row', gap: 10 }}>
+                          <Pressable style={[s.addNoteBtn, { flex: 1, backgroundColor: editDraft.trim() ? c.accent : c.border }]} onPress={() => saveEditNote(note.id)} disabled={!editDraft.trim()}>
+                            <Text style={s.addNoteBtnText}>Save</Text>
+                          </Pressable>
+                          <Pressable style={[s.addNoteBtn, { flex: 1, backgroundColor: c.surfaceAlt }]} onPress={() => setEditingNoteId(null)}>
+                            <Text style={[s.addNoteBtnText, { color: c.textMuted }]}>Cancel</Text>
+                          </Pressable>
+                        </View>
+                      </>
+                    ) : (
+                      <Text style={[s.noteText, { color: c.text }]}>{note.note}</Text>
+                    )}
                   </View>
                 ))}
               </SectionCard>
@@ -495,6 +608,10 @@ const s = StyleSheet.create({
   centerPad: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, textAlign: 'center' },
 
+  searchInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: 'Inter_400Regular', marginBottom: 10 },
+  attentionToggle: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 16 },
+  attentionToggleText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
+
   clientRow:   { borderRadius: 16, padding: 16, marginBottom: 10 },
   clientName:  { fontFamily: 'Inter_600SemiBold', fontSize: 15.5 },
   clientEmail: { fontFamily: 'Inter_400Regular', fontSize: 13, marginTop: 2 },
@@ -536,4 +653,5 @@ const s = StyleSheet.create({
   noteRow:  { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: 10, marginTop: 10 },
   noteDate: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 },
   noteText: { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 },
+  noteActionText: { fontFamily: 'Inter_600SemiBold', fontSize: 12 },
 });
