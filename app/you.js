@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import { loadDoshaResult, loadGunaResult, loadTongueResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
+import { loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
 import { tongueReadings } from '../data/content/tongueCheck';
+import { agniResults } from '../data/content/agniQuiz';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
@@ -50,6 +51,7 @@ export default function You() {
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
   const [tongueResult, setTongueResult] = useState(null);
+  const [agniResult, setAgniResult] = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
   const [consented, setConsented]   = useState(false);
@@ -59,6 +61,7 @@ export default function You() {
     loadDoshaResult().then(r => setResult(r || false));
     loadGunaResult().then(r => setGunaResult(r));
     loadTongueResult().then(r => setTongueResult(r));
+    loadAgniResult().then(r => setAgniResult(r));
     loadUserName().then(n => { if (n) setUserName(n); });
     loadRecentCheckins(365).then(list => {
       setStats(computeStats(list));
@@ -170,6 +173,7 @@ export default function You() {
         {(() => {
           const rows = [
             { label: 'My Dosha',        Icon: LeafIcon, dosha: true },
+            { label: 'Agni Assessment', Icon: FireIcon, agni: true },
             { label: 'Guna Assessment', Icon: GunaIcon, guna: true },
             { label: 'Tongue Check',    Icon: TongueIcon, tongue: true },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
@@ -185,6 +189,22 @@ export default function You() {
                   onPress={() => {
                     if (item.dosha) router.push('/quiz');
                     if (item.intake) router.push('/intake');
+                    if (item.agni) {
+                      if (agniResult) {
+                        router.push({
+                          pathname: '/agni-result',
+                          params: {
+                            dominant: agniResult.agniType,
+                            sama:    agniResult.counts?.sama    ?? 0,
+                            vishama: agniResult.counts?.vishama ?? 0,
+                            tikshna: agniResult.counts?.tikshna ?? 0,
+                            manda:   agniResult.counts?.manda   ?? 0,
+                          },
+                        });
+                      } else {
+                        router.push('/agni-quiz');
+                      }
+                    }
                     if (item.guna) {
                       if (gunaResult) {
                         router.push({
@@ -222,6 +242,11 @@ export default function You() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>{item.label}</Text>
+                    {item.agni && agniResult && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                        {(agniResults[agniResult.agniType] ?? agniResults.sama).name}
+                      </Text>
+                    )}
                     {item.guna && gunaResult && (
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
                         {gunaResult.dominant.charAt(0).toUpperCase() + gunaResult.dominant.slice(1)} dominant
@@ -394,6 +419,11 @@ function GunaIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
+  </Svg>;
+}
+function FireIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1 1 2 2.5 2 4.5A5 5 0 0 1 7 14.5C7 9 12 7 12 2Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
   </Svg>;
 }
 function TongueIcon({ color, size }) {
