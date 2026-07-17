@@ -16,7 +16,7 @@ export const mythbusters = [
   {
     id: 'healthy-eat-more',
     series: 'agni',
-    weekStart: '2026-08-17',
+    weekStart: '2026-07-17', // pulled forward from 2026-08-17 (launch) so it's live now, July 2026 — Matt's call
     myth: 'If it\'s healthy, eat more of it.',
     take: 'Girl, no. I\'ve seen people destroy their digestion with kale, smoothies, and enough supplements to stock a GNC. Your body doesn\'t care what Instagram says. If you can\'t digest it, it\'s not helping you.',
     reframe: 'Healthy is contextual. If you can\'t digest it, that\'s information — not failure.',
