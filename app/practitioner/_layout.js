@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { useState, useEffect } from 'react';
@@ -24,10 +24,41 @@ const NAV_ITEMS = [
   { key: 'playlists',    label: 'Playlists',    href: '/practitioner/playlists' },
 ];
 
+// Sidebar nav on wide (desktop) screens, matching the pattern from the old
+// left-side nav that used to be there before it was replaced with a top tab
+// bar — brought back as a purpose-built practitioner sidebar instead of the
+// removed consumer WebLayout one. Below this width it falls back to the
+// horizontal scrolling tab bar, since a fixed-width sidebar would eat too
+// much of a phone screen.
+const SIDEBAR_BREAKPOINT = 720;
+
+function NavLink({ item, active, variant, colors: c, onPress }) {
+  if (variant === 'sidebar') {
+    return (
+      <Pressable
+        onPress={onPress}
+        style={[s.sidebarBtn, active && { backgroundColor: c.surfaceAlt }]}
+      >
+        <Text style={[s.sidebarBtnText, { color: active ? c.text : c.textMuted }]}>{item.label}</Text>
+      </Pressable>
+    );
+  }
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[s.navBtn, active && { borderBottomColor: c.accent, borderBottomWidth: 2 }]}
+    >
+      <Text style={[s.navBtnText, { color: active ? c.text : c.textMuted }]}>{item.label}</Text>
+    </Pressable>
+  );
+}
+
 export default function PractitionerLayout() {
   const { theme: { colors: c } } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const { width } = useWindowDimensions();
+  const isWide = width >= SIDEBAR_BREAKPOINT;
   const [authorized, setAuthorized] = useState(undefined); // undefined = checking, null = no session, false = signed in but not a practitioner, true = yes
 
   useEffect(() => {
@@ -84,23 +115,44 @@ export default function PractitionerLayout() {
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Practitioner Hub</Text>
         <View style={{ width: 40 }} />
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.navBar, { borderBottomColor: c.border }]} contentContainerStyle={s.navBarContent}>
-        {NAV_ITEMS.map(item => {
-          const active = pathname === item.href;
-          return (
-            <Pressable
-              key={item.key}
-              onPress={() => router.push(item.href)}
-              style={[s.navBtn, active && { borderBottomColor: c.accent, borderBottomWidth: 2 }]}
-            >
-              <Text style={[s.navBtnText, { color: active ? c.text : c.textMuted }]}>{item.label}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-      <View style={{ flex: 1 }}>
-        <Slot />
-      </View>
+
+      {isWide ? (
+        <View style={{ flex: 1, flexDirection: 'row' }}>
+          <View style={[s.sidebar, { borderRightColor: c.border }]}>
+            {NAV_ITEMS.map(item => (
+              <NavLink
+                key={item.key}
+                item={item}
+                active={pathname === item.href}
+                variant="sidebar"
+                colors={c}
+                onPress={() => router.push(item.href)}
+              />
+            ))}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Slot />
+          </View>
+        </View>
+      ) : (
+        <>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.navBar, { borderBottomColor: c.border }]} contentContainerStyle={s.navBarContent}>
+            {NAV_ITEMS.map(item => (
+              <NavLink
+                key={item.key}
+                item={item}
+                active={pathname === item.href}
+                variant="tabs"
+                colors={c}
+                onPress={() => router.push(item.href)}
+              />
+            ))}
+          </ScrollView>
+          <View style={{ flex: 1 }}>
+            <Slot />
+          </View>
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -114,4 +166,7 @@ const s = StyleSheet.create({
   navBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   signInBtn:     { borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   signInBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+  sidebar:       { width: 220, paddingVertical: 16, paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth },
+  sidebarBtn:    { paddingVertical: 11, paddingHorizontal: 14, borderRadius: 10, marginBottom: 2 },
+  sidebarBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14.5 },
 });
