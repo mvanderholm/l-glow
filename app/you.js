@@ -39,6 +39,7 @@ function computeStats(checkins) {
 }
 
 const SETTINGS = [
+  { label: 'Tools',               Icon: ToolsIcon,    tools: true },
   { label: 'Reminders',           Icon: BellIcon,     soon: true  },
   { label: 'Help & guidance',     Icon: QuestionIcon, soon: true  },
 ];
@@ -279,13 +280,15 @@ export default function You() {
             <Pressable
               key={item.label}
               style={[styles.settingsRow, idx < SETTINGS.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-              onPress={() => {}}
+              onPress={() => { if (item.tools) router.push('/tools'); }}
             >
               <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
                 <item.Icon color={c.textMuted} size={15} />
               </View>
-              <Text style={[styles.settingsLabel, { color: c.textMuted }]}>{item.label}</Text>
-              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
+              <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text }]}>{item.label}</Text>
+              {item.soon
+                ? <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
+                : <ChevronIcon color={c.textMuted} />}
             </Pressable>
           ))}
         </View>
@@ -419,6 +422,12 @@ function GunaIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
+  </Svg>;
+}
+function ToolsIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M14.7 6.3a4 4 0 0 1 5 5l-7.4 7.4a2 2 0 0 1-2.8 0l-2.2-2.2a2 2 0 0 1 0-2.8l7.4-7.4Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M4 20l3-1 1-3" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }
 function FireIcon({ color, size }) {
