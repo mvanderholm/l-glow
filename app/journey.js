@@ -14,10 +14,15 @@ const TABS = ['Overview', 'Ayurveda', 'Habits', 'Cycles'];
 
 const FOCUS = ['Nourish your body', 'Calm your mind', 'Honor your pace'];
 
+// done: false for all — this seeds Journey's "checked" state (see below) and
+// has no persistence behind it yet (practice_completions table exists but
+// nothing writes to it, see roadmap). Starting two of these pre-checked
+// showed every user, including a brand-new one, fake completed progress on
+// first load. Fixed July 2026.
 const PRACTICES = [
-  { id: 'morning', title: 'Morning Ritual',    desc: 'Warm water, oil pulling, tongue scrape', time: '10 min',    Icon: SunIcon,    done: true  },
+  { id: 'morning', title: 'Morning Ritual',    desc: 'Warm water, oil pulling, tongue scrape', time: '10 min',    Icon: SunIcon,    done: false },
   { id: 'move',    title: 'Movement',           desc: 'Gentle flow + breath',                   time: '20 min',    Icon: BreathIcon, done: false },
-  { id: 'meal',    title: 'Nourishing Meal',    desc: 'Breakfast — warm & grounding',           time: 'Breakfast', Icon: BowlIcon,   done: true  },
+  { id: 'meal',    title: 'Nourishing Meal',    desc: 'Breakfast — warm & grounding',           time: 'Breakfast', Icon: BowlIcon,   done: false },
   { id: 'mind',    title: 'Mindful Moment',     desc: 'Seated stillness',                       time: '10 min',    Icon: LotusIcon,  done: false },
   { id: 'eve',     title: 'Evening Wind Down',  desc: 'Abhyanga + early rest',                  time: '15 min',    Icon: MoonIcon,   done: false },
 ];

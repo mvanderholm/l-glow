@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doshaInfo } from '../data/content/quiz';
 import { useTheme } from '../context/ThemeContext';
@@ -14,6 +14,13 @@ export default function Result() {
   const innerWidth = (Platform.OS === 'web' ? Math.min(windowWidth, 480) : windowWidth) - spacing.lg * 2;
   const styles = makeStyles(colors, spacing, radius);
   const params = useLocalSearchParams();
+  // The quiz always sends a floor of 3 per dosha (see quiz.js), so real
+  // completions never arrive with every param missing. Landing here with
+  // none of them set means a stale link, browser history weirdness, or
+  // direct navigation — not a real result. Redirect instead of saving a
+  // fake all-zero dosha over whatever the user actually has (or doesn't).
+  const hasParams = params.vata !== undefined || params.pitta !== undefined || params.kapha !== undefined;
+  const [redirecting, setRedirecting] = useState(false);
 
   const scores = {
     vata:  Number(params.vata  || 0),
@@ -32,10 +39,25 @@ export default function Result() {
   };
 
   useEffect(() => {
+    if (!hasParams) {
+      setRedirecting(true);
+      setTimeout(() => router.replace('/quiz'), 1800);
+      return;
+    }
     saveDoshaResult(primary, scores).catch(err =>
       console.error('Failed to save dosha result:', err)
     );
   }, []);
+
+  if (redirecting) {
+    return (
+      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+        <Text style={type.label}>First things first</Text>
+        <Text style={[type.h2, { marginTop: spacing.sm, textAlign: 'center' }]}>Let's find your constitution.</Text>
+        <Text style={[type.muted, { marginTop: spacing.sm }]}>Taking you to the quiz…</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>

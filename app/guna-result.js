@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { gunaResults } from '../data/content/gunaQuiz';
@@ -29,8 +30,22 @@ function PracticeSection({ label, items, color }) {
 }
 
 export default function GunaResult() {
-  const { theme: { colors: c } } = useTheme();
+  const { theme: { colors: c, spacing, type } } = useTheme();
   const params   = useLocalSearchParams();
+  // guna-quiz.js always sends a dominant guna plus all three scores on a
+  // real completion — no params at all means a stale link or direct
+  // navigation, not a real result. Redirect to the quiz instead of showing
+  // a fabricated "Rajas" reading nobody actually got.
+  const hasParams = params.dominant !== undefined;
+  const [redirecting, setRedirecting] = useState(false);
+
+  useEffect(() => {
+    if (!hasParams) {
+      setRedirecting(true);
+      setTimeout(() => router.replace('/guna-quiz'), 1800);
+    }
+  }, []);
+
   const dominant = params.dominant ?? 'rajas';
   const res      = gunaResults[dominant] ?? gunaResults.rajas;
 
@@ -51,6 +66,16 @@ export default function GunaResult() {
     { key: 'rajas',  label: 'Rajas',  color: gunaResults.rajas.color  },
     { key: 'tamas',  label: 'Tamas',  color: gunaResults.tamas.color  },
   ];
+
+  if (redirecting) {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
+        <Text style={type.label}>First things first</Text>
+        <Text style={[type.h2, { marginTop: spacing.sm, textAlign: 'center' }]}>Let's find your mental constitution.</Text>
+        <Text style={[type.muted, { marginTop: spacing.sm }]}>Taking you to the assessment…</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
