@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { useState, useEffect } from 'react';
@@ -19,6 +19,9 @@ const NAV_ITEMS = [
   { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
   { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
   { key: 'guna',         label: 'Guna Quiz',    href: '/practitioner/guna-questions' },
+  { key: 'intentions',   label: 'Intentions',   href: '/practitioner/intentions' },
+  { key: 'routines',     label: 'Daily Rhythms',href: '/practitioner/routines' },
+  { key: 'playlists',    label: 'Playlists',    href: '/practitioner/playlists' },
 ];
 
 export default function PractitionerLayout() {
@@ -45,6 +48,11 @@ export default function PractitionerLayout() {
   }
 
   if (authorized !== true) {
+    // authorized === null means no session — most likely Thea landing on
+    // /practitioner cold, before signing in. Point her at /login instead of
+    // showing the same "not a practitioner" message a wrong-role account
+    // would see (see roadmap #50 tighten-up note, July 2026).
+    const noSession = authorized === null;
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
         <View style={[s.topHeader, { borderBottomColor: c.border }]}>
@@ -54,8 +62,16 @@ export default function PractitionerLayout() {
         </View>
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, color: c.textMuted, textAlign: 'center' }}>
-            This view is for practitioners only.
+            {noSession ? "You'll need to sign in first." : 'This view is for practitioners only.'}
           </Text>
+          {noSession && (
+            <Pressable
+              onPress={() => router.push('/login?returnTo=/practitioner')}
+              style={[s.signInBtn, { backgroundColor: c.accent, marginTop: 20 }]}
+            >
+              <Text style={s.signInBtnText}>Go to sign in</Text>
+            </Pressable>
+          )}
         </View>
       </SafeAreaView>
     );
@@ -68,7 +84,7 @@ export default function PractitionerLayout() {
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Practitioner Hub</Text>
         <View style={{ width: 40 }} />
       </View>
-      <View style={[s.navBar, { borderBottomColor: c.border }]}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.navBar, { borderBottomColor: c.border }]} contentContainerStyle={s.navBarContent}>
         {NAV_ITEMS.map(item => {
           const active = pathname === item.href;
           return (
@@ -81,7 +97,7 @@ export default function PractitionerLayout() {
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
       <View style={{ flex: 1 }}>
         <Slot />
       </View>
@@ -92,7 +108,10 @@ export default function PractitionerLayout() {
 const s = StyleSheet.create({
   topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
-  navBar:    { flexDirection: 'row', paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  navBar:    { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  navBarContent: { flexDirection: 'row', paddingHorizontal: 16 },
   navBtn:    { paddingVertical: 12, paddingHorizontal: 14, marginRight: 4 },
   navBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14 },
+  signInBtn:     { borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
+  signInBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 });

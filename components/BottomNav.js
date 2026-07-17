@@ -21,7 +21,7 @@ export default function BottomNav() {
   const insets = useSafeAreaInsets();
   const bottomPad = Math.max(insets.bottom, 8);
 
-  if (HIDDEN_ROUTES.has(pathname)) return null;
+  if (HIDDEN_ROUTES.has(pathname) || pathname.startsWith('/practitioner')) return null;
 
   return (
     <View style={[styles.wrapper, { paddingBottom: bottomPad, backgroundColor: c.bg }]}>

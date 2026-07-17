@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import BackButton from '../components/BackButton';
@@ -22,7 +22,7 @@ function friendlyError(code) {
 
 // ── Password tab ───────────────────────────────────────────────────────────
 
-function PasswordTab({ colors: c }) {
+function PasswordTab({ colors: c, returnTo }) {
   const { signIn, resetPassword } = useAuth();
   const router = useRouter();
   const [email, setEmail]         = useState('');
@@ -36,7 +36,7 @@ function PasswordTab({ colors: c }) {
     setError(''); setLoading(true);
     try {
       await signIn(email.trim(), password);
-      router.replace('/');
+      router.replace(returnTo || '/');
     } catch (e) {
       setError(friendlyError(e.code));
     } finally {
@@ -281,7 +281,13 @@ export default function Login() {
   const { theme: { colors: c } } = useTheme();
   const { pendingRecovery } = useAuth();
   const router = useRouter();
-  const [tab, setTab] = useState('magic'); // 'password' | 'magic'
+  const { returnTo } = useLocalSearchParams();
+  // Magic link has no way to carry returnTo through the email round-trip
+  // (the emailed link just lands back on /login with a session, nothing
+  // reads the query param at that point) — default to Password when arriving
+  // with a returnTo so the redirect actually works, e.g. the "Go to sign in"
+  // button on the practitioner gate. Free to switch tabs manually either way.
+  const [tab, setTab] = useState(returnTo ? 'password' : 'magic'); // 'password' | 'magic'
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -319,7 +325,7 @@ export default function Login() {
               </View>
 
               {/* Tab content */}
-              {tab === 'magic' ? <MagicLinkTab colors={c} /> : <PasswordTab colors={c} />}
+              {tab === 'magic' ? <MagicLinkTab colors={c} /> : <PasswordTab colors={c} returnTo={returnTo} />}
             </>
           )}
 

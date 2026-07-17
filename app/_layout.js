@@ -3,7 +3,7 @@ import { Platform, View, Text, Pressable } from 'react-native';
 import { useFonts } from 'expo-font';
 import { PlayfairDisplay_400Regular, PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
@@ -43,6 +43,14 @@ function AppNavigator() {
   const { theme, theme: { colors: c } } = useTheme();
   const { isWebMode } = useViewMode();
   const isWeb = Platform.OS === 'web';
+  const pathname = usePathname();
+  // Practitioner Hub is an admin tool with its own header/nav
+  // (app/practitioner/_layout.js), not part of the consumer app shell — it
+  // shouldn't be squeezed into the 480px mobile-app frame (that's what Thea
+  // was seeing by default on her PC) or need the "Web View" toggle to open
+  // wide. Always render it full-bleed on web; on native it just fills the
+  // screen like everything else already does. See roadmap #50.
+  const isPractitionerRoute = pathname.startsWith('/practitioner');
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -106,7 +114,11 @@ function AppNavigator() {
     <>
       <HamburgerDrawer />
       <StatusBar style={theme.statusBar} />
-      {isWebMode ? (
+      {isPractitionerRoute ? (
+        <View style={isWeb ? { width: '100%', height: '100vh' } : { flex: 1 }}>
+          {stack}
+        </View>
+      ) : isWebMode ? (
         <View style={{ width: '100%', height: '100vh' }}>
           <WebLayout>{stack}</WebLayout>
         </View>
