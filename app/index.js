@@ -11,7 +11,7 @@ import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention
 import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
-import { loadMythbusters, refreshMythbusters } from '../data/content/remote';
+import { loadMythbusters, refreshMythbusters, loadIntentions, refreshIntentions, loadPlaylists, refreshPlaylists } from '../data/content/remote';
 import { playlistForDosha } from '../data/content/music';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 
@@ -115,7 +115,7 @@ export default function Home() {
         {/* Daily music suggestion */}
         {savedDosha && <MusicCard dosha={savedDosha} colors={c} />}
 
-        {/* Monday Mythbusters */}
+        {/* Mythbusters */}
         <MythbusterCard colors={c} spacing={spacing} />
 
         {/* Begin here */}
@@ -138,7 +138,15 @@ export default function Home() {
 }
 
 function MusicCard({ dosha, colors: c }) {
-  const playlist = playlistForDosha(dosha);
+  const [playlists, setPlaylists] = useState(null);
+
+  useEffect(() => {
+    loadPlaylists().then(setPlaylists);
+    refreshPlaylists().then(() => loadPlaylists()).then(setPlaylists);
+  }, []);
+
+  if (!playlists) return null;
+  const playlist = playlistForDosha(dosha, playlists);
   if (!playlist) return null;
 
   return (
@@ -195,9 +203,9 @@ function MythbusterCard({ colors: c, spacing }) {
 
   return (
     <View style={[styles.mythCard, { backgroundColor: c.surface }]}>
-      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 8 }]}>Monday Mythbusters</Text>
+      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 8 }]}>Mythbusters</Text>
       <Text style={[styles.mythBody, { color: c.textMedium, fontStyle: 'italic' }]}>
-        Every Monday, Thea takes apart one wellness belief that deserves a closer look. Check back then.
+        Every week, Thea takes apart one wellness belief that deserves a closer look. Check back soon.
       </Text>
     </View>
   );
@@ -246,11 +254,16 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
   const router = useRouter();
   const info = doshaInfo[dosha];
   const { theme: { radius } } = useTheme();
-  const suggestions = intentionSuggestions(dosha);
+  const [intentionsData, setIntentionsData] = useState(null);
+  const suggestions = intentionsData ? intentionSuggestions(dosha, intentionsData) : [];
   const [intention, setIntention] = useState(null);
   const [draft, setDraft] = useState('');
 
   useEffect(() => { loadTodayIntention().then(v => setIntention(v ?? '')); }, []);
+  useEffect(() => {
+    loadIntentions().then(setIntentionsData);
+    refreshIntentions().then(() => loadIntentions()).then(setIntentionsData);
+  }, []);
 
   async function choose(text) {
     const t = text.trim();

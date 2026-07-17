@@ -1,5 +1,7 @@
-// DRAFT — dosha-specific routine items await Thea's content.
-// Universal anchors are Thea's explicit naming from voice memo and roadmap.
+// Fallback/seed data for Daily Rhythms routine items — see
+// data/content/remote.js for the live/cached version Thea can edit via the
+// practitioner hub. Universal anchors are Thea's explicit naming from voice
+// memo and roadmap; dosha-specific arrays are hers to fill in there.
 
 export const routineAnchors = [
   { id: 'wake',  time: 'morning', label: 'Wake before 6am' },
@@ -8,7 +10,7 @@ export const routineAnchors = [
 ];
 
 export const routines = {
-  vata:  [], // awaiting Thea
-  pitta: [], // awaiting Thea
-  kapha: [], // awaiting Thea
+  vata:  [],
+  pitta: [],
+  kapha: [],
 };

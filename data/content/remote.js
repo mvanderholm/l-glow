@@ -4,6 +4,9 @@ import { mythbusters as staticMythbusters } from './mythbusters';
 import { affirmations as staticAffirmations } from './affirmations';
 import { checkinDimensions as staticCheckinDimensions } from './checkinDimensions';
 import { gunaQuestions as staticGunaQuestions } from './gunaQuiz';
+import { intentions as staticIntentions } from './intentions';
+import { routineAnchors as staticRoutineAnchors, routines as staticRoutines } from './routines';
+import { playlists as staticPlaylists } from './music';
 
 // Admin-editable content — lives in Supabase so Thea can edit it live from
 // the practitioner hub, but is cached to AsyncStorage so the app keeps
@@ -23,6 +26,9 @@ const CACHE_KEYS = {
   affirmations:       '@lglow/content_cache/affirmations',
   checkinDimensions:  '@lglow/content_cache/checkin_dimensions',
   gunaQuestions:      '@lglow/content_cache/guna_questions',
+  intentions:         '@lglow/content_cache/intentions',
+  routines:           '@lglow/content_cache/routines',
+  playlists:          '@lglow/content_cache/playlists',
 };
 
 function rowToMythbuster(row) {
@@ -130,5 +136,90 @@ export async function refreshGunaQuestions() {
     await AsyncStorage.setItem(CACHE_KEYS.gunaQuestions, JSON.stringify(data.map(rowToGunaQuestion)));
   } catch (err) {
     console.warn('Refresh guna questions failed (using cached/static):', err.message);
+  }
+}
+
+// intentions and routines reshape into the same {universal/vata/pitta/kapha}
+// object the static files export (rather than a flat array like the types
+// above) so intentionSuggestions()/direct dosha lookups keep working
+// unchanged against either source.
+function rowsToIntentions(rows) {
+  const grouped = { universal: [], vata: [], pitta: [], kapha: [] };
+  for (const row of rows) {
+    grouped[row.dosha].push({ id: row.id, text: row.text });
+  }
+  return grouped;
+}
+
+export async function loadIntentions() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.intentions);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticIntentions;
+}
+
+export async function refreshIntentions() {
+  try {
+    const { data, error } = await supabase.from('intention_suggestions').select('*').order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.intentions, JSON.stringify(rowsToIntentions(data)));
+  } catch (err) {
+    console.warn('Refresh intentions failed (using cached/static):', err.message);
+  }
+}
+
+function rowsToRoutines(rows) {
+  const anchors = [];
+  const routines = { vata: [], pitta: [], kapha: [] };
+  for (const row of rows) {
+    const item = { id: row.id, time: row.time, label: row.label };
+    if (row.dosha === 'universal') anchors.push(item);
+    else routines[row.dosha].push(item);
+  }
+  return { anchors, routines };
+}
+
+export async function loadRoutines() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.routines);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return { anchors: staticRoutineAnchors, routines: staticRoutines };
+}
+
+export async function refreshRoutines() {
+  try {
+    const { data, error } = await supabase.from('routine_items').select('*').order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.routines, JSON.stringify(rowsToRoutines(data)));
+  } catch (err) {
+    console.warn('Refresh routines failed (using cached/static):', err.message);
+  }
+}
+
+function rowsToPlaylists(rows) {
+  const out = {};
+  for (const row of rows) {
+    out[row.dosha] = { name: row.name, url: row.url, mood: row.mood };
+  }
+  return out;
+}
+
+export async function loadPlaylists() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.playlists);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticPlaylists;
+}
+
+export async function refreshPlaylists() {
+  try {
+    const { data, error } = await supabase.from('playlists').select('*');
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.playlists, JSON.stringify(rowsToPlaylists(data)));
+  } catch (err) {
+    console.warn('Refresh playlists failed (using cached/static):', err.message);
   }
 }

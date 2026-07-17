@@ -8,6 +8,7 @@ import { herbs, tasteColors } from '../data/content/herbs';
 import { asanas } from '../data/content/movement';
 import { useTheme } from '../context/ThemeContext';
 import { routineAnchors, routines } from '../data/content/routines';
+import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import { loadDoshaResult } from '../data/user/storage';
 
 export default function Recommendations() {
@@ -19,6 +20,12 @@ export default function Recommendations() {
   const [selectedHerb, setSelectedHerb] = useState(null);
   const [selectedAsana, setSelectedAsana] = useState(null);
   const [redirecting, setRedirecting] = useState(false);
+  const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines });
+
+  useEffect(() => {
+    loadRoutines().then(setRoutinesData);
+    refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
+  }, []);
 
   useEffect(() => {
     if (!dosha) {
@@ -126,10 +133,10 @@ export default function Recommendations() {
         </Section>
 
         <Section title="Daily Rhythms" accent={colors.accentAlt}>
-          {routines[dosha].map(r => (
+          {routinesData.routines[dosha].map(r => (
             <RoutineRow key={r.id} time={r.time} label={r.label} />
           ))}
-          {routineAnchors.map(a => (
+          {routinesData.anchors.map(a => (
             <RoutineRow key={a.id} time={a.time} label={a.label} />
           ))}
         </Section>
