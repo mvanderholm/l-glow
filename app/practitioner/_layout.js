@@ -134,7 +134,7 @@ export default function PractitionerLayout() {
               />
             ))}
           </ScrollView>
-          <View style={{ flex: 1 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
             <Slot />
           </View>
         </View>
@@ -170,7 +170,7 @@ const s = StyleSheet.create({
   navBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   signInBtn:     { borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   signInBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  sidebar:       { width: 220, paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth },
+  sidebar:       { width: 220, flexGrow: 0, flexShrink: 0, flexBasis: 220, paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth },
   sidebarBtn:    { paddingVertical: 11, paddingHorizontal: 14, borderRadius: 10, marginBottom: 2 },
   sidebarBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14.5 },
 });
