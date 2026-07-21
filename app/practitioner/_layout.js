@@ -22,6 +22,8 @@ const NAV_ITEMS = [
   { key: 'intentions',   label: 'Intentions',   href: '/practitioner/intentions' },
   { key: 'routines',     label: 'Daily Rhythms',href: '/practitioner/routines' },
   { key: 'playlists',    label: 'Playlists',    href: '/practitioner/playlists' },
+  { key: 'constitution', label: 'Constitution', href: '/practitioner/constitution-questions' },
+  { key: 'tagging',      label: 'Tag Doshas',   href: '/practitioner/dosha-tagging' },
 ];
 
 // Sidebar nav on wide (desktop) screens, matching the pattern from the old
@@ -118,7 +120,7 @@ export default function PractitionerLayout() {
 
       {isWide ? (
         <View style={{ flex: 1, flexDirection: 'row' }}>
-          <View style={[s.sidebar, { borderRightColor: c.border }]}>
+          <ScrollView style={[s.sidebar, { borderRightColor: c.border }]} contentContainerStyle={{ paddingVertical: 16 }} showsVerticalScrollIndicator={false}>
             {NAV_ITEMS.map(item => (
               <NavLink
                 key={item.key}
@@ -129,7 +131,7 @@ export default function PractitionerLayout() {
                 onPress={() => router.push(item.href)}
               />
             ))}
-          </View>
+          </ScrollView>
           <View style={{ flex: 1 }}>
             <Slot />
           </View>
@@ -166,7 +168,7 @@ const s = StyleSheet.create({
   navBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14 },
   signInBtn:     { borderRadius: 999, paddingVertical: 10, paddingHorizontal: 20 },
   signInBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-  sidebar:       { width: 220, paddingVertical: 16, paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth },
+  sidebar:       { width: 220, paddingHorizontal: 10, borderRightWidth: StyleSheet.hairlineWidth },
   sidebarBtn:    { paddingVertical: 11, paddingHorizontal: 14, borderRadius: 10, marginBottom: 2 },
   sidebarBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14.5 },
 });

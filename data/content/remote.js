@@ -223,3 +223,50 @@ export async function refreshPlaylists() {
     console.warn('Refresh playlists failed (using cached/static):', err.message);
   }
 }
+
+// Constitution questions (Prakriti Foundation/Level 2/Level 3, Vikriti
+// Level 1/2/3) — parameterized by assessment + tier, unlike every other
+// type above which loads one whole table. No static-file fallback yet:
+// there's no consumer screen reading this data yet (no quiz UI built for
+// it), so there's nothing that needs to survive being offline on first
+// launch. Add a static fallback file when the first real quiz screen for
+// one of these tiers gets built, mirroring the other content types.
+function rowToConstitutionQuestion(row) {
+  return {
+    id: row.id,
+    section: row.section ?? undefined,
+    prompt: row.prompt,
+    options: row.options,
+    sortOrder: row.sort_order,
+    allowNone: row.allow_none,
+    photoEnabled: row.photo_enabled,
+    inputType: row.input_type,
+  };
+}
+
+function constitutionCacheKey(assessment, tier) {
+  return `@lglow/content_cache/constitution_questions/${assessment}_${tier}`;
+}
+
+export async function loadConstitutionQuestions(assessment, tier) {
+  const cached = await AsyncStorage.getItem(constitutionCacheKey(assessment, tier));
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to empty */ }
+  }
+  return [];
+}
+
+export async function refreshConstitutionQuestions(assessment, tier) {
+  try {
+    const { data, error } = await supabase
+      .from('constitution_questions')
+      .select('*')
+      .eq('assessment', assessment)
+      .eq('tier', tier)
+      .order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(constitutionCacheKey(assessment, tier), JSON.stringify(data.map(rowToConstitutionQuestion)));
+  } catch (err) {
+    console.warn(`Refresh constitution questions (${assessment}/${tier}) failed (using cached):`, err.message);
+  }
+}
