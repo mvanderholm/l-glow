@@ -36,6 +36,8 @@ const KEYS = {
   INTENTION_PREFIX: '@lglow/intentions/',
   USER_NAME:      '@lglow/user_name',
   ONBOARDED:      '@lglow/onboarded',
+  PRAKRITI_TIER_PREFIX: '@lglow/prakriti_answers/',
+  VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
 };
 
 // --- Dosha result ---
@@ -156,6 +158,57 @@ export async function loadTongueResult() {
   };
 }
 
+// --- Prakriti / Vikriti tier answers ---
+// Not a computed result like dosha/guna/agni/tongue above — dosha tagging on
+// these questions is effectively at 0% (verified live before this was
+// built), so there's nothing to score yet. This stores the raw denormalized
+// Q&A for a completed tier: prompt/section/selected-label text captured at
+// answer time, not just question ids, so a historical response stays
+// readable even if a question is later edited or deleted in the admin
+// editor. Locally, AsyncStorage keeps only the latest completion per tier
+// (used for unlock-gating and "you already did this" state, same as every
+// other result type); Supabase keeps full history via insert, never
+// upsert, since Vikriti in particular is meant to change over time.
+
+function prakritiTierKey(tier) {
+  return KEYS.PRAKRITI_TIER_PREFIX + tier;
+}
+function vikritiTierKey(tier) {
+  return KEYS.VIKRITI_TIER_PREFIX + tier;
+}
+
+export async function savePrakritiTierAnswers(tier, answers) {
+  await AsyncStorage.setItem(prakritiTierKey(tier), JSON.stringify({ answers, completedAt: new Date().toISOString() }));
+  await syncToSupabase(userId => supabase.from('prakriti_responses').insert({ user_id: userId, tier, answers }));
+}
+
+export async function loadPrakritiTierAnswers(tier) {
+  const raw = await AsyncStorage.getItem(prakritiTierKey(tier));
+  return raw ? JSON.parse(raw) : null;
+}
+
+export async function loadPrakritiProgress() {
+  const tiers = ['foundation', 'level2', 'level3'];
+  const pairs = await AsyncStorage.multiGet(tiers.map(prakritiTierKey));
+  return Object.fromEntries(tiers.map((tier, i) => [tier, pairs[i][1] !== null]));
+}
+
+export async function saveVikritiTierAnswers(tier, answers) {
+  await AsyncStorage.setItem(vikritiTierKey(tier), JSON.stringify({ answers, completedAt: new Date().toISOString() }));
+  await syncToSupabase(userId => supabase.from('vikriti_responses').insert({ user_id: userId, tier, answers }));
+}
+
+export async function loadVikritiTierAnswers(tier) {
+  const raw = await AsyncStorage.getItem(vikritiTierKey(tier));
+  return raw ? JSON.parse(raw) : null;
+}
+
+export async function loadVikritiProgress() {
+  const tiers = ['level1', 'level2', 'level3'];
+  const pairs = await AsyncStorage.multiGet(tiers.map(vikritiTierKey));
+  return Object.fromEntries(tiers.map((tier, i) => [tier, pairs[i][1] !== null]));
+}
+
 // --- Onboarding flag ---
 
 export async function loadOnboarded() {
@@ -264,10 +317,34 @@ export async function hydrateFromSupabase() {
       hydrateUserName(userId),
       hydrateCheckins(userId),
       hydrateIntention(userId),
+      hydratePrakritiTiers(userId),
+      hydrateVikritiTiers(userId),
     ]);
   } catch (err) {
     console.warn('Hydration from Supabase failed:', err.message);
   }
+}
+
+async function hydratePrakritiTiers(userId) {
+  await Promise.all(['foundation', 'level2', 'level3'].map(async tier => {
+    if (await loadPrakritiTierAnswers(tier)) return;
+    const { data } = await supabase.from('prakriti_responses')
+      .select('answers, completed_at')
+      .eq('user_id', userId).eq('tier', tier).order('completed_at', { ascending: false }).limit(1).maybeSingle();
+    if (!data) return;
+    await AsyncStorage.setItem(prakritiTierKey(tier), JSON.stringify({ answers: data.answers, completedAt: data.completed_at }));
+  }));
+}
+
+async function hydrateVikritiTiers(userId) {
+  await Promise.all(['level1', 'level2', 'level3'].map(async tier => {
+    if (await loadVikritiTierAnswers(tier)) return;
+    const { data } = await supabase.from('vikriti_responses')
+      .select('answers, completed_at')
+      .eq('user_id', userId).eq('tier', tier).order('completed_at', { ascending: false }).limit(1).maybeSingle();
+    if (!data) return;
+    await AsyncStorage.setItem(vikritiTierKey(tier), JSON.stringify({ answers: data.answers, completedAt: data.completed_at }));
+  }));
 }
 
 async function hydrateDoshaResult(userId) {
@@ -376,6 +453,8 @@ export async function migrateLocalToSupabase() {
       migrateUserName(userId),
       migrateCheckins(userId),
       migrateIntentions(userId),
+      migratePrakritiTiers(userId),
+      migrateVikritiTiers(userId),
     ]);
     await AsyncStorage.setItem(MIGRATED_KEY, 'true');
   } catch (err) {
@@ -428,6 +507,26 @@ async function migrateTongueResult(userId) {
     shape: local.details?.shape, size: local.details?.size, color: local.details?.color, coating: local.details?.coating,
     ama_level: local.details?.amaLevel ?? 0, signs: local.details?.signs ?? [],
   });
+}
+
+async function migratePrakritiTiers(userId) {
+  await Promise.all(['foundation', 'level2', 'level3'].map(async tier => {
+    const local = await loadPrakritiTierAnswers(tier);
+    if (!local) return;
+    const { count } = await supabase.from('prakriti_responses').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('tier', tier);
+    if (count > 0) return; // Supabase already has history for this user+tier — don't guess which is newer
+    await supabase.from('prakriti_responses').insert({ user_id: userId, tier, answers: local.answers });
+  }));
+}
+
+async function migrateVikritiTiers(userId) {
+  await Promise.all(['level1', 'level2', 'level3'].map(async tier => {
+    const local = await loadVikritiTierAnswers(tier);
+    if (!local) return;
+    const { count } = await supabase.from('vikriti_responses').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('tier', tier);
+    if (count > 0) return;
+    await supabase.from('vikriti_responses').insert({ user_id: userId, tier, answers: local.answers });
+  }));
 }
 
 async function migrateUserName(userId) {

@@ -21,6 +21,31 @@ function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+const PRAKRITI_TIER_LABELS = { foundation: 'Foundation', level2: 'Level 2', level3: 'Level 3' };
+const VIKRITI_TIER_LABELS = { level1: 'Check Your Signals', level2: 'Pattern Finder', level3: 'Your Story' };
+
+// Plain-text Q&A dump for a single tier completion, same "select and copy"
+// spirit as buildSessionSummary() in data/user/storage.js — no new
+// dependency (no expo-clipboard/expo-sharing installed, and RN's Share API
+// is fragile on web), Thea just selects the text block and copies it.
+function formatResponseExport(clientName, assessmentLabel, tierLabel, response) {
+  const lines = [];
+  lines.push(`L. GLOW · ${assessmentLabel} — ${tierLabel}`);
+  lines.push(clientName);
+  lines.push(new Date(response.completed_at).toLocaleDateString(undefined, { dateStyle: 'long' }));
+  lines.push('');
+  for (const a of response.answers ?? []) {
+    lines.push(a.section ? `[${a.section}] ${a.prompt}` : a.prompt);
+    if (a.freeText !== undefined) {
+      lines.push(a.freeText ? `  "${a.freeText}"` : '  (skipped)');
+    } else {
+      lines.push(`  ${(a.selectedLabels ?? []).join('; ')}`);
+    }
+    lines.push('');
+  }
+  return lines.join('\n');
+}
+
 function fieldDisplayValue(value) {
   if (Array.isArray(value)) {
     if (value.length === 0) return '—';
@@ -186,6 +211,41 @@ function AnswerRow({ label, value, colors: c }) {
   );
 }
 
+// One tier-completion entry for Prakriti/Vikriti — collapsed by default
+// (date + tier + answer count, tap to expand), since a Level 3 completion
+// can run 60+ questions. Expanded view shows the raw Q&A plus a read-only
+// export text block Thea can select and copy — see formatResponseExport().
+function ResponseEntry({ response, tierLabel, expanded, onToggle, exportText, colors: c }) {
+  return (
+    <Pressable onPress={onToggle} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
+      <Text style={[s.logDate, { color: c.text }]}>{new Date(response.completed_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
+      <Text style={[s.logDetail, { color: c.textMuted }]}>
+        {tierLabel} · {(response.answers ?? []).length} answer{(response.answers ?? []).length === 1 ? '' : 's'} · {expanded ? 'Hide' : 'View'}
+      </Text>
+
+      {expanded && (
+        <View style={{ marginTop: 10 }}>
+          {(response.answers ?? []).map((a, i) => (
+            <View key={i} style={{ marginBottom: 8 }}>
+              <Text style={[s.mutedNote, { color: c.textMuted }]}>{a.section ? `[${a.section}] ` : ''}{a.prompt}</Text>
+              <Text style={[s.answerValue, { color: c.text, marginTop: 2 }]}>
+                {a.freeText !== undefined ? (a.freeText ? `"${a.freeText}"` : '(skipped)') : (a.selectedLabels ?? []).join('; ')}
+              </Text>
+            </View>
+          ))}
+          <Text style={[s.fieldLabel, { color: c.textMuted, marginTop: 10, marginBottom: 6 }]}>Export (select all, copy)</Text>
+          <TextInput
+            style={[s.exportBox, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+            value={exportText}
+            editable={false}
+            multiline
+          />
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 const CLIENT_TABS = [
   { key: 'summary',     label: 'Summary' },
   { key: 'assessments', label: 'Assessments' },
@@ -212,26 +272,30 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [editDraft, setEditDraft] = useState('');
   const [activeTab, setActiveTab] = useState('summary');
+  const [expandedResponseId, setExpandedResponseId] = useState(null);
 
   useEffect(() => { setActiveTab('summary'); load(); }, [client.id]);
 
   async function load() {
-    const [doshaRes, gunaRes, agniRes, tongueRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
+    const [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
       supabase.from('dosha_results').select('dosha, vata_score, pitta_score, kapha_score, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('guna_results').select('dominant, sattva_score, rajas_score, tamas_score, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('agni_results').select('agni_type, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('tongue_checks').select('reading, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('prakriti_responses').select('id, tier, answers, completed_at').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
+      supabase.from('vikriti_responses').select('id, tier, answers, completed_at').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
       supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
       supabase.from('journal_entries').select('date, grateful, showed, tomorrow').eq('user_id', client.id).order('date', { ascending: false }).limit(10),
       supabase.from('intake_forms').select('data, updated_at').eq('user_id', client.id).maybeSingle(),
       supabase.from('practitioner_notes').select('id, note, created_at').eq('client_id', client.id).order('created_at', { ascending: false }),
     ]);
 
-    const firstError = [doshaRes, gunaRes, agniRes, tongueRes, checkinsRes, journalRes, intakeRes, notesRes].find(r => r.error)?.error;
+    const firstError = [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes].find(r => r.error)?.error;
     if (firstError) { setError(firstError.message); return; }
 
     setClientData({
       doshaResults: doshaRes.data ?? [], gunaResults: gunaRes.data ?? [], agniResults: agniRes.data ?? [], tongueResults: tongueRes.data ?? [],
+      prakritiResponses: prakritiRes.data ?? [], vikritiResponses: vikritiRes.data ?? [],
       checkins: checkinsRes.data ?? [], journal: journalRes.data ?? [],
       intakeRow: intakeRes.data, notes: notesRes.data ?? [],
     });
@@ -406,6 +470,34 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
                     <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.reading)}</Text>
                   </View>
+                ))}
+
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Prakriti responses</Text>
+                {clientData.prakritiResponses.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
+                {clientData.prakritiResponses.map(r => (
+                  <ResponseEntry
+                    key={r.id}
+                    colors={c}
+                    response={r}
+                    tierLabel={PRAKRITI_TIER_LABELS[r.tier] || r.tier}
+                    expanded={expandedResponseId === r.id}
+                    onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
+                    exportText={formatResponseExport(client.display_name || client.email, 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r)}
+                  />
+                ))}
+
+                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Vikriti responses</Text>
+                {clientData.vikritiResponses.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>Not yet taken.</Text>}
+                {clientData.vikritiResponses.map(r => (
+                  <ResponseEntry
+                    key={r.id}
+                    colors={c}
+                    response={r}
+                    tierLabel={VIKRITI_TIER_LABELS[r.tier] || r.tier}
+                    expanded={expandedResponseId === r.id}
+                    onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
+                    exportText={formatResponseExport(client.display_name || client.email, 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r)}
+                  />
                 ))}
               </>
             )}
@@ -614,6 +706,8 @@ const s = StyleSheet.create({
   entryCard: { borderRadius: 14, padding: 14, marginBottom: 8 },
   logDate:   { fontFamily: 'Inter_600SemiBold', fontSize: 12.5, marginBottom: 2 },
   logDetail: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19 },
+  fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase' },
+  exportBox: { borderWidth: 1, borderRadius: 10, padding: 10, minHeight: 100, textAlignVertical: 'top', fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 18 },
   logNote:   { fontFamily: 'Inter_400Regular', fontSize: 13, fontStyle: 'italic', marginTop: 2, lineHeight: 18 },
 
   noteInput:   { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, fontFamily: 'Inter_400Regular', minHeight: 70, textAlignVertical: 'top', marginBottom: 10 },

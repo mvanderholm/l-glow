@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import { loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadUserName, loadRecentCheckins } from '../data/user/storage';
+import { loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadUserName, loadRecentCheckins, loadPrakritiProgress, loadVikritiProgress } from '../data/user/storage';
 import { tongueReadings } from '../data/content/tongueCheck';
 import { agniResults } from '../data/content/agniQuiz';
 import { useAuth } from '../context/AuthContext';
@@ -38,6 +38,13 @@ function computeStats(checkins) {
   return { streak, total, thisWeek };
 }
 
+function tierProgressLabel(progress) {
+  if (!progress) return null;
+  const n = Object.values(progress).filter(Boolean).length;
+  if (n === 0) return null;
+  return n === 3 ? 'All 3 sections complete' : `${n} of 3 sections complete`;
+}
+
 const SETTINGS = [
   { label: 'Tools',               Icon: ToolsIcon,    tools: true },
   { label: 'Reminders',           Icon: BellIcon,     soon: true  },
@@ -53,6 +60,8 @@ export default function You() {
   const [gunaResult, setGunaResult] = useState(null);
   const [tongueResult, setTongueResult] = useState(null);
   const [agniResult, setAgniResult] = useState(null);
+  const [prakritiProgress, setPrakritiProgress] = useState(null);
+  const [vikritiProgress, setVikritiProgress]   = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
   const [consented, setConsented]   = useState(false);
@@ -63,6 +72,8 @@ export default function You() {
     loadGunaResult().then(r => setGunaResult(r));
     loadTongueResult().then(r => setTongueResult(r));
     loadAgniResult().then(r => setAgniResult(r));
+    loadPrakritiProgress().then(setPrakritiProgress);
+    loadVikritiProgress().then(setVikritiProgress);
     loadUserName().then(n => { if (n) setUserName(n); });
     loadRecentCheckins(365).then(list => {
       setStats(computeStats(list));
@@ -177,6 +188,8 @@ export default function You() {
             { label: 'Agni Assessment', Icon: FireIcon, agni: true },
             { label: 'Guna Assessment', Icon: GunaIcon, guna: true },
             { label: 'Tongue Check',    Icon: TongueIcon, tongue: true },
+            { label: 'Prakriti',        Icon: PrakritiIcon, prakriti: true },
+            { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
           ];
@@ -236,6 +249,8 @@ export default function You() {
                         router.push('/tongue-check');
                       }
                     }
+                    if (item.prakriti) router.push('/prakriti');
+                    if (item.vikriti) router.push('/vikriti');
                   }}
                 >
                   <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
@@ -261,6 +276,16 @@ export default function You() {
                     {item.tongue && tongueResult && (
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
                         {(tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).name}
+                      </Text>
+                    )}
+                    {item.prakriti && tierProgressLabel(prakritiProgress) && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                        {tierProgressLabel(prakritiProgress)}
+                      </Text>
+                    )}
+                    {item.vikriti && tierProgressLabel(vikritiProgress) && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                        {tierProgressLabel(vikritiProgress)}
                       </Text>
                     )}
                   </View>
@@ -439,6 +464,18 @@ function TongueIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 3c3 0 5 2 5 5.5S15.5 19 12 21C8.5 19 7 12.5 7 8.5S9 3 12 3Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 9v9" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+  </Svg>;
+}
+function PrakritiIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 21V11" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    <Path d="M12 11c0-4 3-6 7-6 0 4-2 7-7 7Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M12 14c0-3.5-2.5-5.5-6-5.5 0 3.5 2 6 6 6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+  </Svg>;
+}
+function VikritiIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 12h3.5l2-6 3 12 2-9 1.5 3H21" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }
 function ShareIcon({ color, size }) {
