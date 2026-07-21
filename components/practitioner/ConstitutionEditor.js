@@ -4,29 +4,15 @@ import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 
-// Eighth admin-editable content type — the first one shared across multiple
-// question sets from one table (constitution_questions), filtered by
-// assessment + tier rather than being its own dedicated table per set. See
-// the migration's header comment for why. Full CRUD like affirmations.js,
-// but each question also has a nested, variable-length options array
-// (label + dosha tags) rather than flat fields.
+// Shared CRUD editor for prakriti_questions / vikriti_questions — extracted
+// July 20 2026 when those became two separate tables instead of one shared
+// constitution_questions table with an `assessment` column. Table name and
+// tier list are now props instead of in-screen state, so Prakriti and
+// Vikriti stay fully separate at the route/nav/table level while the
+// editing logic itself isn't duplicated. See app/practitioner/prakriti-
+// questions.js and vikriti-questions.js for the thin per-assessment
+// wrappers that render this.
 
-const TIERS = {
-  prakriti: [
-    { key: 'foundation', label: 'Foundation' },
-    { key: 'level2', label: 'Level 2' },
-    { key: 'level3', label: 'Level 3' },
-  ],
-  vikriti: [
-    { key: 'level1', label: 'Level 1' },
-    { key: 'level2', label: 'Level 2' },
-    { key: 'level3', label: 'Level 3' },
-  ],
-};
-const ASSESSMENTS = [
-  { key: 'prakriti', label: 'Prakriti' },
-  { key: 'vikriti', label: 'Vikriti' },
-];
 const DOSHA_OPTIONS = ['vata', 'pitta', 'kapha'];
 
 const emptyOption = () => ({ label: '', dosha: [], imageUrl: '' });
@@ -182,30 +168,22 @@ function EditorForm({ draft, setDraft, isNew, colors: c, onSave, onCancel, savin
   );
 }
 
-export default function ConstitutionQuestionsAdmin() {
+export default function ConstitutionEditor({ table, tierOptions, title, subtitle }) {
   const { theme: { colors: c } } = useTheme();
-  const [assessment, setAssessment] = useState('prakriti');
-  const [tier, setTier] = useState('foundation');
+  const [tier, setTier] = useState(tierOptions[0].key);
   const [items, setItems] = useState(null);
   const [error, setError] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState(emptyDraft());
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => { load(); }, [assessment, tier]);
-
-  function changeAssessment(next) {
-    setAssessment(next);
-    setTier(TIERS[next][0].key);
-    setEditingId(null);
-  }
+  useEffect(() => { load(); }, [tier]);
 
   async function load() {
     setItems(null);
     const { data, error } = await supabase
-      .from('constitution_questions')
+      .from(table)
       .select('*')
-      .eq('assessment', assessment)
       .eq('tier', tier)
       .order('sort_order', { ascending: true });
     if (error) { setError(error.message); return; }
@@ -245,7 +223,6 @@ export default function ConstitutionQuestionsAdmin() {
     setSaving(true);
     const payload = {
       id: draft.id.trim(),
-      assessment,
       tier,
       section: draft.section.trim() || null,
       prompt: draft.prompt.trim(),
@@ -255,7 +232,7 @@ export default function ConstitutionQuestionsAdmin() {
       input_type: draft.input_type,
       options: draft.input_type === 'free_text' ? [] : draft.options.map(o => ({ label: o.label.trim(), dosha: o.dosha, imageUrl: o.imageUrl?.trim() || null })),
     };
-    const { error } = await supabase.from('constitution_questions').upsert(payload, { onConflict: 'id' });
+    const { error } = await supabase.from(table).upsert(payload, { onConflict: 'id' });
     setSaving(false);
     if (error) { Alert.alert('Couldn\'t save', error.message); return; }
     setEditingId(null);
@@ -267,7 +244,7 @@ export default function ConstitutionQuestionsAdmin() {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('constitution_questions').delete().eq('id', item.id);
+          const { error } = await supabase.from(table).delete().eq('id', item.id);
           if (error) { Alert.alert('Couldn\'t delete', error.message); return; }
           await load();
         },
@@ -277,13 +254,10 @@ export default function ConstitutionQuestionsAdmin() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
-      <Text style={[s.title, { color: c.text, marginBottom: 4 }]}>Constitution Questions</Text>
-      <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>
-        Prakriti (birth constitution) and Vikriti (current state), each in three tiers. Tag each option's dosha(s) — one, or a blend like Vata + Kapha — with the letter chips.
-      </Text>
+      <Text style={[s.title, { color: c.text, marginBottom: 4 }]}>{title}</Text>
+      <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>{subtitle}</Text>
 
-      <ChipPicker colors={c} options={ASSESSMENTS} value={assessment} onChange={changeAssessment} />
-      <ChipPicker colors={c} options={TIERS[assessment]} value={tier} onChange={setTier} />
+      <ChipPicker colors={c} options={tierOptions} value={tier} onChange={setTier} />
 
       {error && <Text style={[s.emptyText, { color: c.textMuted, marginTop: 12 }]}>Couldn't load questions — {error}</Text>}
       {!error && !items && <View style={s.centerPad}><ActivityIndicator color={c.accent} /></View>}

@@ -22,8 +22,10 @@ const NAV_ITEMS = [
   { key: 'intentions',   label: 'Intentions',   href: '/practitioner/intentions' },
   { key: 'routines',     label: 'Daily Rhythms',href: '/practitioner/routines' },
   { key: 'playlists',    label: 'Playlists',    href: '/practitioner/playlists' },
-  { key: 'constitution', label: 'Constitution', href: '/practitioner/constitution-questions' },
-  { key: 'tagging',      label: 'Tag Doshas',   href: '/practitioner/dosha-tagging' },
+  { key: 'prakriti',         label: 'Prakriti',       href: '/practitioner/prakriti-questions' },
+  { key: 'prakriti-tagging', label: 'Tag Prakriti',   href: '/practitioner/prakriti-tagging' },
+  { key: 'vikriti',          label: 'Vikriti',        href: '/practitioner/vikriti-questions' },
+  { key: 'vikriti-tagging',  label: 'Tag Vikriti',    href: '/practitioner/vikriti-tagging' },
 ];
 
 // Sidebar nav on wide (desktop) screens, matching the pattern from the old

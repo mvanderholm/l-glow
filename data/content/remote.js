@@ -224,13 +224,18 @@ export async function refreshPlaylists() {
   }
 }
 
-// Constitution questions (Prakriti Foundation/Level 2/Level 3, Vikriti
-// Level 1/2/3) — parameterized by assessment + tier, unlike every other
-// type above which loads one whole table. No static-file fallback yet:
-// there's no consumer screen reading this data yet (no quiz UI built for
-// it), so there's nothing that needs to survive being offline on first
-// launch. Add a static fallback file when the first real quiz screen for
-// one of these tiers gets built, mirroring the other content types.
+// Prakriti and Vikriti constitution questions — parameterized by tier,
+// unlike every other type above which loads one whole table. Split into
+// two fully separate tables/loader pairs July 20 2026 (were one shared
+// constitution_questions table filtered by an `assessment` column; Matt
+// wants Prakriti and Vikriti fully independent now, not just
+// organizationally distinct). No static-file fallback yet: there's no
+// consumer screen reading this data yet (no quiz UI built for it), so
+// there's nothing that needs to survive being offline on first launch.
+// Add a static fallback file when the first real quiz screen for one of
+// these tiers gets built, mirroring the other content types — and treat
+// that as two separate builds (Prakriti flow, Vikriti flow), not one
+// combined assessment screen, per the same split.
 function rowToConstitutionQuestion(row) {
   return {
     id: row.id,
@@ -244,29 +249,46 @@ function rowToConstitutionQuestion(row) {
   };
 }
 
-function constitutionCacheKey(assessment, tier) {
-  return `@lglow/content_cache/constitution_questions/${assessment}_${tier}`;
-}
-
-export async function loadConstitutionQuestions(assessment, tier) {
-  const cached = await AsyncStorage.getItem(constitutionCacheKey(assessment, tier));
+export async function loadPrakritiQuestions(tier) {
+  const cached = await AsyncStorage.getItem(`@lglow/content_cache/prakriti_questions/${tier}`);
   if (cached) {
     try { return JSON.parse(cached); } catch { /* fall through to empty */ }
   }
   return [];
 }
 
-export async function refreshConstitutionQuestions(assessment, tier) {
+export async function refreshPrakritiQuestions(tier) {
   try {
     const { data, error } = await supabase
-      .from('constitution_questions')
+      .from('prakriti_questions')
       .select('*')
-      .eq('assessment', assessment)
       .eq('tier', tier)
       .order('sort_order', { ascending: true });
     if (error || !data) return;
-    await AsyncStorage.setItem(constitutionCacheKey(assessment, tier), JSON.stringify(data.map(rowToConstitutionQuestion)));
+    await AsyncStorage.setItem(`@lglow/content_cache/prakriti_questions/${tier}`, JSON.stringify(data.map(rowToConstitutionQuestion)));
   } catch (err) {
-    console.warn(`Refresh constitution questions (${assessment}/${tier}) failed (using cached):`, err.message);
+    console.warn(`Refresh prakriti questions (${tier}) failed (using cached):`, err.message);
+  }
+}
+
+export async function loadVikritiQuestions(tier) {
+  const cached = await AsyncStorage.getItem(`@lglow/content_cache/vikriti_questions/${tier}`);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to empty */ }
+  }
+  return [];
+}
+
+export async function refreshVikritiQuestions(tier) {
+  try {
+    const { data, error } = await supabase
+      .from('vikriti_questions')
+      .select('*')
+      .eq('tier', tier)
+      .order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(`@lglow/content_cache/vikriti_questions/${tier}`, JSON.stringify(data.map(rowToConstitutionQuestion)));
+  } catch (err) {
+    console.warn(`Refresh vikriti questions (${tier}) failed (using cached):`, err.message);
   }
 }

@@ -4,13 +4,13 @@ import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 
-// Purpose-built companion to constitution-questions.js: that screen is full
-// CRUD (create/edit/delete questions, fix prompts, add/remove options) but
-// tagging one option there means opening a whole edit form. This screen
-// does one thing fast: browse every question in a tier and tap dosha chips
-// directly, no edit mode, no save button -- each tap writes immediately.
-// Fixing prompt text, sections, or the option list itself still happens in
-// Constitution -- this screen only ever touches the `dosha` array.
+// Shared tagging-only screen for prakriti_questions / vikriti_questions —
+// extracted July 20 2026 alongside ConstitutionEditor.js when those became
+// two separate tables. Table name and tier list are props; everything else
+// (fast per-option dosha tapping, immediate save, no edit mode) is
+// unchanged from the original single-table dosha-tagging.js. Fixing prompt
+// text, sections, or the option list itself still happens in the
+// ConstitutionEditor screens — this one only ever touches `dosha`.
 //
 // Not every "last option" is a taggable dosha-leaning answer. Vikriti
 // Level 2 and Level 3 bake a personalized "none of these fit" catch-all
@@ -21,22 +21,6 @@ import { supabase } from '../../config/supabase';
 // tagged," so it's a judgment call same as when the content was authored,
 // not something this screen tries to guess at.
 
-const TIERS = {
-  prakriti: [
-    { key: 'foundation', label: 'Foundation' },
-    { key: 'level2', label: 'Level 2' },
-    { key: 'level3', label: 'Level 3' },
-  ],
-  vikriti: [
-    { key: 'level1', label: 'Level 1' },
-    { key: 'level2', label: 'Level 2' },
-    { key: 'level3', label: 'Level 3' },
-  ],
-};
-const ASSESSMENTS = [
-  { key: 'prakriti', label: 'Prakriti' },
-  { key: 'vikriti', label: 'Vikriti' },
-];
 const DOSHA_OPTIONS = ['vata', 'pitta', 'kapha'];
 
 function ChipPicker({ label, options, value, onChange, colors: c }) {
@@ -80,28 +64,21 @@ function DoshaToggle({ selected, onChange, colors: c }) {
   );
 }
 
-export default function DoshaTaggingAdmin() {
+export default function DoshaTaggingScreen({ table, tierOptions, title }) {
   const { theme: { colors: c } } = useTheme();
-  const [assessment, setAssessment] = useState('prakriti');
-  const [tier, setTier] = useState('foundation');
+  const [tier, setTier] = useState(tierOptions[0].key);
   const [items, setItems] = useState(null);
   const [error, setError] = useState(null);
   const [savingId, setSavingId] = useState(null);
   const [untaggedOnly, setUntaggedOnly] = useState(false);
 
-  useEffect(() => { load(); }, [assessment, tier]);
-
-  function changeAssessment(next) {
-    setAssessment(next);
-    setTier(TIERS[next][0].key);
-  }
+  useEffect(() => { load(); }, [tier]);
 
   async function load() {
     setItems(null);
     const { data, error } = await supabase
-      .from('constitution_questions')
+      .from(table)
       .select('*')
-      .eq('assessment', assessment)
       .eq('tier', tier)
       .order('sort_order', { ascending: true });
     if (error) { setError(error.message); return; }
@@ -117,7 +94,7 @@ export default function DoshaTaggingAdmin() {
     });
     setItems(prev => prev.map(it => it.id === item.id ? { ...it, options: newOptions } : it));
     setSavingId(item.id);
-    const { error } = await supabase.from('constitution_questions').update({ options: newOptions }).eq('id', item.id);
+    const { error } = await supabase.from(table).update({ options: newOptions }).eq('id', item.id);
     setSavingId(null);
     if (error) {
       Alert.alert('Couldn\'t save tag', error.message);
@@ -135,13 +112,12 @@ export default function DoshaTaggingAdmin() {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
-      <Text style={[s.title, { color: c.text, marginBottom: 4 }]}>Tag Doshas</Text>
+      <Text style={[s.title, { color: c.text, marginBottom: 4 }]}>{title}</Text>
       <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>
-        Tap a letter to tag or untag that dosha for an option — saves immediately, no edit mode. To fix a prompt, section, or the option list itself, use Constitution instead.
+        Tap a letter to tag or untag that dosha for an option — saves immediately, no edit mode. To fix a prompt, section, or the option list itself, use the questions editor instead.
       </Text>
 
-      <ChipPicker colors={c} options={ASSESSMENTS} value={assessment} onChange={changeAssessment} />
-      <ChipPicker colors={c} options={TIERS[assessment]} value={tier} onChange={setTier} />
+      <ChipPicker colors={c} options={tierOptions} value={tier} onChange={setTier} />
 
       {error && <Text style={[s.emptyText, { color: c.textMuted, marginTop: 12 }]}>Couldn't load questions — {error}</Text>}
       {!error && !items && <View style={s.centerPad}><ActivityIndicator color={c.accent} /></View>}
