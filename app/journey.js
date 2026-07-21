@@ -151,7 +151,7 @@ function OverviewTab({ c, spacing, type, checked, setChecked, doneCount }) {
           </View>
         </View>
         <View style={[styles.focusImg, { backgroundColor: c.surfaceAlt, overflow: 'hidden' }]}>
-          <Image source={require('../assets/botanicals-warm.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <Image source={require('../assets/botanicals-warm.jpg')} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
         </View>
       </View>
 
@@ -254,7 +254,7 @@ function AyurvedaTab({ c, type, doshaResult, router }) {
               </Text>
             </View>
             <View style={[styles.insightsImg, { backgroundColor: c.surfaceAlt }]}>
-              <Image source={require('../assets/soaking-tub.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+              <Image source={require('../assets/soaking-tub.jpg')} style={StyleSheet.absoluteFillObject} resizeMode="cover" />
             </View>
           </View>
 
