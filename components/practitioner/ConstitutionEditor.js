@@ -4,14 +4,15 @@ import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 
-// Shared CRUD editor for prakriti_questions / vikriti_questions — extracted
-// July 20 2026 when those became two separate tables instead of one shared
-// constitution_questions table with an `assessment` column. Table name and
-// tier list are now props instead of in-screen state, so Prakriti and
-// Vikriti stay fully separate at the route/nav/table level while the
-// editing logic itself isn't duplicated. See app/practitioner/prakriti-
-// questions.js and vikriti-questions.js for the thin per-assessment
-// wrappers that render this.
+// Shared editor for prakriti_questions / vikriti_questions. Originally
+// split into this full-CRUD screen plus a separate fast-tagging screen
+// (dosha-tagging.js) — merged back into one screen July 20 2026 since
+// tagging turned out to just be a lighter view onto the same list this
+// screen already renders: every option row below now has tap-to-tag
+// dosha chips that save immediately (no edit mode needed just to tag),
+// while Edit still opens the full form for changing prompt/section/
+// options themselves. Table name and tier list are props so Prakriti and
+// Vikriti stay separate at the route/nav/table level.
 
 const DOSHA_OPTIONS = ['vata', 'pitta', 'kapha'];
 
@@ -123,7 +124,7 @@ function EditorForm({ draft, setDraft, isNew, colors: c, onSave, onCancel, savin
         <>
         <Text style={[s.fieldLabel, { color: c.textMuted, marginTop: 4 }]}>Options</Text>
         {draft.options.map((opt, idx) => (
-        <View key={idx} style={[s.optionRow, { borderColor: c.border, backgroundColor: c.surfaceAlt }]}>
+        <View key={idx} style={[s.optionEditRow, { borderColor: c.border, backgroundColor: c.surfaceAlt }]}>
           <View style={{ flex: 1 }}>
             <TextInput
               style={[s.optionInput, { color: c.text }]}
@@ -176,6 +177,8 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
   const [editingId, setEditingId] = useState(null);
   const [draft, setDraft] = useState(emptyDraft());
   const [saving, setSaving] = useState(false);
+  const [savingTagId, setSavingTagId] = useState(null);
+  const [untaggedOnly, setUntaggedOnly] = useState(false);
 
   useEffect(() => { load(); }, [tier]);
 
@@ -252,6 +255,30 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
     ]);
   }
 
+  async function toggleDosha(item, optIdx, dosha) {
+    const newOptions = item.options.map((o, i) => {
+      if (i !== optIdx) return o;
+      const has = (o.dosha || []).includes(dosha);
+      return { ...o, dosha: has ? o.dosha.filter(x => x !== dosha) : [...(o.dosha || []), dosha] };
+    });
+    setItems(prev => prev.map(it => it.id === item.id ? { ...it, options: newOptions } : it));
+    setSavingTagId(item.id);
+    const { error } = await supabase.from(table).update({ options: newOptions }).eq('id', item.id);
+    setSavingTagId(null);
+    if (error) {
+      Alert.alert('Couldn\'t save tag', error.message);
+      load();
+    }
+  }
+
+  const multiSelect = (items ?? []).filter(i => i.input_type !== 'free_text');
+  const totalOptions = multiSelect.reduce((sum, i) => sum + (i.options?.length ?? 0), 0);
+  const taggedOptions = multiSelect.reduce((sum, i) => sum + (i.options ?? []).filter(o => (o.dosha ?? []).length > 0).length, 0);
+
+  const visibleItems = untaggedOnly
+    ? multiSelect.filter(i => (i.options ?? []).some(o => (o.dosha ?? []).length === 0))
+    : (items ?? []);
+
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
       <Text style={[s.title, { color: c.text, marginBottom: 4 }]}>{title}</Text>
@@ -264,8 +291,20 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
 
       {items && (
         <>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 16, marginBottom: 12 }}>
-            <Text style={[s.title, { color: c.text, fontSize: 16 }]}>{items.length} question{items.length === 1 ? '' : 's'}</Text>
+          <View style={[s.progressCard, { backgroundColor: c.surface, ...card }]}>
+            <Text style={[s.progressText, { color: c.text }]}>{taggedOptions} of {totalOptions} options tagged</Text>
+            <Text style={[s.mutedNote, { color: c.textMuted, marginTop: 2 }]}>
+              Some options (catch-alls, "balanced" readings) are meant to stay untagged — this count won't reach 100% even when tagging is done.
+            </Text>
+            <Pressable onPress={() => setUntaggedOnly(v => !v)} style={[s.chip, { alignSelf: 'flex-start', marginTop: 10, backgroundColor: untaggedOnly ? c.accent : c.surfaceAlt, borderColor: untaggedOnly ? c.accent : c.border }]}>
+              <Text style={{ color: untaggedOnly ? '#FBF9F4' : c.textMedium, fontFamily: 'Inter_500Medium', fontSize: 13 }}>
+                {untaggedOnly ? 'Showing untagged only' : 'Show untagged only'}
+              </Text>
+            </Pressable>
+          </View>
+
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <Text style={[s.title, { color: c.text, fontSize: 16 }]}>{visibleItems.length} question{visibleItems.length === 1 ? '' : 's'}</Text>
             {editingId === null && (
               <Pressable style={[s.actionBtn, { backgroundColor: c.accent }]} onPress={startCreate}>
                 <Text style={s.actionBtnText}>+ New</Text>
@@ -277,11 +316,13 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
             <EditorForm draft={draft} setDraft={setDraft} isNew colors={c} saving={saving} onSave={save} onCancel={() => setEditingId(null)} />
           )}
 
-          {items.length === 0 && editingId !== 'new' && (
-            <Text style={[s.emptyText, { color: c.textMuted }]}>No questions yet for this tier.</Text>
+          {visibleItems.length === 0 && editingId !== 'new' && (
+            <Text style={[s.emptyText, { color: c.textMuted }]}>
+              {untaggedOnly ? 'Nothing untagged left in this tier.' : 'No questions yet for this tier.'}
+            </Text>
           )}
 
-          {items.map(item => (
+          {visibleItems.map(item => (
             <View key={item.id}>
               {editingId === item.id ? (
                 <EditorForm draft={draft} setDraft={setDraft} isNew={false} colors={c} saving={saving} onSave={save} onCancel={() => setEditingId(null)} />
@@ -294,21 +335,26 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
                         {item.input_type === 'free_text' ? ' · free text' : ''}
                         {item.allow_none ? ' · none-escape' : ''}
                         {item.photo_enabled ? ' · 📷' : ''}
+                        {savingTagId === item.id ? ' · saving…' : ''}
                       </Text>
                       <Text style={[s.itemText, { color: c.text }]}>{item.prompt}</Text>
-                      {item.input_type === 'free_text'
-                        ? <Text style={[s.optionPreview, { color: c.textMuted, fontStyle: 'italic' }]}>Free text — no options</Text>
-                        : (item.options || []).map((o, i) => (
-                          <Text key={i} style={[s.optionPreview, { color: c.textMuted }]}>
-                            {o.label} {o.dosha && o.dosha.length > 0 ? `— ${o.dosha.join(' + ')}` : '— untagged'}
-                          </Text>
-                        ))}
                     </View>
                     <View style={{ flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
                       <Pressable onPress={() => startEdit(item)}><Text style={[s.linkText, { color: c.accent }]}>Edit</Text></Pressable>
                       <Pressable onPress={() => deleteItem(item)}><Text style={[s.linkText, { color: c.terracotta || '#C97855' }]}>Delete</Text></Pressable>
                     </View>
                   </View>
+
+                  {item.input_type === 'free_text' ? (
+                    <Text style={[s.optionPreview, { color: c.textMuted, fontStyle: 'italic', marginTop: 6 }]}>Free text — no options to tag.</Text>
+                  ) : (
+                    (item.options ?? []).map((opt, idx) => (
+                      <View key={idx} style={[s.optionTagRow, { borderColor: c.border, backgroundColor: c.surfaceAlt }]}>
+                        <Text style={[s.optionLabel, { color: c.text }]}>{opt.label}</Text>
+                        <DoshaToggle colors={c} selected={opt.dosha ?? []} onChange={d => toggleDosha(item, idx, d)} />
+                      </View>
+                    ))
+                  )}
                 </View>
               )}
             </View>
@@ -332,14 +378,20 @@ const s = StyleSheet.create({
   chip: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 },
   doshaChip: { borderWidth: 1, borderRadius: 8, width: 26, height: 26, alignItems: 'center', justifyContent: 'center' },
 
-  optionRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 8 },
+  optionEditRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, borderWidth: 1, borderRadius: 12, padding: 10, marginBottom: 8 },
   optionInput: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19, marginBottom: 8, minHeight: 20 },
   optionImageInput: { fontFamily: 'Inter_400Regular', fontSize: 11.5, borderWidth: 1, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, marginTop: 8 },
   optionPreview: { fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 18, marginTop: 4 },
 
+  optionTagRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderWidth: 1, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 10, marginTop: 6 },
+  optionLabel: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19 },
+
   editorCard: { borderRadius: 18, padding: 16, marginBottom: 14 },
   actionBtn: { borderRadius: 999, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'center' },
   actionBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
+
+  progressCard: { borderRadius: 18, padding: 16, marginBottom: 16 },
+  progressText: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 17 },
 
   itemCard: { borderRadius: 16, padding: 14, marginBottom: 8 },
   itemMeta: { fontFamily: 'Inter_600SemiBold', fontSize: 10.5, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 },
