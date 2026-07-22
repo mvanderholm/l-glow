@@ -91,15 +91,12 @@ export default function HamburgerDrawer() {
 
               {/* Second access point for assessments — You tab's "Your
                   Assessments" section is untouched, this is quick reach from
-                  anywhere. Matt's call, July 2026 (see docs/roadmap.md #52). */}
+                  anywhere. Matt's call, July 2026 (see docs/roadmap.md #52).
+                  Collapsed into one "Quizzes" row (was six individual links)
+                  pointing at app/quizzes.js, per Matt's follow-up the same day. */}
               <View style={styles.section}>
-                <DrawerItem icon={LeafIcon}     label="My Dosha"         onPress={() => navigate('/quiz')}       c={c} />
-                <DrawerItem icon={FireIcon}     label="Agni Assessment"  onPress={() => navigate('/agni-quiz')}  c={c} />
-                <DrawerItem icon={GunaIcon}     label="Guna Assessment"  onPress={() => navigate('/guna-quiz')}  c={c} />
-                <DrawerItem icon={TongueIcon}   label="Tongue Check"     onPress={() => navigate('/tongue-check')} c={c} />
-                <DrawerItem icon={PrakritiIcon} label="Prakriti"         onPress={() => navigate('/prakriti')}   c={c} />
-                <DrawerItem icon={VikritiIcon}  label="Vikriti"          onPress={() => navigate('/vikriti')}    c={c} />
-                <DrawerItem icon={MusicIcon}    label="Playlist"         onPress={openPlaylist}  c={c} />
+                <DrawerItem icon={QuizIcon}  label="Quizzes"   onPress={() => navigate('/quizzes')} c={c} />
+                <DrawerItem icon={MusicIcon} label="Playlist"  onPress={openPlaylist}  c={c} />
               </View>
 
               <View style={styles.footerInline}>
@@ -207,50 +204,11 @@ function PenIcon({ color, size }) {
     </Svg>
   );
 }
-function LeafIcon({ color, size }) {
+function QuizIcon({ color, size }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} />
-      <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function FireIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1 1 2 2.5 2 4.5A5 5 0 0 1 7 14.5C7 9 12 7 12 2Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-function GunaIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
-    </Svg>
-  );
-}
-function TongueIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 3c3 0 5 2 5 5.5S15.5 19 12 21C8.5 19 7 12.5 7 8.5S9 3 12 3Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M12 9v9" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function PrakritiIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 21V11" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-      <Path d="M12 11c0-4 3-6 7-6 0 4-2 7-7 7Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M12 14c0-3.5-2.5-5.5-6-5.5 0 3.5 2 6 6 6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-function VikritiIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 12h3.5l2-6 3 12 2-9 1.5 3H21" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M9 11.5 11 13.5 15.5 9" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
+      <Path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     </Svg>
   );
 }
