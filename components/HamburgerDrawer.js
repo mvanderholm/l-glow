@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { BOOKING_URL } from '../data/booking';
+import { SPOTIFY_PROFILE_URL } from '../data/content/music';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const W = Math.min(Dimensions.get('window').width * 0.78, 300);
@@ -40,6 +41,11 @@ export default function HamburgerDrawer() {
   function openBooking() {
     close();
     setTimeout(() => Linking.openURL(BOOKING_URL), 50);
+  }
+
+  function openPlaylist() {
+    close();
+    setTimeout(() => Linking.openURL(SPOTIFY_PROFILE_URL), 50);
   }
 
   return (
@@ -79,6 +85,21 @@ export default function HamburgerDrawer() {
                 <DrawerItem icon={PenIcon}      label="Journal"          onPress={() => navigate('/journal')} c={c} />
                 <DrawerItem icon={PersonIcon}   label="About Thea"       onPress={() => navigate('/about')}  c={c} />
                 <DrawerItem icon={CalendarIcon} label="Book a Session"   onPress={openBooking}  c={c} />
+              </View>
+
+              <View style={[styles.sep, { backgroundColor: c.border }]} />
+
+              {/* Second access point for assessments — You tab's "Your
+                  Assessments" section is untouched, this is quick reach from
+                  anywhere. Matt's call, July 2026 (see docs/roadmap.md #52). */}
+              <View style={styles.section}>
+                <DrawerItem icon={LeafIcon}     label="My Dosha"         onPress={() => navigate('/quiz')}       c={c} />
+                <DrawerItem icon={FireIcon}     label="Agni Assessment"  onPress={() => navigate('/agni-quiz')}  c={c} />
+                <DrawerItem icon={GunaIcon}     label="Guna Assessment"  onPress={() => navigate('/guna-quiz')}  c={c} />
+                <DrawerItem icon={TongueIcon}   label="Tongue Check"     onPress={() => navigate('/tongue-check')} c={c} />
+                <DrawerItem icon={PrakritiIcon} label="Prakriti"         onPress={() => navigate('/prakriti')}   c={c} />
+                <DrawerItem icon={VikritiIcon}  label="Vikriti"          onPress={() => navigate('/vikriti')}    c={c} />
+                <DrawerItem icon={MusicIcon}    label="Playlist"         onPress={openPlaylist}  c={c} />
               </View>
 
               <View style={styles.footerInline}>
@@ -183,6 +204,62 @@ function PenIcon({ color, size }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke={color} strokeWidth={1.4} />
       <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function LeafIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} />
+      <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function FireIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1 1 2 2.5 2 4.5A5 5 0 0 1 7 14.5C7 9 12 7 12 2Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function GunaIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
+    </Svg>
+  );
+}
+function TongueIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 3c3 0 5 2 5 5.5S15.5 19 12 21C8.5 19 7 12.5 7 8.5S9 3 12 3Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M12 9v9" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    </Svg>
+  );
+}
+function PrakritiIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M12 21V11" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+      <Path d="M12 11c0-4 3-6 7-6 0 4-2 7-7 7Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M12 14c0-3.5-2.5-5.5-6-5.5 0 3.5 2 6 6 6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function VikritiIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M3 12h3.5l2-6 3 12 2-9 1.5 3H21" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function MusicIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="7" cy="17" r="2.5" stroke={color} strokeWidth={1.4} />
+      <Circle cx="17" cy="15" r="2.5" stroke={color} strokeWidth={1.4} />
+      <Path d="M9.5 17V6l10-2v9" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }

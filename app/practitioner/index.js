@@ -635,18 +635,34 @@ export default function PractitionerClients() {
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
   const [practitionerId, setPractitionerId] = useState(null);
+  const [practitionerSelf, setPractitionerSelf] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setPractitionerId(session?.user?.id ?? null);
+      const id = session?.user?.id ?? null;
+      setPractitionerId(id);
+      if (!id) return;
+      supabase.from('users').select('id, email, display_name').eq('id', id).single()
+        .then(({ data }) => { if (data) setPractitionerSelf(data); });
     });
   }, []);
+
+  // ClientList only ever shows role='user' accounts (deliberately — a
+  // practitioner shouldn't clutter client search), so Thea's own submitted
+  // data was otherwise unreachable from this screen. This button reuses
+  // ClientDetail as-is with her own account standing in for "client."
+  const viewOwnData = practitionerSelf && (
+    <Pressable onPress={() => setSelectedClient(practitionerSelf)} style={[s.ownDataBtn, { borderColor: c.border }]}>
+      <Text style={[s.ownDataBtnText, { color: c.accent }]}>View my own data</Text>
+    </Pressable>
+  );
 
   if (isWide) {
     return (
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <View style={[s.listPane, { borderRightColor: c.border }]}>
+          {viewOwnData}
           <ClientList colors={c} onSelect={setSelectedClient} selectedId={selectedClient?.id} />
         </View>
         <View style={{ flex: 1 }}>
@@ -660,11 +676,13 @@ export default function PractitionerClients() {
 
   return selectedClient
     ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
-    : <ClientList colors={c} onSelect={setSelectedClient} />;
+    : <>{viewOwnData}<ClientList colors={c} onSelect={setSelectedClient} /></>;
 }
 
 const s = StyleSheet.create({
   listPane:    { width: 340, borderRightWidth: StyleSheet.hairlineWidth },
+  ownDataBtn:     { borderWidth: 1, borderRadius: 999, paddingVertical: 8, paddingHorizontal: 14, alignSelf: 'flex-start', margin: 16, marginBottom: 0 },
+  ownDataBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 
   centerPad: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, textAlign: 'center' },
