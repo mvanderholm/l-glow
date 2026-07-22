@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { concepts, tierLabels } from '../data/content/learn';
 import { useTheme } from '../context/ThemeContext';
+import BackButton, { smartBack } from '../components/BackButton';
 
 export default function Learn() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -27,8 +28,10 @@ export default function Learn() {
   };
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
+        <BackButton onPress={() => smartBack('/')} color={colors.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+
         <Text style={type.label}>The Tradition</Text>
         <Text style={[type.h1, { marginTop: spacing.sm }]}>Learn</Text>
         <Text style={[type.muted, { marginTop: spacing.xs }]}>

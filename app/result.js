@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doshaInfo } from '../data/content/quiz';
 import { useTheme } from '../context/ThemeContext';
 import { BotanicalDivider } from '../components/BotanicalAccent';
+import BackButton, { smartBack } from '../components/BackButton';
 
 export default function Result() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -57,8 +58,10 @@ export default function Result() {
   }
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
+
+        <BackButton onPress={() => smartBack('/')} color={colors.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
 
         {/* Primary result */}
         <Text style={type.label}>Your Primary Dosha</Text>

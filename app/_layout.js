@@ -90,15 +90,15 @@ function AppNavigator() {
       <Stack.Screen name="quizzes" options={{ headerShown: false }} />
       <Stack.Screen name="prakriti" options={{ headerShown: false }} />
       <Stack.Screen name="vikriti"  options={{ headerShown: false }} />
-      <Stack.Screen name="result" />
-      <Stack.Screen name="recommendations" />
-      <Stack.Screen name="about" />
-      <Stack.Screen name="learn" />
-      <Stack.Screen name="affirmations" />
-      <Stack.Screen name="recipes" />
-      <Stack.Screen name="breathwork" />
-      <Stack.Screen name="meditation" />
-      <Stack.Screen name="selfmassage" />
+      <Stack.Screen name="result"          options={{ headerShown: false }} />
+      <Stack.Screen name="recommendations" options={{ headerShown: false }} />
+      <Stack.Screen name="about"           options={{ headerShown: false }} />
+      <Stack.Screen name="learn"           options={{ headerShown: false }} />
+      <Stack.Screen name="affirmations"    options={{ headerShown: false }} />
+      <Stack.Screen name="recipes"         options={{ headerShown: false }} />
+      <Stack.Screen name="breathwork"      options={{ headerShown: false }} />
+      <Stack.Screen name="meditation"      options={{ headerShown: false }} />
+      <Stack.Screen name="selfmassage"     options={{ headerShown: false }} />
       <Stack.Screen name="intake"       options={{ headerShown: false }} />
       <Stack.Screen name="practitioner" options={{ headerShown: false }} />
       <Stack.Screen name="guna-quiz"    options={{ headerShown: false }} />

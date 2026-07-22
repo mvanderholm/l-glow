@@ -1,13 +1,16 @@
 import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
+import BackButton, { smartBack } from '../components/BackButton';
 
 export default function Meditation() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
+        <BackButton onPress={() => smartBack('/')} color={c.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+
         <Text style={type.label}>Mind</Text>
         <Text style={[type.h1, { marginTop: spacing.sm }]}>Meditation</Text>
         <Text style={[type.muted, { marginTop: spacing.xs }]}>

@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 import { routineAnchors, routines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import { loadDoshaResult } from '../data/user/storage';
+import BackButton, { smartBack } from '../components/BackButton';
 
 export default function Recommendations() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -67,8 +68,10 @@ export default function Recommendations() {
   const season = currentSeason();
 
   return (
-    <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
+    <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
+        <BackButton onPress={() => smartBack('/')} color={colors.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+
         <Text style={type.label}>Tuned for</Text>
         <Text style={[type.display, { color: info.color, marginTop: spacing.xs }]}>{info.name}</Text>
         <Text style={[type.muted, { marginTop: spacing.xs }]}>

@@ -11,6 +11,7 @@ import { CornerSprig, LeafSprig, BotanicalDivider } from '../components/Botanica
 import { INSTAGRAM_HANDLE } from '../data/instagram';
 import { SPOTIFY_PROFILE_URL } from '../data/content/music';
 import { BOOKING_URL } from '../data/booking';
+import BackButton, { smartBack } from '../components/BackButton';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 const SWATCHES = [
@@ -29,6 +30,8 @@ export default function About() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
+
+        <BackButton onPress={() => smartBack('/')} color={c.text} style={{ alignSelf: 'flex-start', marginLeft: -10, marginBottom: 8 }} />
 
         {/* Photo — lead image, top of page. Swap in assets/thea.jpg when ready */}
         <View style={[styles.photoFrame, { marginTop: spacing.lg }]}>

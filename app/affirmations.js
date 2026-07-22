@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { loadDoshaResult } from '../data/user/storage';
 import { affirmationsForDosha } from '../data/content/affirmations';
 import { loadAffirmations, refreshAffirmations } from '../data/content/remote';
+import BackButton, { smartBack } from '../components/BackButton';
 
 // Picks a starting index from the pool that changes each day but is stable within a day.
 function dailyStartIndex(len) {
@@ -40,6 +41,8 @@ export default function Affirmations() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
+        <BackButton onPress={() => smartBack('/')} color={c.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+
         <Text style={type.label}>Your Practice</Text>
         <Text style={[type.h1, { marginTop: spacing.sm }]}>Affirmation</Text>
 

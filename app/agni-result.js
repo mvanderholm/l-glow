@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { agniResults } from '../data/content/agniQuiz';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 
 // Source: transcript 21 (062126_02). Result copy is DRAFT — Thea to review before launch.
 
@@ -79,7 +79,7 @@ export default function AgniResult() {
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
 
-        <BackButton onPress={() => router.back()} color={c.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+        <BackButton onPress={() => smartBack('/')} color={c.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
 
         {/* Header */}
         <Text style={[s.overline, { color: c.textMuted }]}>Your Agni</Text>
