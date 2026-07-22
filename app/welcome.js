@@ -80,11 +80,16 @@ export default function Welcome() {
         {/* ── LIGHT SECTIONS ── */}
         <View style={{ width: '100%', maxWidth: 680, backgroundColor: c.bg, paddingHorizontal: pad }}>
 
-          {/* ── SIGN IN LINK ── */}
+          {/* ── SIGN IN / SIGN UP LINKS ── */}
           <View style={{ alignItems: 'flex-end', paddingTop: 16, paddingBottom: 4 }}>
             <Pressable onPress={() => router.push('/login')}>
               <Text style={{ color: c.textMuted, fontFamily: 'Inter_500Medium', fontSize: 13 }}>
                 Already have an account? <Text style={{ color: c.accent }}>Sign in</Text>
+              </Text>
+            </Pressable>
+            <Pressable onPress={() => router.push('/signup')} style={{ marginTop: 4 }}>
+              <Text style={{ color: c.textMuted, fontFamily: 'Inter_500Medium', fontSize: 13 }}>
+                New here? <Text style={{ color: c.accent }}>Sign up</Text>
               </Text>
             </Pressable>
           </View>
@@ -202,6 +207,11 @@ export default function Welcome() {
             <Pressable style={{ marginTop: 20 }} onPress={() => router.push('/login')}>
               <Text style={{ color: c.textMuted, fontFamily: 'Inter_400Regular', fontSize: 14 }}>
                 Already a member? <Text style={{ color: c.accent }}>Sign in</Text>
+              </Text>
+            </Pressable>
+            <Pressable style={{ marginTop: 10 }} onPress={() => router.push('/signup')}>
+              <Text style={{ color: c.textMuted, fontFamily: 'Inter_400Regular', fontSize: 14 }}>
+                New here? <Text style={{ color: c.accent }}>Sign up</Text>
               </Text>
             </Pressable>
           </View>
