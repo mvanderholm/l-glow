@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
+import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -24,11 +25,12 @@ export default function Lifestyle() {
   const { theme: { colors: c } } = useTheme();
   const router = useRouter();
   const { open: openDrawer } = useDrawer();
+  const { isWebMode } = useViewMode();
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>Lifestyle</Text>
         <View style={styles.hBtn} />
       </View>

@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
+import { useViewMode } from '../context/ViewModeContext';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 function computeStats(checkins) {
@@ -55,6 +56,7 @@ export default function You() {
   const { theme: { colors: c, spacing } } = useTheme();
   const router = useRouter();
   const { open: openDrawer } = useDrawer();
+  const { isWebMode } = useViewMode();
   const { user, signOut } = useAuth();
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
@@ -98,7 +100,7 @@ export default function You() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>You</Text>
         {/* Right header slot — was an unwired filter/sliders icon (dead tap, removed July 2026).
             Reserved for a future per-screen action, possibly search (see roadmap #44). Spacer

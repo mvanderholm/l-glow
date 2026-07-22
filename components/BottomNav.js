@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { useTheme } from '../context/ThemeContext';
 
-const TABS = [
+export const TABS = [
   { name: 'Lifestyle',   href: '/lifestyle',   icon: LifestyleIcon },
   { name: 'Movement',    href: '/movement',    icon: MovementIcon },
   { name: 'Check In',   href: '/checkin',     icon: CheckInIcon },

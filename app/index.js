@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
+import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
@@ -39,6 +40,7 @@ function todayLabel() {
 export default function Home() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { open: openDrawer } = useDrawer();
+  const { isWebMode } = useViewMode();
   const { user } = useAuth();
   const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
@@ -77,7 +79,7 @@ export default function Home() {
       >
         {/* Header */}
         <View style={styles.header}>
-          <Pressable style={styles.headerBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+          {isWebMode ? <View style={styles.headerBtn} /> : <Pressable style={styles.headerBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
           <LogoLockup color={c.text} />
           <Pressable style={styles.headerBtn}><BellIcon color={c.text} /></Pressable>
         </View>

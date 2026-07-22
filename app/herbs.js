@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { herbs } from '../data/content/herbs';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
+import { useViewMode } from '../context/ViewModeContext';
 import Svg, { Path } from 'react-native-svg';
 
 const DOSHA_COLORS = { vata: '#8B6A7A', pitta: '#E8A030', kapha: '#4A8FA8' };
@@ -12,6 +13,7 @@ const POTENCY_COLOR = { warming: '#C97855', cooling: '#4A8FA8', neutral: '#7C735
 export default function Herbs() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { open: openDrawer } = useDrawer();
+  const { isWebMode } = useViewMode();
   const [selected, setSelected] = useState(null);
   const [query, setQuery] = useState('');
   const herbList = Object.entries(herbs).filter(([name, herb]) => {
@@ -23,7 +25,7 @@ export default function Herbs() {
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       <View style={[herbStyles.header, { paddingHorizontal: 20 }]}>
-        <Pressable style={herbStyles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        {isWebMode ? <View style={herbStyles.hBtn} /> : <Pressable style={herbStyles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[herbStyles.hTitle, { color: c.text }]}>Herbs</Text>
         <View style={herbStyles.hBtn} />
       </View>

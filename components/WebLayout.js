@@ -1,23 +1,18 @@
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useViewMode } from '../context/ViewModeContext';
+import { NAV_SECTIONS } from '../data/nav';
+import { TABS as BOTTOM_TABS } from './BottomNav';
 import LogoMark from './LogoMark';
 
-const NAV_LINKS = [
-  { label: 'Home',              href: '/' },
-  { label: 'Lifestyle',         href: '/lifestyle' },
-  { label: 'Movement',          href: '/movement' },
-  { label: 'Check In',          href: '/checkin' },
-  { label: 'Herbs',             href: '/herbs' },
-  { label: 'Nourishment',       href: '/nourishment' },
-  { label: 'Learn',             href: '/learn',            indent: true },
-  { label: 'Journal',           href: '/journal',          indent: true },
-  { label: 'About Thea',        href: '/about',            indent: true },
-  { label: 'You',               href: '/you' },
-  { label: 'Dosha Quiz',        href: '/quiz',             indent: true },
-  { label: 'Today\'s Guidance', href: '/recommendations',  indent: true },
-  { label: 'Affirmation',       href: '/affirmations',     indent: true },
+// Web View has no separate bottom tab bar, so this sidebar has to cover both
+// navigational planes mobile splits across two controls: BottomNav's 5 tabs,
+// plus the hamburger drawer's items (data/nav.js — same list the drawer
+// renders, so the two can't drift apart the way they used to).
+const NAV_SECTIONS_WITH_TABS = [
+  BOTTOM_TABS.map(t => ({ key: t.href, label: t.name, href: t.href })),
+  ...NAV_SECTIONS,
 ];
 
 export default function WebLayout({ children }) {
@@ -37,25 +32,28 @@ export default function WebLayout({ children }) {
         </View>
 
         <View style={styles.nav}>
-          {NAV_LINKS.map(link => {
-            const active = pathname === link.href;
-            return (
-              <Pressable
-                key={link.href}
-                onPress={() => router.push(link.href)}
-                style={({ pressed }) => [
-                  styles.navLink,
-                  link.indent && styles.navLinkIndent,
-                  active && styles.navLinkActive,
-                  pressed && styles.navLinkPressed,
-                ]}
-              >
-                <Text style={[styles.navLinkText, link.indent && styles.navLinkTextIndent, active && styles.navLinkTextActive]}>
-                  {link.label}
-                </Text>
-              </Pressable>
-            );
-          })}
+          {NAV_SECTIONS_WITH_TABS.map((section, i) => (
+            <View key={i} style={[i > 0 && styles.navSection]}>
+              {section.map(link => {
+                const active = !link.external && pathname === link.href;
+                return (
+                  <Pressable
+                    key={link.key}
+                    onPress={() => link.external ? Linking.openURL(link.external) : router.push(link.href)}
+                    style={({ pressed }) => [
+                      styles.navLink,
+                      active && styles.navLinkActive,
+                      pressed && styles.navLinkPressed,
+                    ]}
+                  >
+                    <Text style={[styles.navLinkText, active && styles.navLinkTextActive]}>
+                      {link.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ))}
         </View>
 
         <Pressable style={styles.toggleBtn} onPress={() => setViewMode('app')}>
@@ -92,14 +90,14 @@ function makeStyles(c, spacing, radius) {
       flex: 1,
       marginTop: spacing.xl,
     },
+    navSection: {
+      marginTop: spacing.md,
+    },
     navLink: {
       paddingVertical: spacing.sm,
       paddingHorizontal: spacing.md,
       borderRadius: radius.md,
       marginBottom: 2,
-    },
-    navLinkIndent: {
-      paddingLeft: spacing.lg + spacing.sm,
     },
     navLinkActive: {
       backgroundColor: c.bg,
@@ -111,9 +109,6 @@ function makeStyles(c, spacing, radius) {
       color: c.textMuted,
       fontFamily: 'Inter_400Regular',
       fontSize: 15,
-    },
-    navLinkTextIndent: {
-      fontSize: 13,
     },
     navLinkTextActive: {
       color: c.text,

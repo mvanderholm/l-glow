@@ -4,9 +4,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
-import { BOOKING_URL } from '../data/booking';
-import { SPOTIFY_PROFILE_URL } from '../data/content/music';
+import { NAV_SECTIONS } from '../data/nav';
 import Svg, { Path, Circle } from 'react-native-svg';
+
+// Icons keyed by data/nav.js's item `key` — kept here (not in the shared
+// data module) since they're a presentation detail specific to this
+// component; WebLayout's sidebar doesn't use icons at all.
+const ICONS = {
+  home: HomeIcon,
+  profile: YouIcon,
+  journey: JourneyIcon,
+  learn: BookIcon,
+  journal: PenIcon,
+  about: PersonIcon,
+  booking: CalendarIcon,
+  quizzes: QuizIcon,
+  playlist: MusicIcon,
+};
 
 const W = Math.min(Dimensions.get('window').width * 0.78, 300);
 
@@ -38,14 +52,13 @@ export default function HamburgerDrawer() {
     setTimeout(() => router.push(path), 50);
   }
 
-  function openBooking() {
+  function openExternal(url) {
     close();
-    setTimeout(() => Linking.openURL(BOOKING_URL), 50);
+    setTimeout(() => Linking.openURL(url), 50);
   }
 
-  function openPlaylist() {
-    close();
-    setTimeout(() => Linking.openURL(SPOTIFY_PROFILE_URL), 50);
+  function handlePress(item) {
+    return item.external ? () => openExternal(item.external) : () => navigate(item.href);
   }
 
   return (
@@ -71,33 +84,19 @@ export default function HamburgerDrawer() {
 
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
 
-              {/* Primary nav items */}
-              <View style={styles.section}>
-                <DrawerItem icon={HomeIcon}     label="Home"             onPress={() => navigate('/')}       c={c} />
-                <DrawerItem icon={YouIcon}      label="Your Profile"     onPress={() => navigate('/you')}    c={c} />
-                <DrawerItem icon={JourneyIcon}  label="My Journey"       onPress={() => navigate('/journey')} c={c} />
-              </View>
-
-              <View style={[styles.sep, { backgroundColor: c.border }]} />
-
-              <View style={styles.section}>
-                <DrawerItem icon={BookIcon}     label="Learn"            onPress={() => navigate('/learn')}  c={c} />
-                <DrawerItem icon={PenIcon}      label="Journal"          onPress={() => navigate('/journal')} c={c} />
-                <DrawerItem icon={PersonIcon}   label="About Thea"       onPress={() => navigate('/about')}  c={c} />
-                <DrawerItem icon={CalendarIcon} label="Book a Session"   onPress={openBooking}  c={c} />
-              </View>
-
-              <View style={[styles.sep, { backgroundColor: c.border }]} />
-
-              {/* Second access point for assessments — You tab's "Your
-                  Assessments" section is untouched, this is quick reach from
-                  anywhere. Matt's call, July 2026 (see docs/roadmap.md #52).
-                  Collapsed into one "Quizzes" row (was six individual links)
-                  pointing at app/quizzes.js, per Matt's follow-up the same day. */}
-              <View style={styles.section}>
-                <DrawerItem icon={QuizIcon}  label="Quizzes"   onPress={() => navigate('/quizzes')} c={c} />
-                <DrawerItem icon={MusicIcon} label="Playlist"  onPress={openPlaylist}  c={c} />
-              </View>
+              {/* Nav items — data/nav.js is the single source of truth,
+                  shared with WebLayout's fixed sidebar so the two can't drift
+                  out of sync the way they used to (see docs/roadmap.md #52). */}
+              {NAV_SECTIONS.map((section, i) => (
+                <View key={i}>
+                  {i > 0 && <View style={[styles.sep, { backgroundColor: c.border }]} />}
+                  <View style={styles.section}>
+                    {section.map(item => (
+                      <DrawerItem key={item.key} icon={ICONS[item.key]} label={item.label} onPress={handlePress(item)} c={c} />
+                    ))}
+                  </View>
+                </View>
+              ))}
 
               <View style={styles.footerInline}>
                 <Text style={[styles.footerText, { color: c.textMuted }]}>L. Glow · v0.1</Text>

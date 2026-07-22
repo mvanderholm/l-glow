@@ -9,6 +9,7 @@ import { SEASONAL_CONTENT, LUNAR_CONTENT } from '../data/content/cycles';
 import { loadDoshaResult } from '../data/user/storage';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
+import { useViewMode } from '../context/ViewModeContext';
 
 const TABS = ['Overview', 'Ayurveda', 'Habits', 'Cycles'];
 
@@ -77,6 +78,7 @@ export default function Journey() {
   const { theme: { colors: c, spacing, type } } = useTheme();
   const router = useRouter();
   const { open: openDrawer } = useDrawer();
+  const { isWebMode } = useViewMode();
   const [activeTab, setActiveTab] = useState(0);
   const [checked, setChecked] = useState(() =>
     Object.fromEntries(PRACTICES.map(p => [p.id, p.done]))
@@ -90,7 +92,7 @@ export default function Journey() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       {/* Header */}
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>
+        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>My Journey</Text>
         {/* Right header slot — was an unwired filter/sliders icon (dead tap, removed July 2026).
             Reserved for a future per-screen action, possibly search (see roadmap #44). Spacer
