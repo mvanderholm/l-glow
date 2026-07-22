@@ -706,10 +706,12 @@ Scope — two surfaces, sequenced (unchanged from the original plan, just a diff
 
 With both fixed, the full loop is confirmed working: client fills out intake form while genuinely signed in → syncs to `intake_forms` → practitioner account sees it in the dashboard. (One test-session gotcha worth remembering for next time: filling out "My Intake Form" from the drawer saves under *whatever account is currently signed in* — it doesn't check role. Testing with two accounts in the same browser tab, without confirming which one is actually active, silently wrote data to the wrong account's row. Two separate browsers avoided the mix-up.)
 
-**Deliberately not built, because this is v1-to-react-to, not the real design:**
-- Dosha result, check-in history/trends, vikriti drift, journal entries in the dashboard — intake form only for now
-- The actual conversation with Thea about what she wants to see — still hasn't happened; treat everything above as a strawman for that conversation, not a finished feature
-- Email notification when a form is completed — explicitly deferred (see #33 discussion, July 2026); Thea checks the dashboard manually for now, no automated trigger exists
+~~**Deliberately not built, because this is v1-to-react-to, not the real design:**~~ — Thea's first real feedback landed July 21 2026, see below. Email notification when a form is completed is still explicitly deferred (see #33 discussion, July 2026); Thea checks the dashboard manually for that, no automated trigger exists.
+
+**Thea's first real design feedback, July 21 2026 — the conversation build-order step 7 was waiting on.** She confirmed raw data access (already built) is enough everywhere else, and asked for two additions:
+- **Dosha Breakdown visual in the practitioner hub.** Explicitly "doesn't have to be like the venn diagram" (You tab's `DoshaWheel`). Built as a simple proportional bar (`DoshaBar` in `app/practitioner/index.js`), reusing the app's existing `DOSHA_COLORS` from `components/DoshaWheel.js` rather than a new palette — same three-category data, denser list-appropriate treatment. Lives in the Summary tab's "Current snapshot" card.
+- **AI-generated guidance alongside each filled-out assessment.** First LLM integration in this app, and the first practitioner-only AI content — never shown to the client, gated so only a practitioner account can trigger it (checked server-side). New `supabase/functions/generate-ai-guidance` Edge Function holds `ANTHROPIC_API_KEY` server-side (same shape as `notify-intake-complete`'s `RESEND_API_KEY` pattern — a client-side key isn't an option for a web+native app), model `claude-opus-4-8`, one non-agentic summarization call. Cached in a new `ai_guidance` table (practitioner-only RLS, no client-read policy — same as `practitioner_notes`), one row per client/assessment/tier, overwritten on "Regenerate" rather than accumulating history. **Content-safety split:** Dosha/Guna/Agni/Tongue already have real computed scores, so the model discusses those numbers directly; Prakriti/Vikriti have no computed dosha score (tagging still ~0%), so the model is explicitly told to summarize themes in the client's raw answers only and never assign a dosha type. Every guidance card is labeled "AI-generated — not a diagnosis, for your reference" in the UI.
+- **Deploy step for Matt, not something Claude Code can do remotely:** create the `generate-ai-guidance` function in the Supabase dashboard (Edge Functions → Create, paste `supabase/functions/generate-ai-guidance/index.ts`), then set `ANTHROPIC_API_KEY` under Edge Functions → Secrets.
 
 **Build order:**
 1. ~~Supabase Auth integration + L. Glow auth screens (#29)~~ done, July 2026
@@ -718,7 +720,7 @@ With both fixed, the full loop is confirmed working: client fills out intake for
 4. ~~AsyncStorage migration flow for existing local users on first login~~ done, July 14 2026 — see Gap 2 above
 5. ~~Read-hydration from Supabase~~ done, July 14 2026 — see Gap 1 above
 6. ~~Practitioner dashboard v1~~ done, July 2026 — rough pass, see above, built before rather than after the Thea conversation
-7. Thea conversation → real practitioner view design, reacting to v1
+7. ~~Thea conversation → real practitioner view design, reacting to v1~~ — first round landed July 21 2026 (Dosha Breakdown + AI guidance, above). Ongoing — more feedback expected as she uses the dashboard for real sessions.
 8. ~~Consent flow~~ done, July 14 2026 — "Share with Thea" toggle in You tab. Privacy policy for the intake form's signature screen still needed from Thea before that screen can ship publicly (see #33).
 9. End-to-end QA on real devices
 

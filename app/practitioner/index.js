@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { SECTIONS, sectionProgress } from '../intake';
+import { DOSHA_COLORS } from '../../components/DoshaWheel';
 
 // Practitioner "Clients" screen — v2, still built ahead of the real
 // conversation with Thea about what she wants to see (see roadmap #30 Phase
@@ -211,6 +212,93 @@ function AnswerRow({ label, value, colors: c }) {
   );
 }
 
+// Dosha Breakdown visual — Thea asked for this specifically, "doesn't have
+// to be like the venn diagram" (You tab's DoshaWheel). A denser, list-
+// appropriate treatment for the practitioner hub: a single proportional
+// bar instead of the decorative wheel, reusing the app's existing
+// DOSHA_COLORS rather than a new palette, since it's the same three-
+// category data the wheel already renders.
+function DoshaBar({ scores, colors: c }) {
+  const total = (scores.vata + scores.pitta + scores.kapha) || 1;
+  const doshas = [
+    { key: 'vata', label: 'Vata', pct: Math.round((scores.vata / total) * 100) },
+    { key: 'pitta', label: 'Pitta', pct: Math.round((scores.pitta / total) * 100) },
+    { key: 'kapha', label: 'Kapha', pct: Math.round((scores.kapha / total) * 100) },
+  ];
+  return (
+    <View style={{ marginTop: 6, marginBottom: 4 }}>
+      <View style={{ flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden' }}>
+        {doshas.map(d => (
+          <View key={d.key} style={{ width: `${d.pct}%`, backgroundColor: DOSHA_COLORS[d.key] }} />
+        ))}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 12, marginTop: 6 }}>
+        {doshas.map(d => (
+          <Text key={d.key} style={{ fontFamily: 'Inter_500Medium', fontSize: 11.5, color: c.textMuted }}>
+            <Text style={{ color: DOSHA_COLORS[d.key] }}>●</Text> {d.label} {d.pct}%
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// AI-generated guidance — first LLM integration in the app, and the first
+// practitioner-only AI content (never shown to the client). Thea's own
+// working reference to help prep for a session, not authored content.
+// Calls the generate-ai-guidance Edge Function, which holds the Anthropic
+// key server-side and does the real practitioner-role authorization check
+// — this component trusts nothing client-side, it's just the UI for it.
+function AIGuidanceSection({ clientId, assessmentType, tier, colors: c }) {
+  const [content, setContent] = useState(null); // null = loading, false = none cached yet
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { load(); }, [clientId, assessmentType, tier]);
+
+  async function load() {
+    setContent(null);
+    const { data } = await supabase.from('ai_guidance').select('content')
+      .eq('user_id', clientId).eq('assessment_type', assessmentType).eq('tier', tier || 'none')
+      .maybeSingle();
+    setContent(data?.content ?? false);
+  }
+
+  async function generate() {
+    setGenerating(true);
+    setError(null);
+    const { data, error } = await supabase.functions.invoke('generate-ai-guidance', {
+      body: { clientId, assessmentType, tier },
+    });
+    setGenerating(false);
+    if (error) { setError(error.message); return; }
+    setContent(data.content);
+  }
+
+  if (content === null) return null;
+
+  return (
+    <View style={{ marginTop: 6, marginBottom: 10 }}>
+      {content ? (
+        <View style={[s.aiCard, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+          <Text style={[s.aiLabel, { color: c.textMuted }]}>AI-generated — not a diagnosis, for your reference</Text>
+          <Text style={[s.aiContent, { color: c.text }]}>{content}</Text>
+          <Pressable onPress={generate} disabled={generating}>
+            <Text style={[s.aiRegenerate, { color: c.accent }]}>{generating ? 'Regenerating…' : 'Regenerate'}</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable onPress={generate} disabled={generating}>
+          <Text style={{ color: c.accent, fontFamily: 'Inter_500Medium', fontSize: 12.5 }}>
+            {generating ? 'Generating…' : '+ Generate AI guidance'}
+          </Text>
+        </Pressable>
+      )}
+      {error && <Text style={{ color: c.terracotta || '#C97855', fontSize: 12, marginTop: 4 }}>Couldn't generate — {error}</Text>}
+    </View>
+  );
+}
+
 // One tier-completion entry for Prakriti/Vikriti — collapsed by default
 // (date + tier + answer count, tap to expand), since a Level 3 completion
 // can run 60+ questions. Expanded view shows the raw Q&A plus a read-only
@@ -409,8 +497,18 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                 <Pressable onPress={() => setActiveTab('assessments')}>
                   <SectionCard title="Current snapshot" colors={c}>
                     <AnswerRow label="Dosha" colors={c} value={clientData.doshaResults[0]
-                      ? `${cap(clientData.doshaResults[0].dosha)} · V${clientData.doshaResults[0].vata_score} P${clientData.doshaResults[0].pitta_score} K${clientData.doshaResults[0].kapha_score}`
+                      ? cap(clientData.doshaResults[0].dosha)
                       : 'Not yet taken'} />
+                    {clientData.doshaResults[0] && (
+                      <DoshaBar
+                        colors={c}
+                        scores={{
+                          vata: clientData.doshaResults[0].vata_score,
+                          pitta: clientData.doshaResults[0].pitta_score,
+                          kapha: clientData.doshaResults[0].kapha_score,
+                        }}
+                      />
+                    )}
                     <AnswerRow label="Guna" colors={c} value={clientData.gunaResults[0]
                       ? `${cap(clientData.gunaResults[0].dominant)} · S${clientData.gunaResults[0].sattva_score} R${clientData.gunaResults[0].rajas_score} T${clientData.gunaResults[0].tamas_score}`
                       : 'Not yet taken'} />
@@ -444,6 +542,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dosha)} · V{r.vata_score} P{r.pitta_score} K{r.kapha_score}</Text>
                   </View>
                 ))}
+                {clientData.doshaResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="dosha" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Guna history</Text>
                 {clientData.gunaResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
@@ -453,6 +552,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dominant)} · S{r.sattva_score} R{r.rajas_score} T{r.tamas_score}</Text>
                   </View>
                 ))}
+                {clientData.gunaResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="guna" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Agni history</Text>
                 {clientData.agniResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
@@ -462,6 +562,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.agni_type)}</Text>
                   </View>
                 ))}
+                {clientData.agniResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="agni" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Tongue check history</Text>
                 {clientData.tongueResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>Not yet taken.</Text>}
@@ -471,6 +572,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.reading)}</Text>
                   </View>
                 ))}
+                {clientData.tongueResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="tongue" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Prakriti responses</Text>
                 {clientData.prakritiResponses.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
@@ -485,6 +587,9 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     exportText={formatResponseExport(client.display_name || client.email, 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r)}
                   />
                 ))}
+                {[...new Set(clientData.prakritiResponses.map(r => r.tier))].map(tier => (
+                  <AIGuidanceSection key={tier} colors={c} clientId={client.id} assessmentType="prakriti" tier={tier} />
+                ))}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Vikriti responses</Text>
                 {clientData.vikritiResponses.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>Not yet taken.</Text>}
@@ -498,6 +603,9 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                     exportText={formatResponseExport(client.display_name || client.email, 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r)}
                   />
+                ))}
+                {[...new Set(clientData.vikritiResponses.map(r => r.tier))].map(tier => (
+                  <AIGuidanceSection key={tier} colors={c} clientId={client.id} assessmentType="vikriti" tier={tier} />
                 ))}
               </>
             )}
@@ -726,6 +834,10 @@ const s = StyleSheet.create({
   logDetail: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 19 },
   fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase' },
   exportBox: { borderWidth: 1, borderRadius: 10, padding: 10, minHeight: 100, textAlignVertical: 'top', fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 18 },
+  aiCard: { borderWidth: 1, borderRadius: 12, padding: 12 },
+  aiLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 },
+  aiContent: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 20, fontStyle: 'italic', marginBottom: 8 },
+  aiRegenerate: { fontFamily: 'Inter_500Medium', fontSize: 12 },
   logNote:   { fontFamily: 'Inter_400Regular', fontSize: 13, fontStyle: 'italic', marginTop: 2, lineHeight: 18 },
 
   noteInput:   { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, fontFamily: 'Inter_400Regular', minHeight: 70, textAlignVertical: 'top', marginBottom: 10 },
