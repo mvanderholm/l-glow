@@ -9,10 +9,13 @@ import LogoMark from './LogoMark';
 // Web View has no separate bottom tab bar, so this sidebar has to cover both
 // navigational planes mobile splits across two controls: BottomNav's 5 tabs,
 // plus the hamburger drawer's items (data/nav.js — same list the drawer
-// renders, so the two can't drift apart the way they used to).
+// renders, so the two can't drift apart the way they used to). Home/Your
+// Profile/My Journey leads, matching the drawer's own order, then the
+// BottomNav tabs, then the rest of the drawer's groups.
 const NAV_SECTIONS_WITH_TABS = [
+  NAV_SECTIONS[0],
   BOTTOM_TABS.map(t => ({ key: t.href, label: t.name, href: t.href })),
-  ...NAV_SECTIONS,
+  ...NAV_SECTIONS.slice(1),
 ];
 
 export default function WebLayout({ children }) {
