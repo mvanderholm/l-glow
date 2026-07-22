@@ -23,6 +23,12 @@
 // have a computed dosha score yet (tagging is still ~0% as of when this
 // was built) — for those, the model is explicitly told not to assign a
 // dosha type, only to summarize themes in the client's own raw answers.
+//
+// CORS: this is called from a browser (the web build), which sends a
+// preflight OPTIONS request before the real POST whenever custom headers
+// like Authorization are involved. Supabase Edge Functions don't add CORS
+// headers automatically — every response below goes through jsonResponse()
+// so the browser doesn't silently block the real request on the preflight.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import Anthropic from 'npm:@anthropic-ai/sdk';
@@ -31,6 +37,19 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY');
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  });
+}
 
 const VOICE_GUIDE_PRINCIPLES = `Five principles this practice works from, for tone only (not instructions to follow beyond tone):
 1. Nothing is for everybody. Everything is for somebody — never state anything as a universal truth.
@@ -42,13 +61,16 @@ const VOICE_GUIDE_PRINCIPLES = `Five principles this practice works from, for to
 const SCORED_TYPES = new Set(['dosha', 'guna', 'agni', 'tongue']);
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401 });
+    return jsonResponse({ error: 'Missing Authorization header' }, 401);
   }
 
   const anonClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -56,7 +78,7 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: authError } = await anonClient.auth.getUser();
   if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'Not authenticated' }), { status: 401 });
+    return jsonResponse({ error: 'Not authenticated' }, 401);
   }
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -66,26 +88,26 @@ Deno.serve(async (req) => {
   const { data: caller, error: callerError } = await admin
     .from('users').select('role').eq('id', user.id).maybeSingle();
   if (callerError) {
-    return new Response(JSON.stringify({ error: callerError.message }), { status: 500 });
+    return jsonResponse({ error: callerError.message }, 500);
   }
   if (caller?.role !== 'practitioner') {
-    return new Response(JSON.stringify({ error: 'Practitioner access required' }), { status: 403 });
+    return jsonResponse({ error: 'Practitioner access required' }, 403);
   }
 
   const { clientId, assessmentType, tier } = await req.json();
   if (!clientId || !assessmentType) {
-    return new Response(JSON.stringify({ error: 'clientId and assessmentType are required' }), { status: 400 });
+    return jsonResponse({ error: 'clientId and assessmentType are required' }, 400);
   }
 
   const { data: consented } = await admin
     .from('users').select('consented_to_practitioner_view').eq('id', clientId).maybeSingle();
   if (!consented?.consented_to_practitioner_view) {
-    return new Response(JSON.stringify({ error: 'Client has not consented to practitioner view' }), { status: 403 });
+    return jsonResponse({ error: 'Client has not consented to practitioner view' }, 403);
   }
 
   const promptData = await fetchAssessmentData(admin, assessmentType, clientId, tier);
   if (!promptData) {
-    return new Response(JSON.stringify({ error: 'No data on file for this assessment' }), { status: 404 });
+    return jsonResponse({ error: 'No data on file for this assessment' }, 404);
   }
 
   const anthropic = new Anthropic({ apiKey: ANTHROPIC_API_KEY });
@@ -93,16 +115,22 @@ Deno.serve(async (req) => {
     ? `You're helping an Ayurvedic practitioner (Thea) prepare for a client session. You'll be given a client's self-reported assessment scores. Write 3-5 sentences of observations for the practitioner's own reference — not a diagnosis, not something shown to the client. Reference the actual numbers/dominant type given; don't add interpretation the data doesn't support.\n\n${VOICE_GUIDE_PRINCIPLES}`
     : `You're helping an Ayurvedic practitioner (Thea) prepare for a client session. You'll be given a client's raw answers to a self-assessment tier. No dosha score exists for this content yet — tagging isn't done. Summarize recurring themes in what they shared, in 3-5 sentences. Do not assign a dosha type or score — there's no tagged data to support one. Frame everything as "what they shared," not a clinical reading.\n\n${VOICE_GUIDE_PRINCIPLES}`;
 
-  const message = await anthropic.messages.create({
-    model: 'claude-opus-4-8',
-    max_tokens: 512,
-    output_config: { effort: 'low' },
-    system,
-    messages: [{ role: 'user', content: JSON.stringify(promptData) }],
-  });
+  let message;
+  try {
+    message = await anthropic.messages.create({
+      model: 'claude-opus-4-8',
+      max_tokens: 512,
+      output_config: { effort: 'low' },
+      system,
+      messages: [{ role: 'user', content: JSON.stringify(promptData) }],
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return jsonResponse({ error: `Claude API call failed: ${message}` }, 502);
+  }
   const content = message.content.find((b) => b.type === 'text')?.text;
   if (!content) {
-    return new Response(JSON.stringify({ error: 'Model returned no text' }), { status: 502 });
+    return jsonResponse({ error: 'Model returned no text' }, 502);
   }
 
   const { error: upsertError } = await admin.from('ai_guidance').upsert({
@@ -114,10 +142,10 @@ Deno.serve(async (req) => {
     generated_at: new Date().toISOString(),
   }, { onConflict: 'user_id,assessment_type,tier' });
   if (upsertError) {
-    return new Response(JSON.stringify({ error: upsertError.message }), { status: 500 });
+    return jsonResponse({ error: upsertError.message }, 500);
   }
 
-  return new Response(JSON.stringify({ content }), { status: 200 });
+  return jsonResponse({ content });
 });
 
 async function fetchAssessmentData(admin, assessmentType, clientId, tier) {

@@ -15,6 +15,13 @@
 // display name/email, checking/writing notified_at — with the service
 // role, which bypasses RLS. A client can only ever trigger a notification
 // about themselves; they can never pass another user's id.
+//
+// CORS: this is called from a browser (the web build), which sends a
+// preflight OPTIONS request before the real POST whenever custom headers
+// like Authorization are involved. Supabase Edge Functions don't add CORS
+// headers automatically — every response below goes through jsonResponse()
+// so the browser doesn't silently block the real request on the preflight
+// (found and fixed the same way on generate-ai-guidance, July 2026).
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
@@ -28,14 +35,30 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const NOTIFY_TO = 'thea@lglowliving.com';
 const NOTIFY_FROM = 'L. Glow <notifications@lglowliving.com>';
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+  });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: CORS_HEADERS });
+  }
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return jsonResponse({ error: 'Method not allowed' }, 405);
   }
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: 'Missing Authorization header' }), { status: 401 });
+    return jsonResponse({ error: 'Missing Authorization header' }, 401);
   }
 
   // Identify the caller from their own JWT — never trust a client-supplied user id.
@@ -44,7 +67,7 @@ Deno.serve(async (req) => {
   });
   const { data: { user }, error: authError } = await anonClient.auth.getUser();
   if (authError || !user) {
-    return new Response(JSON.stringify({ error: 'Not authenticated' }), { status: 401 });
+    return jsonResponse({ error: 'Not authenticated' }, 401);
   }
 
   const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -55,14 +78,14 @@ Deno.serve(async (req) => {
     .eq('user_id', user.id)
     .maybeSingle();
   if (intakeError) {
-    return new Response(JSON.stringify({ error: intakeError.message }), { status: 500 });
+    return jsonResponse({ error: intakeError.message }, 500);
   }
   if (!intake) {
-    return new Response(JSON.stringify({ error: 'No intake form on file for this user' }), { status: 404 });
+    return jsonResponse({ error: 'No intake form on file for this user' }, 404);
   }
   if (intake.notified_at) {
     // Already notified — idempotent no-op, not an error.
-    return new Response(JSON.stringify({ status: 'already_notified' }), { status: 200 });
+    return jsonResponse({ status: 'already_notified' });
   }
 
   const { data: profile } = await admin
@@ -89,10 +112,10 @@ Deno.serve(async (req) => {
 
   if (!emailRes.ok) {
     const detail = await emailRes.text();
-    return new Response(JSON.stringify({ error: 'Email send failed', detail }), { status: 502 });
+    return jsonResponse({ error: 'Email send failed', detail }, 502);
   }
 
   await admin.from('intake_forms').update({ notified_at: new Date().toISOString() }).eq('user_id', user.id);
 
-  return new Response(JSON.stringify({ status: 'sent' }), { status: 200 });
+  return jsonResponse({ status: 'sent' });
 });
