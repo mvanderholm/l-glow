@@ -27,3 +27,4 @@ yarn-error.*
 *.tsbuildinfo
 
 .vercel
+qa-tmp/

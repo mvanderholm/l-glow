@@ -706,7 +706,7 @@ Scope — two surfaces, sequenced (unchanged from the original plan, just a diff
 
 With both fixed, the full loop is confirmed working: client fills out intake form while genuinely signed in → syncs to `intake_forms` → practitioner account sees it in the dashboard. (One test-session gotcha worth remembering for next time: filling out "My Intake Form" from the drawer saves under *whatever account is currently signed in* — it doesn't check role. Testing with two accounts in the same browser tab, without confirming which one is actually active, silently wrote data to the wrong account's row. Two separate browsers avoided the mix-up.)
 
-~~**Deliberately not built, because this is v1-to-react-to, not the real design:**~~ — Thea's first real feedback landed July 21 2026, see below. Email notification when a form is completed is still explicitly deferred (see #33 discussion, July 2026); Thea checks the dashboard manually for that, no automated trigger exists.
+~~**Deliberately not built, because this is v1-to-react-to, not the real design:**~~ — Thea's first real feedback landed July 21 2026, see below. Email notification when a form is completed is now built (`supabase/functions/notify-intake-complete`, wired from `app/intake.js`'s `notifyIntakeComplete()`) but **not yet live** — blocked on the same Resend account/domain setup as #49 below, since it needs `RESEND_API_KEY` and a verified sending domain to actually deliver. Until that's done, Thea still checks the dashboard manually.
 
 **Thea's first real design feedback, July 21 2026 — the conversation build-order step 7 was waiting on.** She confirmed raw data access (already built) is enough everywhere else, and asked for two additions:
 - **Dosha Breakdown visual in the practitioner hub.** Explicitly "doesn't have to be like the venn diagram" (You tab's `DoshaWheel`). Built as a simple proportional bar (`DoshaBar` in `app/practitioner/index.js`), reusing the app's existing `DOSHA_COLORS` from `components/DoshaWheel.js` rather than a new palette — same three-category data, denser list-appropriate treatment. Lives in the Summary tab's "Current snapshot" card.
@@ -731,13 +731,16 @@ Found live, July 13 2026: Supabase's default built-in mailer (no custom SMTP con
 
 **Provider decided, July 17 2026: Resend.** Picked over Postmark/SendGrid — Supabase's own docs use it as the default SMTP example, free tier (3,000/mo, 100/day, $0) comfortably covers this app's real scale, no permanent-free-tier competitor matches it. Explicitly ruled out reusing Thea's Squarespace-hosted mailbox: even if it exposes SMTP credentials, personal/business mailboxes aren't built for automated app-volume sending and risk her real email's spam reputation, not just re-hitting the same rate-limit problem this item exists to fix.
 
+**One Resend account/domain now covers two features, July 22 2026.** `notify-intake-complete` (the intake-completion email to Thea, see #30 above) also needs Resend — and a Resend API key works as *both* the SMTP password for Auth emails *and* the bearer token for `notify-intake-complete`'s direct HTTP call. Same account, same verified domain, same key — one setup unblocks both. Do the domain verification once, then generate one API key and use it in both places below.
+
 **Setup steps (Matt, not something Claude Code can do remotely — needs a new account + DNS access):**
 1. Create a Resend account, add `lglowliving.com` as a sending domain
 2. Add Resend's DNS records in Squarespace — ⚠️ merge the SPF `include` into the domain's *existing* Squarespace SPF record (one record only; a second one breaks Thea's real email deliverability), add the DKIM/DMARC records as given
 3. Wait for Resend to verify the domain
-4. Generate an SMTP API key in Resend
-5. Supabase Dashboard → Authentication → Settings → SMTP Settings: enable custom SMTP, enter Resend's host/port/username, API key as password, sender `noreply@lglowliving.com` or `thea@lglowliving.com`
-6. Test with a real signup to confirm delivery before trusting it for launch
+4. Generate one API key in Resend (Resend doesn't distinguish "SMTP key" vs "API key" — the same key works both ways)
+5. **Auth SMTP:** Supabase Dashboard → Authentication → Settings → SMTP Settings: enable custom SMTP, host `smtp.resend.com`, port `465` (or `587`), username `resend`, password = the API key, sender `noreply@lglowliving.com` or `thea@lglowliving.com`
+6. **Intake notification:** Supabase Dashboard → Edge Functions → Create a new function → name it `notify-intake-complete` → paste `supabase/functions/notify-intake-complete/index.ts`'s contents → then Edge Functions → Secrets → add `RESEND_API_KEY` = the same API key
+7. Test both: a real signup (confirms Auth SMTP) and completing an intake form on a test account (confirms the notification email reaches `thea@lglowliving.com`)
 
 Not yet done — account creation and DNS steps above are still open.
 
