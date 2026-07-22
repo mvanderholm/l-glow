@@ -271,7 +271,18 @@ function AIGuidanceSection({ clientId, assessmentType, tier, colors: c }) {
       body: { clientId, assessmentType, tier },
     });
     setGenerating(false);
-    if (error) { setError(error.message); return; }
+    if (error) {
+      // supabase-js only gives a generic "non-2xx status code" message by
+      // default — the real reason is JSON in the response body, reachable
+      // via error.context (the raw fetch Response) on a FunctionsHttpError.
+      let detail = error.message;
+      try {
+        const body = await error.context?.json();
+        if (body?.error) detail = body.error;
+      } catch { /* context wasn't JSON — fall back to the generic message */ }
+      setError(detail);
+      return;
+    }
     setContent(data.content);
   }
 
