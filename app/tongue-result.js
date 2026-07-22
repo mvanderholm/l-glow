@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -19,7 +20,23 @@ function Bullet({ text, color }) {
 
 export default function TongueResult() {
   const { theme: { colors: c } } = useTheme();
-  const { shape, size, color, coating, ama: amaParam, signs: signsParam } = useLocalSearchParams();
+  const params = useLocalSearchParams();
+  const { shape, size, color, coating, ama: amaParam, signs: signsParam } = params;
+  // tongue-check.js always sends at least a shape param on a real
+  // completion — no params at all means a stale link or direct navigation,
+  // not a real reading. Redirect instead of silently showing the fabricated
+  // "Balanced" reading computeReading() falls back to when every input is
+  // undefined (same class of bug the other three result screens already
+  // guard against).
+  const hasParams = shape !== undefined;
+  const [redirecting, setRedirecting] = useState(false);
+
+  useEffect(() => {
+    if (!hasParams) {
+      setRedirecting(true);
+      setTimeout(() => router.replace('/tongue-check'), 1800);
+    }
+  }, []);
 
   const amaLevel   = Math.min(Number(amaParam) || 0, 3);
   const signIds    = signsParam ? signsParam.split(',').filter(Boolean) : [];
@@ -27,6 +44,16 @@ export default function TongueResult() {
   const reading    = tongueReadings[readingKey] ?? tongueReadings.balanced;
   const amaRead    = amaReadings[amaLevel] ?? amaReadings[0];
   const notedSigns = tongueSignList.filter(s => signIds.includes(s.id));
+
+  if (redirecting) {
+    return (
+      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted }}>First things first</Text>
+        <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, color: c.text, marginTop: 8, textAlign: 'center' }}>Let's take a look at your tongue.</Text>
+        <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: c.textMuted, marginTop: 8 }}>Taking you to the check…</Text>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
