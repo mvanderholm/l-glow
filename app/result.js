@@ -166,6 +166,10 @@ export default function Result() {
           <Text style={styles.primaryBtnText}>See Today's Guidance</Text>
         </Pressable>
 
+        <Pressable style={styles.retakeBtn} onPress={() => router.replace('/quiz')}>
+          <Text style={styles.retakeText}>Retake quiz</Text>
+        </Pressable>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -244,6 +248,16 @@ function makeStyles(colors, spacing, radius) {
       color: colors.bg,
       fontFamily: 'Inter_700Bold',
       fontSize: 16,
+    },
+    retakeBtn: {
+      alignSelf: 'center',
+      paddingVertical: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    retakeText: {
+      color: colors.textMuted,
+      fontFamily: 'Inter_400Regular',
+      fontSize: 13.5,
     },
   });
 }
