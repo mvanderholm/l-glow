@@ -6,7 +6,7 @@ import { loadPrakritiQuestions, refreshPrakritiQuestions } from '../data/content
 import { savePrakritiTierAnswers, loadPrakritiProgress } from '../data/user/storage';
 import { tierClosings } from '../data/content/tierClosings';
 import { useTheme } from '../context/ThemeContext';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 
 // Prakriti tier quiz — one question at a time, same shell as guna-quiz.js
 // (the one existing quiz that already does cache-then-live-refresh instead
@@ -196,7 +196,7 @@ export default function PrakritiQuiz() {
   }
 
   function goBack() {
-    if (index === 0) { router.back(); return; }
+    if (index === 0) { smartBack('/prakriti'); return; }
     setIndex(index - 1);
   }
 

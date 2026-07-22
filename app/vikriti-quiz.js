@@ -6,7 +6,7 @@ import { loadVikritiQuestions, refreshVikritiQuestions } from '../data/content/r
 import { saveVikritiTierAnswers, loadVikritiProgress } from '../data/user/storage';
 import { tierClosings } from '../data/content/tierClosings';
 import { useTheme } from '../context/ThemeContext';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 
 // Vikriti tier quiz — mirrors prakriti-quiz.js (see that file's header
 // comment for the drafts-array back-navigation fix and the recap/closing
@@ -218,7 +218,7 @@ export default function VikritiQuiz() {
   function goBack() {
     if (index === 0) {
       if (tier === 'level3') { setGatingDone(false); return; }
-      router.back();
+      smartBack('/vikriti');
       return;
     }
     setIndex(index - 1);

@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { tongueSteps, tongueSignList, computeReading } from '../data/content/tongueCheck';
 import { saveTongueResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 // Source: transcript 27 (062426_01), June 2026. Content is DRAFT — Thea to review.
@@ -26,7 +26,7 @@ export default function TongueCheck() {
   const progress = isIntro ? 0 : (phase / SIGNS_PHASE) * 100;
 
   function goBack() {
-    if (phase === 0) router.back();
+    if (phase === 0) smartBack();
     else setPhase(phase - 1);
   }
 

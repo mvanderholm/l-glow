@@ -6,7 +6,7 @@ import { gunaQuestions as staticGunaQuestions } from '../data/content/gunaQuiz';
 import { loadGunaQuestions, refreshGunaQuestions } from '../data/content/remote';
 import { saveGunaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 
 export default function GunaQuiz() {
   const { theme: { colors: c } } = useTheme();
@@ -47,7 +47,7 @@ export default function GunaQuiz() {
 
   function goBack() {
     if (index === 0) {
-      router.back();
+      smartBack();
     } else {
       setAnswers(answers.slice(0, -1));
       setIndex(index - 1);

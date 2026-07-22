@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { agniQuestions } from '../data/content/agniQuiz';
 import { saveAgniResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 
 export default function AgniQuiz() {
   const { theme: { colors: c } } = useTheme();
@@ -38,7 +38,7 @@ export default function AgniQuiz() {
 
   function goBack() {
     if (index === 0) {
-      router.back();
+      smartBack();
     } else {
       setAnswers(answers.slice(0, -1));
       setIndex(index - 1);

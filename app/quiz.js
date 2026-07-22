@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { quizQuestions } from '../data/content/quiz';
 import { saveDoshaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
-import BackButton from '../components/BackButton';
+import BackButton, { smartBack } from '../components/BackButton';
 
 const NONE = '__none__';
 const NONE_LABEL = 'None of these feels right';
@@ -82,7 +82,7 @@ export default function Quiz() {
 
   function goBack() {
     if (index === 0) {
-      router.back();
+      smartBack();
     } else {
       setAnswers(answers.slice(0, -1));
       setPicked([]);

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
+import BackButton, { smartBack } from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 // Quizzes — one nav item in the hamburger drawer, replacing the six
@@ -12,6 +13,15 @@ import Svg, { Path } from 'react-native-svg';
 // screen the way the You tab rows do (see docs/roadmap.md #52's note on
 // this deliberate simplification). You tab's "Your Assessments" section is
 // untouched; this is a second, faster-to-reach entry point.
+//
+// Back button uses smartBack() rather than a bare router.back() — this
+// screen (and Prakriti/Vikriti's hubs) briefly had no back control at all,
+// relying on the native Stack header's auto-back, which only appears when
+// there's real navigation history. A direct URL load, refresh, or shared
+// link on the deployed site has none, so that was a dead end in production
+// (found live, July 2026). headerShown:false in _layout.js now, so this is
+// the only back control — no risk of the duplicate that got this removed
+// the first time.
 
 const ROWS = [
   { label: 'My Dosha',        Icon: LeafIcon,     href: '/quiz' },
@@ -28,7 +38,9 @@ export default function Quizzes() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <View style={[s.topHeader, { borderBottomColor: c.border }]}>
+        <BackButton onPress={() => smartBack('/')} color={c.text} />
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Quizzes</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
@@ -92,7 +104,7 @@ function VikritiIcon({ color, size }) {
 }
 
 const s = StyleSheet.create({
-  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
 
   list: { borderRadius: 18, overflow: 'hidden' },

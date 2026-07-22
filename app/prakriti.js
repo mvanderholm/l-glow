@@ -7,6 +7,7 @@ import { card } from '../theme/index';
 import { loadPrakritiProgress } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
+import BackButton, { smartBack } from '../components/BackButton';
 
 // Prakriti hub — three-tier progressive assessment, kept fully separate
 // from the existing Dosha Quiz (/quiz) per Matt's explicit call, July 2026,
@@ -43,7 +44,9 @@ export default function Prakriti() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <View style={[s.topHeader, { borderBottomColor: c.border }]}>
+        <BackButton onPress={() => smartBack('/')} color={c.text} />
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Prakriti</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
@@ -103,7 +106,7 @@ export default function Prakriti() {
 }
 
 const s = StyleSheet.create({
-  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
   intro: { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 21, marginBottom: 20 },
   centerPad: { alignItems: 'center', justifyContent: 'center', padding: 32 },

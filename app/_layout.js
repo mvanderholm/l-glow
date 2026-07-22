@@ -86,7 +86,10 @@ function AppNavigator() {
       <Stack.Screen name="tools"           options={{ headerShown: false }} />
       <Stack.Screen name="journal"         options={{ headerShown: false }} />
       <Stack.Screen name="you"             options={{ headerShown: false }} />
-      <Stack.Screen name="quiz" />
+      <Stack.Screen name="quiz"     options={{ headerShown: false }} />
+      <Stack.Screen name="quizzes" options={{ headerShown: false }} />
+      <Stack.Screen name="prakriti" options={{ headerShown: false }} />
+      <Stack.Screen name="vikriti"  options={{ headerShown: false }} />
       <Stack.Screen name="result" />
       <Stack.Screen name="recommendations" />
       <Stack.Screen name="about" />
