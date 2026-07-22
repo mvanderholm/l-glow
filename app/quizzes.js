@@ -3,7 +3,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import BackButton from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 // Quizzes — one nav item in the hamburger drawer, replacing the six
@@ -29,9 +28,7 @@ export default function Quizzes() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <View style={[s.topHeader, { borderBottomColor: c.border }]}>
-        <BackButton onPress={() => router.back()} color={c.text} />
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Quizzes</Text>
-        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
@@ -95,7 +92,7 @@ function VikritiIcon({ color, size }) {
 }
 
 const s = StyleSheet.create({
-  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
   topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
 
   list: { borderRadius: 18, overflow: 'hidden' },
