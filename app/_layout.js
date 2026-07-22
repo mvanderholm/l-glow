@@ -104,6 +104,11 @@ function AppNavigator() {
       <Stack.Screen name="agni-result"  options={{ headerShown: false }} />
       <Stack.Screen name="tongue-check" options={{ headerShown: false }} />
       <Stack.Screen name="tongue-result" options={{ headerShown: false }} />
+      <Stack.Screen name="prakriti"       options={{ headerShown: false }} />
+      <Stack.Screen name="prakriti-quiz"  options={{ headerShown: false }} />
+      <Stack.Screen name="vikriti"        options={{ headerShown: false }} />
+      <Stack.Screen name="vikriti-quiz"   options={{ headerShown: false }} />
+      <Stack.Screen name="quizzes"        options={{ headerShown: false }} />
       <Stack.Screen name="login"        options={{ headerShown: false }} />
       <Stack.Screen name="signup"       options={{ headerShown: false }} />
       <Stack.Screen name="welcome"      options={{ headerShown: false }} />
