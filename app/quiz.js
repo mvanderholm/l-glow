@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { quizQuestions } from '../data/content/quiz';
 import { saveDoshaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
+import BackButton from '../components/BackButton';
 
 const NONE = '__none__';
 const NONE_LABEL = 'None of these feels right';
@@ -79,15 +80,28 @@ export default function Quiz() {
     }
   }
 
+  function goBack() {
+    if (index === 0) {
+      router.back();
+    } else {
+      setAnswers(answers.slice(0, -1));
+      setPicked([]);
+      setIndex(index - 1);
+    }
+  }
+
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.progressBar}>
         <View style={[styles.progressFill, { width: `${progress}%` }]} />
       </View>
-      <Text style={[type.label, { marginTop: spacing.md }]}>
-        Question {index + 1} of {quizQuestions.length}{sectionLabel ? ` · ${sectionLabel}` : ''}
-      </Text>
+      <View style={[styles.topRow, { marginTop: spacing.md }]}>
+        <BackButton onPress={goBack} color={colors.textMuted} style={{ marginLeft: -10 }} />
+        <Text style={type.label}>
+          Question {index + 1} of {quizQuestions.length}{sectionLabel ? ` · ${sectionLabel}` : ''}
+        </Text>
+      </View>
       <Text style={[type.h1, { marginTop: spacing.sm, marginBottom: spacing.sm }]}>{q.prompt}</Text>
       {index === 0 && (
         <Pressable
@@ -144,6 +158,7 @@ export default function Quiz() {
 function makeStyles(colors, spacing, radius) {
 return StyleSheet.create({
   container: { padding: spacing.lg },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   progressBar: { height: 4, backgroundColor: colors.surfaceAlt, borderRadius: radius.pill, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: colors.saffron },
   option: {
