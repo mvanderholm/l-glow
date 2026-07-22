@@ -45,6 +45,19 @@ export default function Welcome() {
           />
           {/* dark overlay */}
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(14,10,7,0.52)' }]} pointerEvents="none" />
+          {/* Only real exit from this page besides completing the quiz or
+              signing in — without it, a user who lands here (or bounces
+              back via Home's onboarded-check) has no way out. Counts as
+              "seen the welcome page," same as taking the quiz does, so
+              Home's redirect-if-not-onboarded check doesn't just bounce
+              them right back here. */}
+          <Pressable
+            style={{ position: 'absolute', top: pad, right: pad, paddingVertical: 8, paddingHorizontal: 12, zIndex: 1 }}
+            onPress={() => { saveOnboarded(); router.replace('/'); }}
+          >
+            <Text style={{ color: 'rgba(245,237,227,0.85)', fontFamily: 'Inter_500Medium', fontSize: 13 }}>Skip ›</Text>
+          </Pressable>
+
           <View style={[StyleSheet.absoluteFill, { justifyContent: 'flex-end', padding: pad, paddingBottom: 44 }]}>
             <LogoLockup color="#F5EDE3" />
             {/* [DRAFT] */}
