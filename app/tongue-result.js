@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { tongueReadings, amaReadings, tongueMap, tongueSignList, computeReading } from '../data/content/tongueCheck';
+import BackButton from '../components/BackButton';
 
 // Source: transcript 27 (062426_01), June 2026. Content is DRAFT — Thea to review.
 
@@ -30,6 +31,8 @@ export default function TongueResult() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false}>
+
+        <BackButton onPress={() => router.back()} color={c.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
 
         {/* Header */}
         <Text style={[s.overline, { color: c.textMuted }]}>Tongue reading</Text>
