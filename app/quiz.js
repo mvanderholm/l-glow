@@ -3,9 +3,11 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { quizQuestions } from '../data/content/quiz';
+import { saveDoshaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
 
 const NONE = '__none__';
+const NONE_LABEL = 'None of these feels right';
 
 const SECTION_LABELS = {
   physical: 'The obvious stuff',
@@ -16,24 +18,28 @@ const SECTION_LABELS = {
 export default function Quiz() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
   const [index, setIndex] = useState(0);
-  const [answers, setAnswers] = useState([]); // array of dosha[] per question (multi-select answers hold >1)
-  const [picked, setPicked] = useState([]);   // in-progress selections for the current multi-select question
+  const [answers, setAnswers] = useState([]); // array of {section, prompt, doshas, selectedLabels} per question
+  const [picked, setPicked] = useState([]);   // in-progress option indices for the current multi-select question
   const styles = makeStyles(colors, spacing, radius);
   const q = quizQuestions[index];
   const progress = (index / quizQuestions.length) * 100;
   const sectionLabel = q.section && SECTION_LABELS[q.section];
 
-  function finish(allAnswers) {
-    const tally = allAnswers.flat().reduce((acc, d) => ({ ...acc, [d]: (acc[d] || 0) + 1 }), {});
+  async function finish(allAnswers) {
+    const tally = allAnswers.flatMap(a => a.doshas).reduce((acc, d) => ({ ...acc, [d]: (acc[d] || 0) + 1 }), {});
     // Floor of 3 per dosha — caps the max single-dosha result at ~65%, ensures all three are always present
+    const scores = { vata: (tally.vata || 0) + 3, pitta: (tally.pitta || 0) + 3, kapha: (tally.kapha || 0) + 3 };
+    const primary = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+    const answerLog = allAnswers.map(({ section, prompt, selectedLabels }) => ({ section, prompt, selectedLabels }));
+    await saveDoshaResult(primary, scores, answerLog);
     router.replace({
       pathname: '/result',
-      params: { vata: (tally.vata || 0) + 3, pitta: (tally.pitta || 0) + 3, kapha: (tally.kapha || 0) + 3 },
+      params: { vata: scores.vata, pitta: scores.pitta, kapha: scores.kapha },
     });
   }
 
-  function advance(doshasForQuestion) {
-    const next = [...answers, doshasForQuestion];
+  function advance(doshasForQuestion, selectedLabels) {
+    const next = [...answers, { section: q.section ?? null, prompt: q.prompt, doshas: doshasForQuestion, selectedLabels }];
     setPicked([]);
     if (index + 1 >= quizQuestions.length) {
       finish(next);
@@ -43,25 +49,34 @@ export default function Quiz() {
     }
   }
 
-  function pickSingle(dosha) {
-    advance(dosha === NONE ? [] : [dosha]);
+  function pickSingle(opt) {
+    if (opt === NONE) {
+      advance([], [NONE_LABEL]);
+    } else {
+      advance([opt.dosha], [opt.label]);
+    }
   }
 
-  function toggleMulti(dosha) {
-    if (dosha === NONE) {
+  function toggleMulti(i) {
+    if (i === NONE) {
       setPicked(sel => (sel.includes(NONE) ? [] : [NONE]));
       return;
     }
     setPicked(sel => {
-      const withoutNone = sel.filter(d => d !== NONE);
-      return withoutNone.includes(dosha)
-        ? withoutNone.filter(d => d !== dosha)
-        : [...withoutNone, dosha];
+      const withoutNone = sel.filter(x => x !== NONE);
+      return withoutNone.includes(i)
+        ? withoutNone.filter(x => x !== i)
+        : [...withoutNone, i];
     });
   }
 
   function confirmMulti() {
-    advance(picked.includes(NONE) ? [] : picked);
+    if (picked.includes(NONE)) {
+      advance([], [NONE_LABEL]);
+    } else {
+      const chosen = picked.map(i => q.options[i]);
+      advance(chosen.map(o => o.dosha), chosen.map(o => o.label));
+    }
   }
 
   return (
@@ -89,12 +104,12 @@ export default function Quiz() {
       )}
 
       {q.options.map((opt, i) => {
-        const isSelected = q.multiSelect && picked.includes(opt.dosha);
+        const isSelected = q.multiSelect && picked.includes(i);
         return (
           <Pressable
             key={i}
             style={[styles.option, isSelected && styles.optionSelected]}
-            onPress={() => (q.multiSelect ? toggleMulti(opt.dosha) : pickSingle(opt.dosha))}
+            onPress={() => (q.multiSelect ? toggleMulti(i) : pickSingle(opt))}
           >
             <Text style={styles.optionText}>{opt.label}</Text>
           </Pressable>

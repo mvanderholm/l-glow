@@ -5,6 +5,7 @@ import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { SECTIONS, sectionProgress } from '../intake';
 import { DOSHA_COLORS } from '../../components/DoshaWheel';
+import { tongueSteps, tongueSignList } from '../../data/content/tongueCheck';
 
 // Practitioner "Clients" screen — v2, still built ahead of the real
 // conversation with Thea about what she wants to see (see roadmap #30 Phase
@@ -29,13 +30,13 @@ const VIKRITI_TIER_LABELS = { level1: 'Check Your Signals', level2: 'Pattern Fin
 // spirit as buildSessionSummary() in data/user/storage.js — no new
 // dependency (no expo-clipboard/expo-sharing installed, and RN's Share API
 // is fragile on web), Thea just selects the text block and copies it.
-function formatResponseExport(clientName, assessmentLabel, tierLabel, response) {
+function formatResponseExport(clientName, assessmentLabel, tierLabel, dateValue, answers) {
   const lines = [];
-  lines.push(`L. GLOW · ${assessmentLabel} — ${tierLabel}`);
+  lines.push(tierLabel ? `L. GLOW · ${assessmentLabel} — ${tierLabel}` : `L. GLOW · ${assessmentLabel}`);
   lines.push(clientName);
-  lines.push(new Date(response.completed_at).toLocaleDateString(undefined, { dateStyle: 'long' }));
+  lines.push(new Date(dateValue).toLocaleDateString(undefined, { dateStyle: 'long' }));
   lines.push('');
-  for (const a of response.answers ?? []) {
+  for (const a of answers ?? []) {
     lines.push(a.section ? `[${a.section}] ${a.prompt}` : a.prompt);
     if (a.freeText !== undefined) {
       lines.push(a.freeText ? `  "${a.freeText}"` : '  (skipped)');
@@ -45,6 +46,24 @@ function formatResponseExport(clientName, assessmentLabel, tierLabel, response) 
     lines.push('');
   }
   return lines.join('\n');
+}
+
+// Tongue Check has no `answers` jsonb blob (unlike Prakriti/Vikriti/the new
+// Dosha/Guna/Agni columns) — it stores real per-question values directly as
+// columns (shape/size/color/coating/signs), because those columns already
+// existed before this "show every answer" pattern did. This adapter maps
+// those stored signal strings back to the option labels tongue-check.js
+// actually showed the client, so ResponseEntry can render it the same way
+// as everything else.
+function buildTongueAnswers(row) {
+  const answers = tongueSteps.map(step => {
+    const stored = row[step.id];
+    const opt = step.options.find(o => (o.signal ?? 'unclear') === stored);
+    return { prompt: step.prompt, selectedLabels: [opt ? opt.label : (stored || '—')] };
+  });
+  const signLabels = (row.signs ?? []).map(id => tongueSignList.find(s => s.id === id)?.label ?? id);
+  answers.push({ prompt: 'Anything else noticed?', selectedLabels: signLabels.length ? signLabels : ['None selected'] });
+  return answers;
 }
 
 function fieldDisplayValue(value) {
@@ -310,35 +329,46 @@ function AIGuidanceSection({ clientId, assessmentType, tier, colors: c }) {
   );
 }
 
-// One tier-completion entry for Prakriti/Vikriti — collapsed by default
-// (date + tier + answer count, tap to expand), since a Level 3 completion
-// can run 60+ questions. Expanded view shows the raw Q&A plus a read-only
+// One assessment-completion entry, collapsed by default (date + score/tier
+// summary, tap to expand), since a Level 3 Prakriti/Vikriti completion can
+// run 60+ questions. Expanded view shows the raw Q&A plus a read-only
 // export text block Thea can select and copy — see formatResponseExport().
-function ResponseEntry({ response, tierLabel, expanded, onToggle, exportText, colors: c }) {
+// Used for all 6 assessment types now, not just Prakriti/Vikriti — dosha/
+// guna/agni rows taken before the `answers` column existed, and any Tongue
+// row that somehow has nothing to map, pass `answers={null}` and fall back
+// to a plain "no detail saved" line rather than an empty/broken expansion.
+function ResponseEntry({ dateValue, summaryLine, answers, expanded, onToggle, exportText, colors: c }) {
+  const hasAnswers = Array.isArray(answers) && answers.length > 0;
   return (
     <Pressable onPress={onToggle} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
-      <Text style={[s.logDate, { color: c.text }]}>{new Date(response.completed_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
+      <Text style={[s.logDate, { color: c.text }]}>{new Date(dateValue).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
       <Text style={[s.logDetail, { color: c.textMuted }]}>
-        {tierLabel} · {(response.answers ?? []).length} answer{(response.answers ?? []).length === 1 ? '' : 's'} · {expanded ? 'Hide' : 'View'}
+        {summaryLine} · {expanded ? 'Hide' : 'View'}
       </Text>
 
       {expanded && (
         <View style={{ marginTop: 10 }}>
-          {(response.answers ?? []).map((a, i) => (
-            <View key={i} style={{ marginBottom: 8 }}>
-              <Text style={[s.mutedNote, { color: c.textMuted }]}>{a.section ? `[${a.section}] ` : ''}{a.prompt}</Text>
-              <Text style={[s.answerValue, { color: c.text, marginTop: 2 }]}>
-                {a.freeText !== undefined ? (a.freeText ? `"${a.freeText}"` : '(skipped)') : (a.selectedLabels ?? []).join('; ')}
-              </Text>
-            </View>
-          ))}
-          <Text style={[s.fieldLabel, { color: c.textMuted, marginTop: 10, marginBottom: 6 }]}>Export (select all, copy)</Text>
-          <TextInput
-            style={[s.exportBox, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
-            value={exportText}
-            editable={false}
-            multiline
-          />
+          {hasAnswers ? (
+            <>
+              {answers.map((a, i) => (
+                <View key={i} style={{ marginBottom: 8 }}>
+                  <Text style={[s.mutedNote, { color: c.textMuted }]}>{a.section ? `[${a.section}] ` : ''}{a.prompt}</Text>
+                  <Text style={[s.answerValue, { color: c.text, marginTop: 2 }]}>
+                    {a.freeText !== undefined ? (a.freeText ? `"${a.freeText}"` : '(skipped)') : (a.selectedLabels ?? []).join('; ')}
+                  </Text>
+                </View>
+              ))}
+              <Text style={[s.fieldLabel, { color: c.textMuted, marginTop: 10, marginBottom: 6 }]}>Export (select all, copy)</Text>
+              <TextInput
+                style={[s.exportBox, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+                value={exportText}
+                editable={false}
+                multiline
+              />
+            </>
+          ) : (
+            <Text style={[s.mutedNote, { color: c.textMuted }]}>No per-question detail saved for this attempt.</Text>
+          )}
         </View>
       )}
     </Pressable>
@@ -377,10 +407,10 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
 
   async function load() {
     const [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
-      supabase.from('dosha_results').select('dosha, vata_score, pitta_score, kapha_score, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('guna_results').select('dominant, sattva_score, rajas_score, tamas_score, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('agni_results').select('agni_type, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('tongue_checks').select('reading, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('dosha_results').select('id, dosha, vata_score, pitta_score, kapha_score, answers, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('guna_results').select('id, dominant, sattva_score, rajas_score, tamas_score, answers, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('agni_results').select('id, agni_type, answers, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('tongue_checks').select('id, reading, shape, size, color, coating, ama_level, signs, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('prakriti_responses').select('id, tier, answers, completed_at').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
       supabase.from('vikriti_responses').select('id, tier, answers, completed_at').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
       supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
@@ -548,41 +578,68 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>Dosha history</Text>
                 {clientData.doshaResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
                 {clientData.doshaResults.map(r => (
-                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
-                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
-                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dosha)} · V{r.vata_score} P{r.pitta_score} K{r.kapha_score}</Text>
-                  </View>
+                  <ResponseEntry
+                    key={r.id}
+                    colors={c}
+                    dateValue={r.taken_at}
+                    summaryLine={`${cap(r.dosha)} · V${r.vata_score} P${r.pitta_score} K${r.kapha_score}`}
+                    answers={r.answers}
+                    expanded={expandedResponseId === r.id}
+                    onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
+                    exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Dosha Quiz', null, r.taken_at, r.answers) : null}
+                  />
                 ))}
                 {clientData.doshaResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="dosha" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Guna history</Text>
                 {clientData.gunaResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
                 {clientData.gunaResults.map(r => (
-                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
-                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
-                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.dominant)} · S{r.sattva_score} R{r.rajas_score} T{r.tamas_score}</Text>
-                  </View>
+                  <ResponseEntry
+                    key={r.id}
+                    colors={c}
+                    dateValue={r.taken_at}
+                    summaryLine={`${cap(r.dominant)} · S${r.sattva_score} R${r.rajas_score} T${r.tamas_score}`}
+                    answers={r.answers}
+                    expanded={expandedResponseId === r.id}
+                    onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
+                    exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Guna Assessment', null, r.taken_at, r.answers) : null}
+                  />
                 ))}
                 {clientData.gunaResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="guna" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Agni history</Text>
                 {clientData.agniResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 16 }]}>Not yet taken.</Text>}
                 {clientData.agniResults.map(r => (
-                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
-                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
-                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.agni_type)}</Text>
-                  </View>
+                  <ResponseEntry
+                    key={r.id}
+                    colors={c}
+                    dateValue={r.taken_at}
+                    summaryLine={cap(r.agni_type)}
+                    answers={r.answers}
+                    expanded={expandedResponseId === r.id}
+                    onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
+                    exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Agni Assessment', null, r.taken_at, r.answers) : null}
+                  />
                 ))}
                 {clientData.agniResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="agni" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Tongue check history</Text>
                 {clientData.tongueResults.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>Not yet taken.</Text>}
-                {clientData.tongueResults.map(r => (
-                  <View key={r.taken_at} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
-                    <Text style={[s.logDate, { color: c.text }]}>{new Date(r.taken_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
-                    <Text style={[s.logDetail, { color: c.textMuted }]}>{cap(r.reading)}</Text>
-                  </View>
-                ))}
+                {clientData.tongueResults.map(r => {
+                  const tongueAnswers = buildTongueAnswers(r);
+                  return (
+                    <ResponseEntry
+                      key={r.id}
+                      colors={c}
+                      dateValue={r.taken_at}
+                      summaryLine={cap(r.reading)}
+                      answers={tongueAnswers}
+                      expanded={expandedResponseId === r.id}
+                      onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
+                      exportText={formatResponseExport(client.display_name || client.email, 'Tongue Check', null, r.taken_at, tongueAnswers)}
+                    />
+                  );
+                })}
                 {clientData.tongueResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="tongue" />}
 
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10, marginTop: 8 }]}>Prakriti responses</Text>
@@ -591,11 +648,12 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                   <ResponseEntry
                     key={r.id}
                     colors={c}
-                    response={r}
-                    tierLabel={PRAKRITI_TIER_LABELS[r.tier] || r.tier}
+                    dateValue={r.completed_at}
+                    summaryLine={`${PRAKRITI_TIER_LABELS[r.tier] || r.tier} · ${(r.answers ?? []).length} answer${(r.answers ?? []).length === 1 ? '' : 's'}`}
+                    answers={r.answers}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={formatResponseExport(client.display_name || client.email, 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r)}
+                    exportText={formatResponseExport(client.display_name || client.email, 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
                   />
                 ))}
                 {[...new Set(clientData.prakritiResponses.map(r => r.tier))].map(tier => (
@@ -608,11 +666,12 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                   <ResponseEntry
                     key={r.id}
                     colors={c}
-                    response={r}
-                    tierLabel={VIKRITI_TIER_LABELS[r.tier] || r.tier}
+                    dateValue={r.completed_at}
+                    summaryLine={`${VIKRITI_TIER_LABELS[r.tier] || r.tier} · ${(r.answers ?? []).length} answer${(r.answers ?? []).length === 1 ? '' : 's'}`}
+                    answers={r.answers}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={formatResponseExport(client.display_name || client.email, 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r)}
+                    exportText={formatResponseExport(client.display_name || client.email, 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
                   />
                 ))}
                 {[...new Set(clientData.vikritiResponses.map(r => r.tier))].map(tier => (

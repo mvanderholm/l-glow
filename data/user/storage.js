@@ -42,7 +42,7 @@ const KEYS = {
 
 // --- Dosha result ---
 
-export async function saveDoshaResult(primaryDosha, scores) {
+export async function saveDoshaResult(primaryDosha, scores, answers = null) {
   await AsyncStorage.multiSet([
     [KEYS.PRIMARY_DOSHA, primaryDosha],
     [KEYS.DOSHA_SCORES, JSON.stringify(scores)],
@@ -53,6 +53,7 @@ export async function saveDoshaResult(primaryDosha, scores) {
     vata_score: scores.vata,
     pitta_score: scores.pitta,
     kapha_score: scores.kapha,
+    answers,
   }));
 }
 
@@ -70,7 +71,7 @@ export async function loadDoshaResult() {
 
 // --- Guna result ---
 
-export async function saveGunaResult(dominant, scores) {
+export async function saveGunaResult(dominant, scores, answers = null) {
   await AsyncStorage.multiSet([
     [KEYS.GUNA_DOMINANT, dominant],
     [KEYS.GUNA_SCORES, JSON.stringify(scores)],
@@ -81,6 +82,7 @@ export async function saveGunaResult(dominant, scores) {
     sattva_score: scores.sattva,
     rajas_score: scores.rajas,
     tamas_score: scores.tamas,
+    answers,
   }));
 }
 
@@ -98,7 +100,7 @@ export async function loadGunaResult() {
 
 // --- Agni result ---
 
-export async function saveAgniResult(agniType, counts) {
+export async function saveAgniResult(agniType, counts, answers = null) {
   await AsyncStorage.multiSet([
     [KEYS.AGNI_TYPE,   agniType],
     [KEYS.AGNI_COUNTS, JSON.stringify(counts)],
@@ -110,6 +112,7 @@ export async function saveAgniResult(agniType, counts) {
     vishama_count: counts.vishama ?? 0,
     tikshna_count: counts.tikshna ?? 0,
     manda_count: counts.manda ?? 0,
+    answers,
   }));
 }
 

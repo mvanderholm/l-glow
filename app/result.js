@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doshaInfo } from '../data/content/quiz';
 import { useTheme } from '../context/ThemeContext';
-import { saveDoshaResult } from '../data/user/storage';
 import { BotanicalDivider } from '../components/BotanicalAccent';
 
 export default function Result() {
@@ -39,14 +38,12 @@ export default function Result() {
   };
 
   useEffect(() => {
+    // quiz.js saves the result (with per-question answers) before navigating
+    // here — this screen only needs to redirect on a params-less landing.
     if (!hasParams) {
       setRedirecting(true);
       setTimeout(() => router.replace('/quiz'), 1800);
-      return;
     }
-    saveDoshaResult(primary, scores).catch(err =>
-      console.error('Failed to save dosha result:', err)
-    );
   }, []);
 
   if (redirecting) {

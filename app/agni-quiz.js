@@ -15,16 +15,17 @@ export default function AgniQuiz() {
   const q        = agniQuestions[index];
   const progress = (index / agniQuestions.length) * 100;
 
-  async function pick(agni) {
-    const next = [...answers, agni];
+  async function pick(opt) {
+    const next = [...answers, { agni: opt.agni, questionId: q.id, prompt: q.prompt, selectedLabels: [opt.label] }];
 
     if (index + 1 >= agniQuestions.length) {
       const counts = next.reduce(
-        (acc, t) => ({ ...acc, [t]: (acc[t] || 0) + 1 }),
+        (acc, a) => ({ ...acc, [a.agni]: (acc[a.agni] || 0) + 1 }),
         { sama: 0, vishama: 0, tikshna: 0, manda: 0 }
       );
       const dominant = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
-      await saveAgniResult(dominant, counts);
+      const answerLog = next.map(({ questionId, prompt, selectedLabels }) => ({ questionId, section: null, prompt, selectedLabels }));
+      await saveAgniResult(dominant, counts, answerLog);
       router.replace({
         pathname: '/agni-result',
         params: { dominant, ...counts },
@@ -73,7 +74,7 @@ export default function AgniQuiz() {
           <Pressable
             key={i}
             style={[s.option, { backgroundColor: c.surface, borderColor: c.border }]}
-            onPress={() => pick(opt.agni)}
+            onPress={() => pick(opt)}
           >
             <Text style={[s.optionText, { color: c.text }]}>{opt.label}</Text>
           </Pressable>

@@ -24,16 +24,17 @@ export default function GunaQuiz() {
 
   if (!q) return <SafeAreaView style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.accent} /></SafeAreaView>;
 
-  async function pick(guna) {
-    const next = [...answers, guna];
+  async function pick(opt) {
+    const next = [...answers, { guna: opt.guna, questionId: q.id, prompt: q.prompt, selectedLabels: [opt.label] }];
 
     if (index + 1 >= gunaQuestions.length) {
       const scores = next.reduce(
-        (acc, g) => ({ ...acc, [g]: (acc[g] || 0) + 1 }),
+        (acc, a) => ({ ...acc, [a.guna]: (acc[a.guna] || 0) + 1 }),
         { sattva: 0, rajas: 0, tamas: 0 }
       );
       const dominant = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
-      await saveGunaResult(dominant, scores);
+      const answerLog = next.map(({ questionId, prompt, selectedLabels }) => ({ questionId, section: null, prompt, selectedLabels }));
+      await saveGunaResult(dominant, scores, answerLog);
       router.replace({
         pathname: '/guna-result',
         params: { dominant, sattva: scores.sattva, rajas: scores.rajas, tamas: scores.tamas },
@@ -93,7 +94,7 @@ export default function GunaQuiz() {
           <Pressable
             key={i}
             style={[s.option, { backgroundColor: c.surface, borderColor: c.border }]}
-            onPress={() => pick(opt.guna)}
+            onPress={() => pick(opt)}
           >
             <Text style={[s.optionText, { color: c.text }]}>{opt.label}</Text>
           </Pressable>
