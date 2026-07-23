@@ -381,8 +381,155 @@ const CLIENT_TABS = [
   { key: 'checkins',    label: 'Check-ins' },
   { key: 'journal',     label: 'Journal' },
   { key: 'intake',      label: 'Intake' },
+  { key: 'manual',      label: 'Manual' },
   { key: 'notes',       label: 'Notes' },
 ];
+
+// The first AI-drafted content in this app that's ever meant to reach the
+// client — everything AIGuidanceSection shows above is practitioner-only.
+// Calls generate-user-manual (same security scaffold as generate-ai-
+// guidance) to synthesize a full narrative from this client's intake +
+// assessments + check-ins + journal, in Thea's voice, then holds it in
+// user_manuals with status='draft' until explicitly approved here. The
+// client-read RLS policy on that table only allows status='approved' rows
+// through, so "Approve & publish" is the actual gate, not just UI.
+function ManualSection({ clientId, practitionerId, colors: c }) {
+  const [manual, setManual] = useState(null); // null = loading, false = none yet
+  const [draft, setDraft] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { load(); }, [clientId]);
+
+  async function load() {
+    setManual(null);
+    const { data } = await supabase.from('user_manuals')
+      .select('content, ai_draft, status, generated_at, edited_at, approved_at')
+      .eq('user_id', clientId).maybeSingle();
+    setManual(data ?? false);
+    setDraft(data?.content ?? '');
+  }
+
+  async function confirmDiscard() {
+    if (!manual || manual.content === manual.ai_draft) return true;
+    return new Promise(resolve => {
+      Alert.alert(
+        'Discard your edits?',
+        'Regenerating replaces the current draft with a new AI-generated version — the edits you made won\'t carry over.',
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
+          { text: 'Regenerate', style: 'destructive', onPress: () => resolve(true) },
+        ],
+      );
+    });
+  }
+
+  async function generate() {
+    if (!(await confirmDiscard())) return;
+    setGenerating(true);
+    setError(null);
+    const { data, error } = await supabase.functions.invoke('generate-user-manual', {
+      body: { clientId },
+    });
+    setGenerating(false);
+    if (error) {
+      let detail = error.message;
+      try {
+        const body = await error.context?.json();
+        if (body?.error) detail = body.error;
+      } catch { /* context wasn't JSON — fall back to the generic message */ }
+      setError(detail);
+      return;
+    }
+    await load();
+  }
+
+  async function saveDraft() {
+    setSaving(true);
+    const { error } = await supabase.from('user_manuals')
+      .update({ content: draft, edited_at: new Date().toISOString() })
+      .eq('user_id', clientId);
+    setSaving(false);
+    if (!error) setManual(prev => ({ ...prev, content: draft, edited_at: new Date().toISOString() }));
+  }
+
+  async function approve() {
+    setSaving(true);
+    const { error } = await supabase.from('user_manuals')
+      .update({ content: draft, status: 'approved', approved_at: new Date().toISOString(), approved_by: practitionerId, edited_at: new Date().toISOString() })
+      .eq('user_id', clientId);
+    setSaving(false);
+    if (!error) await load();
+  }
+
+  async function unpublish() {
+    setSaving(true);
+    const { error } = await supabase.from('user_manuals')
+      .update({ status: 'draft' })
+      .eq('user_id', clientId);
+    setSaving(false);
+    if (!error) await load();
+  }
+
+  if (manual === null) return <View style={s.centerPad}><ActivityIndicator color={c.accent} /></View>;
+
+  return (
+    <SectionCard title="User's Manual" colors={c}>
+      <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 12 }]}>
+        AI-drafted from this client's full intake and assessment history, in Thea's voice. Review and edit before approving — only visible to the client once approved.
+      </Text>
+
+      {!manual ? (
+        <Pressable onPress={generate} disabled={generating} style={[s.addNoteBtn, { backgroundColor: c.accent, alignSelf: 'flex-start', paddingHorizontal: 18 }]}>
+          <Text style={s.addNoteBtnText}>{generating ? 'Generating…' : "Generate User's Manual"}</Text>
+        </Pressable>
+      ) : (
+        <>
+          <View style={[s.statusBadge, { alignSelf: 'flex-start', backgroundColor: manual.status === 'approved' ? '#7AB87822' : (c.terracotta ? c.terracotta + '22' : '#C9785522') }]}>
+            <Text style={[s.statusBadgeText, { color: manual.status === 'approved' ? '#4E8F52' : (c.terracotta || '#C97855') }]}>
+              {manual.status === 'approved' ? 'Approved — visible to client' : 'Draft — not visible to client'}
+            </Text>
+          </View>
+
+          <TextInput
+            style={[s.noteInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border, minHeight: 240, marginTop: 10 }]}
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+          />
+
+          <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 }}>
+            <Pressable
+              style={[s.addNoteBtn, { backgroundColor: (draft.trim() && draft !== manual.content) ? c.accent : c.border, paddingHorizontal: 18, marginBottom: 0 }]}
+              onPress={saveDraft}
+              disabled={saving || draft === manual.content}
+            >
+              <Text style={s.addNoteBtnText}>{saving ? 'Saving…' : 'Save draft'}</Text>
+            </Pressable>
+            <Pressable
+              style={[s.addNoteBtn, { backgroundColor: '#4E8F52', paddingHorizontal: 18, marginBottom: 0 }]}
+              onPress={approve}
+              disabled={saving || !draft.trim()}
+            >
+              <Text style={s.addNoteBtnText}>{manual.status === 'approved' ? 'Update & re-approve' : 'Approve & publish'}</Text>
+            </Pressable>
+            {manual.status === 'approved' && (
+              <Pressable onPress={unpublish} disabled={saving}>
+                <Text style={[s.noteActionText, { color: c.terracotta || '#C97855' }]}>Unpublish</Text>
+              </Pressable>
+            )}
+          </View>
+
+          <Pressable onPress={generate} disabled={generating}>
+            <Text style={[s.aiRegenerate, { color: c.accent }]}>{generating ? 'Regenerating…' : 'Regenerate from scratch'}</Text>
+          </Pressable>
+        </>
+      )}
+      {error && <Text style={{ color: c.terracotta || '#C97855', fontSize: 12, marginTop: 8 }}>Couldn't generate — {error}</Text>}
+    </SectionCard>
+  );
+}
 
 function StatCard({ label, value, colors: c }) {
   return (
@@ -737,6 +884,10 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
               </>
             )}
 
+            {activeTab === 'manual' && (
+              <ManualSection clientId={client.id} practitionerId={practitionerId} colors={c} />
+            )}
+
             {activeTab === 'notes' && (
               <SectionCard title="Follow-up notes" colors={c}>
                 <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 10 }]}>
@@ -908,6 +1059,8 @@ const s = StyleSheet.create({
   aiLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 },
   aiContent: { fontFamily: 'Inter_400Regular', fontSize: 13.5, lineHeight: 20, fontStyle: 'italic', marginBottom: 8 },
   aiRegenerate: { fontFamily: 'Inter_500Medium', fontSize: 12 },
+  statusBadge: { borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 },
+  statusBadgeText: { fontFamily: 'Inter_600SemiBold', fontSize: 11.5 },
   logNote:   { fontFamily: 'Inter_400Regular', fontSize: 13, fontStyle: 'italic', marginTop: 2, lineHeight: 18 },
 
   noteInput:   { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14, fontFamily: 'Inter_400Regular', minHeight: 70, textAlignVertical: 'top', marginBottom: 10 },

@@ -85,6 +85,7 @@ export default function You() {
   const [userName, setUserName]     = useState('');
   const [consented, setConsented]   = useState(false);
   const [consentBusy, setConsentBusy] = useState(false);
+  const [manualAvailable, setManualAvailable] = useState(false);
 
   useEffect(() => {
     loadDoshaResult().then(r => setResult(r || false));
@@ -103,6 +104,15 @@ export default function You() {
     if (!user) { setConsented(false); return; }
     supabase.from('users').select('consented_to_practitioner_view').eq('id', user.id).single()
       .then(({ data }) => setConsented(!!data?.consented_to_practitioner_view));
+  }, [user]);
+
+  // RLS on user_manuals only returns a row to its owner when status =
+  // 'approved' — so "did this query return anything" already is the
+  // readiness check, no separate status field to read client-side.
+  useEffect(() => {
+    if (!user) { setManualAvailable(false); return; }
+    supabase.from('user_manuals').select('id').eq('user_id', user.id).maybeSingle()
+      .then(({ data }) => setManualAvailable(!!data));
   }, [user]);
 
   async function toggleConsent(next) {
@@ -313,6 +323,31 @@ export default function You() {
           );
         })()}
 
+        {/* Your User's Manual — AI-drafted from everything you've shared, in
+            Thea's voice, but only ever visible once she's reviewed and
+            approved it. RLS on user_manuals returns a row to its owner only
+            when status='approved', so manualAvailable already is the
+            readiness check. */}
+        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Your User's Manual</Text>
+        {manualAvailable ? (
+          <Pressable style={[styles.manualCard, { backgroundColor: c.surface, ...card }]} onPress={() => router.push('/manual')}>
+            <Text style={[styles.manualExcerpt, { color: c.text }]}>
+              "Your body has been handing you pieces of your user's manual your entire life, hoping you'd slow down long enough to notice."
+            </Text>
+            <Text style={[styles.manualLink, { color: c.accent }]}>Read yours →</Text>
+          </Pressable>
+        ) : (
+          <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
+            <View style={styles.settingsRow}>
+              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                <ManualIcon color={c.textMuted} size={15} />
+              </View>
+              <Text style={[styles.settingsLabel, { color: c.textMuted }]}>Your User's Manual</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
+            </View>
+          </View>
+        )}
+
         {/* Settings */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Settings</Text>
         <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
@@ -508,6 +543,13 @@ function ClipboardIcon({ color, size }) {
     <Path d="M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
+function ManualIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M5 4.5C5 3.7 5.7 3 6.5 3H18a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6.5c-.8 0-1.5-.7-1.5-1.5v-14Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M5 17.5C5 16.7 5.7 16 6.5 16H19" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+    <Path d="M8.5 7h7M8.5 10h7" stroke={color} strokeWidth={1.3} strokeLinecap="round" />
+  </Svg>;
+}
 function SignOutIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
@@ -549,6 +591,9 @@ const styles = StyleSheet.create({
   progressNote:  { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 14.5, fontStyle: 'italic', marginTop: 10, lineHeight: 20 },
 
   sectionH: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
+  manualCard:    { borderRadius: 26, padding: 20 },
+  manualExcerpt: { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 15.5, fontStyle: 'italic', lineHeight: 22, marginBottom: 12 },
+  manualLink:    { fontFamily: 'Inter_600SemiBold', fontSize: 13.5 },
   settingsList: { borderRadius: 26, overflow: 'hidden' },
   settingsRow:  { flexDirection: 'row', alignItems: 'center', padding: 15, gap: 12 },
   settingsIconWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

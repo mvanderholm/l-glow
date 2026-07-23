@@ -1294,14 +1294,21 @@ Registered in `_layout.js`, has real content (Recipes, Herbs, Breathwork, Medita
 
 ---
 
-## Thea's "User's Manual" — new content, placement undecided
+## Thea's "User's Manual" — placement decided, feature built
 
-**48. Full essay-length piece from Thea, not yet placed anywhere in the app.**
+~~**48. Full essay-length piece from Thea, not yet placed anywhere in the app.**~~
 Source: Thea, sent directly to Matt, July 2026. Full verbatim text preserved in `docs/thea-users-manual.md` (not reproduced here — read it there). Opens "Welcome to Your User's Manual," and reframes the entire app as a tool for the user to learn to read their *own* body's signals rather than follow anyone else's rules — explicitly including L. Glow itself ("Stop listening to everyone else. L. Glôw included.").
 
-**Why this matters:** it's the same correction already made to the voice guide's opening section this cycle (`docs/voice-guide.md`, "What L. Glow actually is" — her "it's not her worldview, it's your work to do for yourself" note), but written out at full essay length in a way that reads like it's meant for a user to actually encounter, not just background philosophy for the team. Strong candidate for an actual onboarding moment, welcome-screen rewrite, or dedicated first-run "your blueprint" flow.
+**Placement decided July 23 2026:** an excerpt ("Your body has been handing you pieces of your user's manual your entire life, hoping you'd slow down long enough to notice.") is now the framing copy for a new feature — a per-client, AI-drafted "User's Manual" synthesized from a client's full intake + assessment + check-in/journal history, in Thea's voice, reviewed and approved by her before the client ever sees it. This is the first AI-generated content in the app that's ever meant to reach a client (everything `generate-ai-guidance` produces stays practitioner-only) — see the content-authorship rules in `CLAUDE.md`.
 
-**Status:** Matt doesn't yet know what to do with it. **Do not build anything from this content — no screens, no copy, no onboarding flow — until that placement decision is made.** Flagging its existence and connection to the voice guide is the extent of this item for now.
+**Built:**
+- `supabase/migrations/20260723000000_user_manuals.sql` — new `user_manuals` table (one row per client, `ai_draft`/`content`/`status`). First conditional owner-read RLS policy in this codebase: a client can read their own row only when `status = 'approved'` — every other owner policy is unconditional.
+- `supabase/functions/generate-user-manual/index.ts` — new Edge Function, same security scaffold as `generate-ai-guidance`. Aggregates intake, latest assessment results, all completed Prakriti/Vikriti tiers, a condensed 30-day check-in summary, and the last 5 journal entries; calls `claude-opus-4-8` with adaptive thinking; upserts a draft.
+- `app/practitioner/index.js` — new "Manual" client tab: generate, edit, save draft, approve & publish, unpublish, regenerate (warns before discarding edits).
+- `app/you.js` — new "Your User's Manual" section between Assessments and Settings; shows the framing excerpt + a link once an approved manual exists, otherwise a dimmed "soon" row.
+- `app/manual.js` — new client-facing screen, reads the approved manual (RLS-gated).
+
+**Still open:** the migration and Edge Function are written but not yet run/deployed — that's Matt's manual step (Supabase SQL Editor + Edge Functions dashboard, reusing the existing `ANTHROPIC_API_KEY` secret), same as every prior migration/function in this project.
 
 ---
 

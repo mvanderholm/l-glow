@@ -93,6 +93,7 @@ function AppNavigator() {
       <Stack.Screen name="prakriti-quiz" options={{ headerShown: false }} />
       <Stack.Screen name="vikriti-quiz"  options={{ headerShown: false }} />
       <Stack.Screen name="search"   options={{ headerShown: false }} />
+      <Stack.Screen name="manual"   options={{ headerShown: false }} />
       <Stack.Screen name="result"          options={{ headerShown: false }} />
       <Stack.Screen name="recommendations" options={{ headerShown: false }} />
       <Stack.Screen name="about"           options={{ headerShown: false }} />
