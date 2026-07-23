@@ -1270,10 +1270,10 @@ Full audit: every route file cross-checked against `_layout.js` registrations, e
 - **`app/checkin.js` had no hamburger drawer trigger at all** — the only one of the 5 bottom-nav tabs missing it, so a user landing on Check In had no way to reach account/settings or the new Practitioner View without switching tabs first. Added a menu icon matching the pattern already used on Lifestyle/Movement/Herbs/Nourishment.
 - **Hamburger drawer content could get silently clipped.** The drawer's nav sections were plain `View`s inside a panel with `overflow: 'hidden'` and no `ScrollView` — on a short enough viewport, the bottom items (Practitioner View, Reminders, Help) were cut off with no scrollbar and no indication they existed. Wrapped the nav content in a `ScrollView`; footer moved from absolute-positioned to inline so it scrolls with the rest instead of overlapping.
 
-**46. `app/tools.js` is fully built but completely unreachable.**
+~~**46. `app/tools.js` is fully built but completely unreachable.**~~
 Registered in `_layout.js`, has real content (Recipes, Herbs, Breathwork, Meditation, Self Massage, Journaling, Tongue Check, Learn, About Thea tiles) — but nothing anywhere in the app links to `/tools`. Not the hamburger drawer, not the bottom nav, not any screen's CTA. Likely a leftover from before the Lifestyle/Movement/Herbs/Nourishment bottom-nav restructure (see the "legacy screens" comment in `_layout.js` for journey/journal/you, which *are* still linked from the drawer — tools isn't even that).
 
-**Decision needed:** delete it, or wire it in somewhere (it substantially overlaps with content already reachable via Lifestyle/Movement tiles and the drawer, so wiring it in risks a third redundant path to the same screens). Leaning delete, but that's Matt's call, not mine to make unilaterally.
+**Resolved July 22 2026 — Matt's call: wire it in, not delete.** Added a "Tools" row to `data/nav.js` (the shared drawer/Web-View-sidebar nav list, same one Quizzes lives in) — same "second, faster access point" framing as Quizzes rather than a true duplicate. New grid icon in `HamburgerDrawer.js`'s `ICONS` map.
 
 ---
 
