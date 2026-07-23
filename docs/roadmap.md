@@ -1294,7 +1294,7 @@ Registered in `_layout.js`, has real content (Recipes, Herbs, Breathwork, Medita
 
 ---
 
-## Thea's "User's Manual" — placement decided, feature built
+## Thea's "User's Manual" — placement decided, feature built and deployed
 
 ~~**48. Full essay-length piece from Thea, not yet placed anywhere in the app.**~~
 Source: Thea, sent directly to Matt, July 2026. Full verbatim text preserved in `docs/thea-users-manual.md` (not reproduced here — read it there). Opens "Welcome to Your User's Manual," and reframes the entire app as a tool for the user to learn to read their *own* body's signals rather than follow anyone else's rules — explicitly including L. Glow itself ("Stop listening to everyone else. L. Glôw included.").
@@ -1308,7 +1308,7 @@ Source: Thea, sent directly to Matt, July 2026. Full verbatim text preserved in 
 - `app/you.js` — new "Your User's Manual" section between Assessments and Settings; shows the framing excerpt + a link once an approved manual exists, otherwise a dimmed "soon" row.
 - `app/manual.js` — new client-facing screen, reads the approved manual (RLS-gated).
 
-**Still open:** the migration and Edge Function are written but not yet run/deployed — that's Matt's manual step (Supabase SQL Editor + Edge Functions dashboard, reusing the existing `ANTHROPIC_API_KEY` secret), same as every prior migration/function in this project.
+**Deployed July 23 2026** — migration run and Edge Function live in Supabase. Feature is fully wired end to end: generate → review/edit → approve → client sees it on the You tab.
 
 ---
 
