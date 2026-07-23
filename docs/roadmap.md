@@ -648,6 +648,14 @@ Personality archetype added to `doshaInfo` in `data/content/quiz.js` for each do
 
 ~~**Standardize the Continue button across every quiz question, July 22 2026.**~~ Matt flagged the Dosha Quiz as inconsistent (Continue showed on multi-select questions, not single-select) — turned out to be a three-way inconsistency across all 6 assessments: Guna/Agni/Tongue Check always auto-advanced on tap, Dosha Quiz was mixed, Prakriti/Vikriti already required Continue on every question. Since multi-select can never auto-advance (no way to know the user's done picking without an explicit confirm), standardized the other direction — every question in `quiz.js`, `guna-quiz.js`, `agni-quiz.js`, and `tongue-check.js` now requires tapping Continue, matching Prakriti/Vikriti's existing pattern. Selecting an option highlights it rather than advancing immediately; Continue stays disabled until something's picked.
 
+**Single- vs. multi-select is intentionally content-driven, not a UI inconsistency — don't "fix" this again.** Checked immediately after the Continue-button work above, since it's the natural next question: whether a question allows one answer or several is a scoring/semantics decision per question, not something that should be uniform.
+- **Dosha Quiz**: mixed by design — most questions single-select, but Skin and Hair are multi-select because "dry but also sensitive" is a real combination Thea named (see the field-research notes on #18 above).
+- **Guna Quiz, Agni Assessment**: always single-select — each question tallies toward one Sattva/Rajas/Tamas or Agni-type bucket per answer; multi-select would break that scoring math.
+- **Tongue Check**: the 4 core observations (shape, size, color, coating) are single-select — a tongue only has one shape. The closing "anything else you notice?" step is multi-select, since multiple signs can co-occur.
+- **Prakriti, Vikriti**: always multi-select — a trait can genuinely blend across doshas.
+
+Making everything multi-select would change what several of these quizzes actually measure, not just how they feel to use — a real content/scoring change, not a consistency fix, if it's ever wanted.
+
 ---
 
 ## Pre-launch requirements — must ship before public release
