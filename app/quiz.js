@@ -50,17 +50,15 @@ export default function Quiz() {
     }
   }
 
-  function pickSingle(opt) {
-    if (opt === NONE) {
-      advance([], [NONE_LABEL]);
-    } else {
-      advance([opt.dosha], [opt.label]);
-    }
-  }
-
-  function toggleMulti(i) {
+  // Single-select still only ever holds one index — picking a new option
+  // replaces it rather than toggling, since there's only one slot to fill.
+  function toggleOption(i) {
     if (i === NONE) {
       setPicked(sel => (sel.includes(NONE) ? [] : [NONE]));
+      return;
+    }
+    if (!q.multiSelect) {
+      setPicked([i]);
       return;
     }
     setPicked(sel => {
@@ -71,7 +69,7 @@ export default function Quiz() {
     });
   }
 
-  function confirmMulti() {
+  function confirm() {
     if (picked.includes(NONE)) {
       advance([], [NONE_LABEL]);
     } else {
@@ -118,12 +116,12 @@ export default function Quiz() {
       )}
 
       {q.options.map((opt, i) => {
-        const isSelected = q.multiSelect && picked.includes(i);
+        const isSelected = picked.includes(i);
         return (
           <Pressable
             key={i}
             style={[styles.option, isSelected && styles.optionSelected]}
-            onPress={() => (q.multiSelect ? toggleMulti(i) : pickSingle(opt))}
+            onPress={() => toggleOption(i)}
           >
             <Text style={styles.optionText}>{opt.label}</Text>
           </Pressable>
@@ -134,22 +132,20 @@ export default function Quiz() {
         style={[
           styles.option,
           styles.noneOption,
-          q.multiSelect && picked.includes(NONE) && styles.optionSelected,
+          picked.includes(NONE) && styles.optionSelected,
         ]}
-        onPress={() => (q.multiSelect ? toggleMulti(NONE) : pickSingle(NONE))}
+        onPress={() => toggleOption(NONE)}
       >
         <Text style={[styles.optionText, styles.noneOptionText]}>None of these feels right</Text>
       </Pressable>
 
-      {q.multiSelect && (
-        <Pressable
-          style={[styles.continueBtn, picked.length === 0 && styles.continueBtnDisabled]}
-          disabled={picked.length === 0}
-          onPress={confirmMulti}
-        >
-          <Text style={styles.continueBtnText}>Continue</Text>
-        </Pressable>
-      )}
+      <Pressable
+        style={[styles.continueBtn, picked.length === 0 && styles.continueBtnDisabled]}
+        disabled={picked.length === 0}
+        onPress={confirm}
+      >
+        <Text style={styles.continueBtnText}>Continue</Text>
+      </Pressable>
     </ScrollView>
     </SafeAreaView>
   );

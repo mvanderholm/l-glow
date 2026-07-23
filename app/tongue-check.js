@@ -18,6 +18,7 @@ export default function TongueCheck() {
   const [phase, setPhase]     = useState(0);
   const [answers, setAnswers] = useState({});
   const [signs, setSigns]     = useState(new Set());
+  const [stepPicked, setStepPicked] = useState(null); // index into step.options for the current observation step
 
   const isIntro = phase === 0;
   const isSigns = phase === SIGNS_PHASE;
@@ -28,10 +29,13 @@ export default function TongueCheck() {
   function goBack() {
     if (phase === 0) smartBack();
     else setPhase(phase - 1);
+    setStepPicked(null);
   }
 
-  function pickOption(signal, ama) {
-    setAnswers({ ...answers, [step.id]: { signal, ama: ama ?? null } });
+  function confirmStep() {
+    const opt = step.options[stepPicked];
+    setAnswers({ ...answers, [step.id]: { signal: opt.signal, ama: opt.ama ?? null } });
+    setStepPicked(null);
     setPhase(phase + 1);
   }
 
@@ -117,8 +121,8 @@ export default function TongueCheck() {
             {step.options.map((opt, i) => (
               <Pressable
                 key={i}
-                style={[s.option, { backgroundColor: c.surface, borderColor: c.border }]}
-                onPress={() => pickOption(opt.signal, opt.ama)}
+                style={[s.option, { backgroundColor: c.surface, borderColor: c.border }, stepPicked === i && { borderColor: c.saffron, backgroundColor: c.surfaceAlt }]}
+                onPress={() => setStepPicked(i)}
               >
                 <Text style={[s.optionLabel, { color: c.text }]}>{opt.label}</Text>
                 {opt.sub && (
@@ -126,6 +130,14 @@ export default function TongueCheck() {
                 )}
               </Pressable>
             ))}
+
+            <Pressable
+              style={[s.btn, { backgroundColor: c.accent, marginTop: 8 }, stepPicked === null && { opacity: 0.4 }]}
+              disabled={stepPicked === null}
+              onPress={confirmStep}
+            >
+              <Text style={s.btnText}>CONTINUE  ›</Text>
+            </Pressable>
           </>
         )}
 

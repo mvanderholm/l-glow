@@ -12,6 +12,7 @@ export default function GunaQuiz() {
   const { theme: { colors: c } } = useTheme();
   const [index, setIndex]     = useState(0);
   const [answers, setAnswers] = useState([]);
+  const [picked, setPicked]   = useState(null); // index of the selected option for the current question
   const [gunaQuestions, setGunaQuestions] = useState(staticGunaQuestions);
 
   useEffect(() => {
@@ -24,7 +25,8 @@ export default function GunaQuiz() {
 
   if (!q) return <SafeAreaView style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={c.accent} /></SafeAreaView>;
 
-  async function pick(opt) {
+  async function confirm() {
+    const opt = q.options[picked];
     const next = [...answers, { guna: opt.guna, questionId: q.id, prompt: q.prompt, selectedLabels: [opt.label] }];
 
     if (index + 1 >= gunaQuestions.length) {
@@ -42,6 +44,7 @@ export default function GunaQuiz() {
     } else {
       setAnswers(next);
       setIndex(index + 1);
+      setPicked(null);
     }
   }
 
@@ -51,6 +54,7 @@ export default function GunaQuiz() {
     } else {
       setAnswers(answers.slice(0, -1));
       setIndex(index - 1);
+      setPicked(null);
     }
   }
 
@@ -93,12 +97,20 @@ export default function GunaQuiz() {
         {q.options.map((opt, i) => (
           <Pressable
             key={i}
-            style={[s.option, { backgroundColor: c.surface, borderColor: c.border }]}
-            onPress={() => pick(opt)}
+            style={[s.option, { backgroundColor: c.surface, borderColor: c.border }, picked === i && { borderColor: c.saffron, backgroundColor: c.surfaceAlt }]}
+            onPress={() => setPicked(i)}
           >
             <Text style={[s.optionText, { color: c.text }]}>{opt.label}</Text>
           </Pressable>
         ))}
+
+        <Pressable
+          style={[s.continueBtn, { backgroundColor: c.accent }, picked === null && { opacity: 0.4 }]}
+          disabled={picked === null}
+          onPress={confirm}
+        >
+          <Text style={s.continueBtnText}>Continue</Text>
+        </Pressable>
 
       </ScrollView>
     </SafeAreaView>
@@ -127,4 +139,7 @@ const s = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
   },
+
+  continueBtn:     { marginTop: 8, paddingVertical: 16, borderRadius: 999, alignItems: 'center' },
+  continueBtnText: { color: '#FBF9F4', fontFamily: 'Inter_700Bold', fontSize: 16, letterSpacing: 1 },
 });
