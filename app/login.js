@@ -282,12 +282,13 @@ export default function Login() {
   const { pendingRecovery } = useAuth();
   const router = useRouter();
   const { returnTo } = useLocalSearchParams();
-  // Magic link has no way to carry returnTo through the email round-trip
-  // (the emailed link just lands back on /login with a session, nothing
-  // reads the query param at that point) — default to Password when arriving
-  // with a returnTo so the redirect actually works, e.g. the "Go to sign in"
+  // Password first/default, not Magic link — also fixes a real constraint,
+  // not just preference: magic link has no way to carry returnTo through the
+  // email round-trip (the emailed link just lands back on /login with a
+  // session, nothing reads the query param at that point), so Password was
+  // already required whenever returnTo is present, e.g. the "Go to sign in"
   // button on the practitioner gate. Free to switch tabs manually either way.
-  const [tab, setTab] = useState(returnTo ? 'password' : 'magic'); // 'password' | 'magic'
+  const [tab, setTab] = useState('password'); // 'password' | 'magic'
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -311,8 +312,8 @@ export default function Login() {
               {/* Tab switcher */}
               <View style={[s.tabs, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
                 {[
-                  { key: 'magic',    label: 'Magic link' },
                   { key: 'password', label: 'Password' },
+                  { key: 'magic',    label: 'Magic link' },
                 ].map(t => (
                   <Pressable
                     key={t.key}
