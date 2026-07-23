@@ -7,6 +7,7 @@ import { card } from '../theme/index';
 import { loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadUserName, loadRecentCheckins, loadPrakritiProgress, loadVikritiProgress } from '../data/user/storage';
 import { tongueReadings } from '../data/content/tongueCheck';
 import { agniResults } from '../data/content/agniQuiz';
+import { gunaResults } from '../data/content/gunaQuiz';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
@@ -45,6 +46,21 @@ function tierProgressLabel(progress) {
   const n = Object.values(progress).filter(Boolean).length;
   if (n === 0) return null;
   return n === 3 ? 'All 3 sections complete' : `${n} of 3 sections complete`;
+}
+
+function cap(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+}
+
+// Colored result pill — every result type already carries its own canonical
+// color in its content data (DOSHA_COLORS, gunaResults[x].color, etc.), so
+// this reuses that instead of inventing a separate badge palette.
+function ResultBadge({ label, color }) {
+  return (
+    <View style={{ alignSelf: 'flex-start', backgroundColor: color + '26', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, marginTop: 3 }}>
+      <Text style={{ color, fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>{label}</Text>
+    </View>
+  );
 }
 
 const SETTINGS = [
@@ -182,13 +198,27 @@ export default function You() {
         {/* Your Assessments — dosha/guna results + intake form live here now, not just the drawer */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Your Assessments</Text>
         {(() => {
+          const doshaBadge = result && result.dosha
+            ? { label: cap(result.dosha), color: DOSHA_COLORS[result.dosha] } : null;
+          const agniBadge = agniResult
+            ? { label: (agniResults[agniResult.agniType] ?? agniResults.sama).name, color: (agniResults[agniResult.agniType] ?? agniResults.sama).color }
+            : null;
+          const gunaBadge = gunaResult
+            ? { label: `${cap(gunaResult.dominant)} dominant`, color: gunaResults[gunaResult.dominant]?.color }
+            : null;
+          const tongueBadge = tongueResult
+            ? { label: (tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).name, color: (tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).color }
+            : null;
+          const prakritiProgressText = tierProgressLabel(prakritiProgress);
+          const vikritiProgressText = tierProgressLabel(vikritiProgress);
+
           const rows = [
-            { label: 'My Dosha',        Icon: LeafIcon, dosha: true },
-            { label: 'Agni Assessment', Icon: FireIcon, agni: true },
-            { label: 'Guna Assessment', Icon: GunaIcon, guna: true },
-            { label: 'Tongue Check',    Icon: TongueIcon, tongue: true },
-            { label: 'Prakriti',        Icon: PrakritiIcon, prakriti: true },
-            { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true },
+            { label: 'My Dosha',        Icon: LeafIcon, dosha: true, badge: doshaBadge, notTaken: !doshaBadge },
+            { label: 'Agni Assessment', Icon: FireIcon, agni: true, badge: agniBadge, notTaken: !agniBadge },
+            { label: 'Guna Assessment', Icon: GunaIcon, guna: true, badge: gunaBadge, notTaken: !gunaBadge },
+            { label: 'Tongue Check',    Icon: TongueIcon, tongue: true, badge: tongueBadge, notTaken: !tongueBadge },
+            { label: 'Prakriti',        Icon: PrakritiIcon, prakriti: true, progressText: prakritiProgressText, notTaken: !prakritiProgressText },
+            { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true, progressText: vikritiProgressText, notTaken: !vikritiProgressText },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
           ];
@@ -257,34 +287,20 @@ export default function You() {
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>{item.label}</Text>
-                    {item.agni && agniResult && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                        {(agniResults[agniResult.agniType] ?? agniResults.sama).name}
+                    {item.badge && <ResultBadge label={item.badge.label} color={item.badge.color} />}
+                    {item.progressText && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 3 }}>
+                        {item.progressText}
                       </Text>
                     )}
-                    {item.guna && gunaResult && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                        {gunaResult.dominant.charAt(0).toUpperCase() + gunaResult.dominant.slice(1)} dominant
+                    {item.notTaken && (
+                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11.5, fontStyle: 'italic', color: c.textMuted, marginTop: 3 }}>
+                        Not yet taken
                       </Text>
                     )}
                     {item.share && (
                       <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
                         {consented ? 'Thea can see your intake form' : 'Your intake form stays private'}
-                      </Text>
-                    )}
-                    {item.tongue && tongueResult && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                        {(tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).name}
-                      </Text>
-                    )}
-                    {item.prakriti && tierProgressLabel(prakritiProgress) && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                        {tierProgressLabel(prakritiProgress)}
-                      </Text>
-                    )}
-                    {item.vikriti && tierProgressLabel(vikritiProgress) && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                        {tierProgressLabel(vikritiProgress)}
                       </Text>
                     )}
                   </View>
