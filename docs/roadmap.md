@@ -646,6 +646,8 @@ Three large stat-style percentage cards (Vata / Pitta / Kapha) now render below 
 ~~**35. Dosha archetype content — transcript 19.**~~
 Personality archetype added to `doshaInfo` in `data/content/quiz.js` for each dosha: name (The Wanderer / The Warrior / The Keeper), balanced traits, imbalanced traits, the trap, the truth, and a reminder line. New archetype section added to `app/result.js` with the closing "We are all three" line. Archetype reminder lines added to `data/content/affirmations.js` (v-4, p-4, k-4). DRAFT — awaiting Thea's review.
 
+~~**Standardize the Continue button across every quiz question, July 22 2026.**~~ Matt flagged the Dosha Quiz as inconsistent (Continue showed on multi-select questions, not single-select) — turned out to be a three-way inconsistency across all 6 assessments: Guna/Agni/Tongue Check always auto-advanced on tap, Dosha Quiz was mixed, Prakriti/Vikriti already required Continue on every question. Since multi-select can never auto-advance (no way to know the user's done picking without an explicit confirm), standardized the other direction — every question in `quiz.js`, `guna-quiz.js`, `agni-quiz.js`, and `tongue-check.js` now requires tapping Continue, matching Prakriti/Vikriti's existing pattern. Selecting an option highlights it rather than advancing immediately; Continue stays disabled until something's picked.
+
 ---
 
 ## Pre-launch requirements — must ship before public release
