@@ -25,6 +25,7 @@ export const NAV_SECTIONS = [
   ],
   [
     { key: 'quizzes',  label: 'Quizzes',  href: '/quizzes' },
+    { key: 'tools',    label: 'Tools',    href: '/tools' },
     { key: 'playlist', label: 'Playlist', external: SPOTIFY_PROFILE_URL },
   ],
 ];
