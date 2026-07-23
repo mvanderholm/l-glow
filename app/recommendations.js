@@ -11,6 +11,7 @@ import { routineAnchors, routines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import { loadDoshaResult } from '../data/user/storage';
 import BackButton, { smartBack } from '../components/BackButton';
+import SearchButton from '../components/SearchButton';
 
 export default function Recommendations() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -70,7 +71,10 @@ export default function Recommendations() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
-        <BackButton onPress={() => smartBack('/')} color={colors.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <BackButton onPress={() => smartBack('/')} color={colors.textMuted} style={{ marginLeft: -10, marginBottom: 8 }} />
+          <SearchButton color={colors.textMuted} style={{ marginBottom: 8 }} />
+        </View>
 
         <Text style={type.label}>Tuned for</Text>
         <Text style={[type.display, { color: info.color, marginTop: spacing.xs }]}>{info.name}</Text>

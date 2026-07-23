@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -10,6 +10,7 @@ import { loadDoshaResult } from '../data/user/storage';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
+import SearchButton from '../components/SearchButton';
 
 const TABS = ['Overview', 'Ayurveda', 'Habits', 'Cycles'];
 
@@ -77,6 +78,7 @@ function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 export default function Journey() {
   const { theme: { colors: c, spacing, type } } = useTheme();
   const router = useRouter();
+  const { tab } = useLocalSearchParams();
   const { open: openDrawer } = useDrawer();
   const { isWebMode } = useViewMode();
   const [activeTab, setActiveTab] = useState(0);
@@ -86,6 +88,11 @@ export default function Journey() {
   const [doshaResult, setDoshaResult] = useState(null);
   useEffect(() => { loadDoshaResult().then(r => setDoshaResult(r || false)); }, []);
 
+  // Deep link from global search — see data/searchIndex.js
+  useEffect(() => {
+    if (tab === 'cycles') setActiveTab(TABS.indexOf('Cycles'));
+  }, [tab]);
+
   const doneCount = Object.values(checked).filter(Boolean).length;
 
   return (
@@ -94,11 +101,7 @@ export default function Journey() {
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
         {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>My Journey</Text>
-        {/* Right header slot — was an unwired filter/sliders icon (dead tap, removed July 2026).
-            Reserved for a future per-screen action, possibly search (see roadmap #44). Spacer
-            keeps the title centered until something real goes here.
-            <Pressable style={styles.hBtn}><SlidersIcon color={c.text} /></Pressable> */}
-        <View style={styles.hBtn} />
+        <SearchButton color={c.text} style={styles.hBtn} />
       </View>
 
       {/* Tab strip */}

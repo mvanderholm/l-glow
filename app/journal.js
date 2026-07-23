@@ -56,28 +56,45 @@ export async function migrateJournal(userId) {
   if (rows.length) await supabase.from('journal_entries').upsert(rows, { onConflict: 'user_id,date' });
 }
 
+// Real "load my history" — nothing in the app did this before (the old
+// "Earlier" list was hardcoded mock data). Offline-first, same
+// AsyncStorage-key-scan + multiGet approach migrateJournal() already uses,
+// not a Supabase-first pattern. Also the data source for journal search.
+export async function loadAllJournalEntries() {
+  const allKeys = await AsyncStorage.getAllKeys();
+  const journalKeys = allKeys.filter(k => k.startsWith(JOURNAL_PREFIX)).sort().reverse(); // ISO dates sort lexically → newest first
+  const pairs = await AsyncStorage.multiGet(journalKeys);
+  return pairs
+    .filter(([, v]) => v !== null)
+    .map(([key, raw]) => {
+      let entry = {};
+      try { entry = JSON.parse(raw); } catch {}
+      return { date: key.replace(JOURNAL_PREFIX, ''), grateful: entry.grateful || '', showed: entry.showed || '', tomorrow: entry.tomorrow || '' };
+    })
+    .filter(e => e.grateful || e.showed || e.tomorrow); // skip empty saves
+}
+
 const PROMPTS = [
   { id: 'grateful', label: "Today I'm grateful for…" },
   { id: 'showed',   label: "I showed up for myself by…" },
   { id: 'tomorrow', label: "Tomorrow I will…" },
 ];
 
-const PAST = [
-  { month: 'MAY', day: 19, title: 'Morning pages',        excerpt: 'Woke before the sun. The garden was still. I felt the quiet hold me…',           body: 'Woke before the sun. The garden was still. I felt the quiet hold me in a way that the middle of the day never does. No agenda. Just the sound of birds and the smell of earth after rain. I am grateful for mornings that ask nothing of me.' },
-  { month: 'MAY', day: 17, title: 'After abhyanga',       excerpt: 'Warm sesame oil, slow strokes toward the heart. My shoulders finally dropped…',   body: 'Warm sesame oil, slow strokes toward the heart. My shoulders finally dropped — I did not realize how high I had been holding them. Twenty minutes. That is all it takes. I showed up for myself today by actually doing the thing instead of just thinking about doing the thing.' },
-  { month: 'MAY', day: 14, title: 'A heavy day, softened', excerpt: 'Kapha season is asking me to move. A walk among the eucalyptus helped…',        body: 'Kapha season is asking me to move and I have been resisting it. A walk among the eucalyptus helped. The air was cool and sharp. By the time I got back, the heaviness had lifted enough to breathe. Tomorrow I will try to move before noon instead of waiting until I feel like it.' },
-];
-
 export default function Journal() {
   const { theme: { colors: c, spacing } } = useTheme();
   const today = new Date();
+  const todayDateStr = today.toISOString().slice(0, 10);
   const [answers, setAnswers] = useState({ grateful: '', showed: '', tomorrow: '' });
   const [saved, setSaved] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState(null);
+  const [pastEntries, setPastEntries] = useState([]);
 
   useEffect(() => {
     AsyncStorage.getItem(KEY(today)).then(v => {
       if (v) try { setAnswers(JSON.parse(v)); } catch {}
+    });
+    loadAllJournalEntries().then(entries => {
+      setPastEntries(entries.filter(e => e.date !== todayDateStr));
     });
   }, []);
 
@@ -157,25 +174,33 @@ export default function Journal() {
           {/* Earlier section */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 28, marginBottom: 16 }}>
             <Text style={[styles.sectionH, { color: c.text }]}>Earlier</Text>
-            <Text style={{ color: c.textMedium, fontFamily: 'Inter_500Medium', fontSize: 12.5 }}>This week</Text>
           </View>
 
-          {PAST.map(entry => (
-            <Pressable
-              key={entry.day}
-              style={({ pressed }) => [styles.pastCard, { backgroundColor: c.surface, ...card, marginBottom: 10, opacity: pressed ? 0.75 : 1 }]}
-              onPress={() => setSelectedEntry(entry)}
-            >
-              <View style={styles.pastLeft}>
-                <Text style={[styles.pastMonth, { color: c.textMuted }]}>{entry.month}</Text>
-                <Text style={[styles.pastDay, { color: c.accentSoft }]}>{entry.day}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.pastTitle, { color: c.text }]}>{entry.title}</Text>
-                <Text style={[styles.pastExcerpt, { color: c.textMedium }]} numberOfLines={2}>{entry.excerpt}</Text>
-              </View>
-            </Pressable>
-          ))}
+          {pastEntries.length === 0 && (
+            <Text style={{ color: c.textMuted, fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 }}>
+              Nothing here yet — entries you save will show up once there's more than today.
+            </Text>
+          )}
+
+          {pastEntries.map(entry => {
+            const d = new Date(entry.date + 'T12:00:00');
+            const excerpt = entry.grateful || entry.showed || entry.tomorrow;
+            return (
+              <Pressable
+                key={entry.date}
+                style={({ pressed }) => [styles.pastCard, { backgroundColor: c.surface, ...card, marginBottom: 10, opacity: pressed ? 0.75 : 1 }]}
+                onPress={() => setSelectedEntry(entry)}
+              >
+                <View style={styles.pastLeft}>
+                  <Text style={[styles.pastMonth, { color: c.textMuted }]}>{MONTHS[d.getMonth()]}</Text>
+                  <Text style={[styles.pastDay, { color: c.accentSoft }]}>{d.getDate()}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.pastExcerpt, { color: c.textMedium }]} numberOfLines={2}>{excerpt}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
 
         </ScrollView>
       </KeyboardAvoidingView>
@@ -188,12 +213,16 @@ export default function Journal() {
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12, marginBottom: 16 }}>
                 <View style={styles.pastLeft}>
-                  <Text style={[styles.pastMonth, { color: c.textMuted }]}>{selectedEntry.month}</Text>
-                  <Text style={[styles.pastDay, { color: c.accentSoft }]}>{selectedEntry.day}</Text>
+                  <Text style={[styles.pastMonth, { color: c.textMuted }]}>{MONTHS[new Date(selectedEntry.date + 'T12:00:00').getMonth()]}</Text>
+                  <Text style={[styles.pastDay, { color: c.accentSoft }]}>{new Date(selectedEntry.date + 'T12:00:00').getDate()}</Text>
                 </View>
-                <Text style={[styles.formTitle, { color: c.text, flex: 1 }]}>{selectedEntry.title}</Text>
               </View>
-              <Text style={[styles.input, { color: c.textMedium, lineHeight: 26 }]}>{selectedEntry.body}</Text>
+              {PROMPTS.map((p, idx) => selectedEntry[p.id] ? (
+                <View key={p.id} style={[idx > 0 && { marginTop: 18 }]}>
+                  <Text style={[styles.promptLabel, { color: c.text, marginBottom: 6 }]}>{p.label}</Text>
+                  <Text style={[styles.input, { color: c.textMedium, lineHeight: 26 }]}>{selectedEntry[p.id]}</Text>
+                </View>
+              ) : null)}
             </ScrollView>
             <Pressable
               style={[styles.saveBtn, { backgroundColor: c.surfaceAlt, marginTop: 16, borderWidth: 1, borderColor: c.border }]}
@@ -246,6 +275,5 @@ const styles = StyleSheet.create({
   pastLeft:  { alignItems: 'center', width: 32 },
   pastMonth: { fontFamily: 'Inter_700Bold', fontSize: 9, letterSpacing: 0.72 },
   pastDay:   { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
-  pastTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14.5, lineHeight: 20 },
   pastExcerpt:{ fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18, marginTop: 2 },
 });

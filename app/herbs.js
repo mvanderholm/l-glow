@@ -1,10 +1,12 @@
 import { View, Text, Pressable, ScrollView, Modal, TextInput, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { herbs } from '../data/content/herbs';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path } from 'react-native-svg';
 
 const DOSHA_COLORS = { vata: '#8B6A7A', pitta: '#E8A030', kapha: '#4A8FA8' };
@@ -14,8 +16,14 @@ export default function Herbs() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { open: openDrawer } = useDrawer();
   const { isWebMode } = useViewMode();
+  const { herb } = useLocalSearchParams();
   const [selected, setSelected] = useState(null);
   const [query, setQuery] = useState('');
+
+  // Deep link from global search — see data/searchIndex.js
+  useEffect(() => {
+    if (herb && herbs[herb]) setSelected({ name: herb, ...herbs[herb] });
+  }, [herb]);
   const herbList = Object.entries(herbs).filter(([name, herb]) => {
     if (!query.trim()) return true;
     const q = query.toLowerCase();
@@ -27,7 +35,7 @@ export default function Herbs() {
       <View style={[herbStyles.header, { paddingHorizontal: 20 }]}>
         {isWebMode ? <View style={herbStyles.hBtn} /> : <Pressable style={herbStyles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[herbStyles.hTitle, { color: c.text }]}>Herbs</Text>
-        <View style={herbStyles.hBtn} />
+        <SearchButton color={c.text} style={herbStyles.hBtn} />
       </View>
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Text style={[type.muted, { marginBottom: spacing.md, fontStyle: 'italic' }]}>

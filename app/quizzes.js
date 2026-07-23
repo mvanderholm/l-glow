@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import BackButton, { smartBack } from '../components/BackButton';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path } from 'react-native-svg';
 
 // Quizzes — one nav item in the hamburger drawer, replacing the six
@@ -40,7 +41,7 @@ export default function Quizzes() {
       <View style={[s.topHeader, { borderBottomColor: c.border }]}>
         <BackButton onPress={() => smartBack('/')} color={c.text} />
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Quizzes</Text>
-        <View style={{ width: 40 }} />
+        <SearchButton color={c.text} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>

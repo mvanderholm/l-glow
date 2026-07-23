@@ -12,6 +12,7 @@ import { INSTAGRAM_HANDLE } from '../data/instagram';
 import { SPOTIFY_PROFILE_URL } from '../data/content/music';
 import { BOOKING_URL } from '../data/booking';
 import BackButton, { smartBack } from '../components/BackButton';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 const SWATCHES = [
@@ -31,7 +32,10 @@ export default function About() {
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <ScrollView contentContainerStyle={styles.container}>
 
-        <BackButton onPress={() => smartBack('/')} color={c.text} style={{ alignSelf: 'flex-start', marginLeft: -10, marginBottom: 8 }} />
+        <View style={{ alignSelf: 'stretch', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <BackButton onPress={() => smartBack('/')} color={c.text} style={{ marginLeft: -10, marginBottom: 8 }} />
+          <SearchButton color={c.text} style={{ marginBottom: 8 }} />
+        </View>
 
         {/* Photo — lead image, top of page. Swap in assets/thea.jpg when ready */}
         <View style={[styles.photoFrame, { marginTop: spacing.lg }]}>

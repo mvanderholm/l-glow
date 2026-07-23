@@ -14,6 +14,7 @@ import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { loadMythbusters, refreshMythbusters, loadIntentions, refreshIntentions, loadPlaylists, refreshPlaylists } from '../data/content/remote';
 import { playlistForDosha } from '../data/content/music';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 
 const WEEK_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -81,7 +82,7 @@ export default function Home() {
         <View style={styles.header}>
           {isWebMode ? <View style={styles.headerBtn} /> : <Pressable style={styles.headerBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
           <LogoLockup color={c.text} />
-          <Pressable style={styles.headerBtn}><BellIcon color={c.text} /></Pressable>
+          <SearchButton color={c.text} style={styles.headerBtn} />
         </View>
 
         {/* Greeting */}
@@ -375,15 +376,6 @@ function MenuIcon({ color }) {
   return (
     <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
       <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-function BellIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 10a6 6 0 0 1 12 0c0 3 1.5 5 2 6H4c.5-1 2-3 2-6Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
-      <Path d="M10 20a2 2 0 0 0 4 0" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
     </Svg>
   );
 }

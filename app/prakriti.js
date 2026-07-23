@@ -8,6 +8,7 @@ import { loadPrakritiProgress } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import BackButton, { smartBack } from '../components/BackButton';
+import SearchButton from '../components/SearchButton';
 
 // Prakriti hub — three-tier progressive assessment, kept fully separate
 // from the existing Dosha Quiz (/quiz) per Matt's explicit call, July 2026,
@@ -46,7 +47,7 @@ export default function Prakriti() {
       <View style={[s.topHeader, { borderBottomColor: c.border }]}>
         <BackButton onPress={() => smartBack('/')} color={c.text} />
         <Text style={[s.topHeaderTitle, { color: c.text }]}>Prakriti</Text>
-        <View style={{ width: 40 }} />
+        <SearchButton color={c.text} />
       </View>
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>

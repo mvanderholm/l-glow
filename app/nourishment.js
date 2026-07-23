@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const PRACTICES = [
@@ -29,7 +30,7 @@ export default function Nourishment() {
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
         {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>Nourishment</Text>
-        <View style={styles.hBtn} />
+        <SearchButton color={c.text} style={styles.hBtn} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>

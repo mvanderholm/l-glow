@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 const TOOLS = [
@@ -39,7 +40,7 @@ export default function Tools() {
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
         {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>Tools</Text>
-        <Pressable style={styles.hBtn}><InfoIcon color={c.text} /></Pressable>
+        <SearchButton color={c.text} style={styles.hBtn} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
@@ -120,13 +121,6 @@ export default function Tools() {
 function MenuIcon({ color }) {
   return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-  </Svg>;
-}
-
-function InfoIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.5} />
-    <Path d="M12 11v5M12 8.5v.5" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
   </Svg>;
 }
 

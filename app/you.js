@@ -12,6 +12,7 @@ import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
+import SearchButton from '../components/SearchButton';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 function computeStats(checkins) {
@@ -102,11 +103,7 @@ export default function You() {
       <View style={[styles.header, { paddingHorizontal: 20 }]}>
         {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
         <Text style={[styles.hTitle, { color: c.text }]}>You</Text>
-        {/* Right header slot — was an unwired filter/sliders icon (dead tap, removed July 2026).
-            Reserved for a future per-screen action, possibly search (see roadmap #44). Spacer
-            keeps the title centered until something real goes here.
-            <Pressable style={styles.hBtn}><SlidersIcon color={c.text} /></Pressable> */}
-        <View style={styles.hBtn} />
+        <SearchButton color={c.text} style={styles.hBtn} />
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
