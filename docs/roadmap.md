@@ -524,20 +524,18 @@ Done — Check In is now its own pillar tab at `/checkin`.
 **17. Check-in history view.**
 Hold until real users have at least a week of data. A simple trend of morning hunger over time is the first diagnostically interesting view. Don't over-design before the data exists.
 
-**44. Search — global, direction decided July 17 2026; scope/build still open.**
+~~**44. Search — global, direction decided July 17 2026; scope/build still open.**~~
 Source: Matt, July 2026, originally flagged as the app's content footprint grows (Learn, Herbs, Mythbusters, Recipes, and eventually the Herb + Food Database in #36, Freedom with Food in #40, Weight Balancing in #41).
 
-**Decided, July 17 2026:** Matt wants a persistent search entry point (magnifying-glass icon) that searches *everything* in the app — one global search, not scoped per-section. This is a direct reversal of the "leaning scoped" reasoning below, which is kept as historical context, not deleted — it's still useful for understanding the tradeoff being accepted, not something to silently re-litigate.
+**Scoped and built, July 22 2026.** Revisiting turned up two things that reshaped the July 17 direction, both confirmed with Matt before building:
+- **Icon placement**: hub/content screens only (Home, You, Journey, Herbs, Nourishment, Movement, Lifestyle, Tools, Learn, About, Quizzes/Prakriti/Vikriti hubs, Recommendations) — not quiz-taking flows, Welcome, login/signup, or Checkin's hero-overlay header, all bad fits for a persistent icon. `you.js`/`journey.js` already had a dead header slot with a comment literally reserving it for this.
+- **"Search the user's own data"** hit a real gap: `app/journal.js`'s "Earlier" list was hardcoded mock data, not real saved entries, and nothing loaded more than today's entry. Built a real `loadAllJournalEntries()` and fixed the fake list as a prerequisite — a genuine bug fix independent of search (users were being shown fabricated past entries).
 
-**What global search now has to reckon with, given the earlier reasoning:** #36's Herb + Food Database already plans its own *symptom-based* search ("bloating," "anxiety," "PMS") — tag/curated-index matching, a different mechanism than full-text search over Learn's essays or Recipes' dosha/season/ingredient filters. A single global box needs to either run multiple matching strategies under one input (name match here, tag match there, full-text elsewhere) or accept a lowest-common-denominator search that's worse at each individual thing than a tuned per-section field would be. Not a reason not to build it — just the design cost of "everything" that a scoped approach would have avoided.
+**What shipped:** `data/searchIndex.js` (normalized entries from Learn, Herbs, Mythbusters, Recommendations, doshaInfo, cycles, Tongue Check reference, Guna/Agni result copy — plus the user's own journal/check-in notes), `app/search.js` (results grouped Content/Your Data, capped at 20/group, plain substring matching — same philosophy as `herbs.js`'s existing search), `components/SearchButton.js` (shared icon, wired into all 14 screens). Sources with an addressable screen deep-link there (Learn's existing `conceptId` param, new `herb`/`tab` params on `herbs.js`/`journey.js`); sources with none (Mythbusters, Tongue Check reference, Guna/Agni result copy, check-ins) open an in-place detail sheet on `/search` itself.
 
-**Open questions to resolve before building:**
-- Where it surfaces: persistent header icon (matches "magnifying glass" framing), hamburger drawer, or both?
-- What "everything" actually covers — every `data/content/*.js` file (Learn, Herbs, Mythbusters, Recipes, Movement, Quiz/dosha info, Affirmations...) plus admin-editable content (Intentions, Daily Rhythms, Playlists)? Or content only, excluding user's own data (journal entries, check-in history)?
-- Matching strategy: one unified full-text pass over all sources (simplest, weakest per-source relevance), or one input dispatching to per-source matchers with merged/ranked results (better relevance, more to build)?
-- Mark 1 is local-only with all content in static JS files (`data/content/`) — any search here is client-side filtering, not a backend query. That changes if/when #30's backend lands.
+**Bundled bug fix:** `prakriti-quiz.js`/`vikriti-quiz.js` were missing their `headerShown:false` registration in `_layout.js` — found while touching the same file, fixed alongside (they were double-rendering the native header on top of their own).
 
-**Still not scheduled** — decided in direction, not yet scoped into a build order or prioritized against everything else on this list. Flag to Matt when ready to move this from "decided" to "next."
+Matching strategy landed on plain substring (not ranked/multi-strategy) and content scope stayed to what's actually populated (`movement.js` asanas, `music.js` playlists, `intentions.js`/`routines.js` are still placeholder-only and excluded) — the open questions below are resolved, kept for the reasoning history.
 
 **Framing discussion, July 2026 (superseded by the global decision above, kept for the tradeoff reasoning):**
 
