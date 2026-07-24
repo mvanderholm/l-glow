@@ -7,7 +7,7 @@
 // index, it's client-side filtering."
 
 import { concepts } from './content/learn';
-import { herbs } from './content/herbs';
+import { herbFoodDatabase } from './content/herbFoodDatabase';
 import { recommendations } from './content/recommendations';
 import { doshaInfo } from './content/quiz';
 import { SEASONAL_CONTENT, LUNAR_CONTENT } from './content/cycles';
@@ -35,12 +35,12 @@ function buildLearnEntries() {
 }
 
 function buildHerbEntries() {
-  return Object.entries(herbs).map(([name, h]) => ({
-    id: `herb:${name}`, source: 'herbs', sourceLabel: 'Herbs', group: 'content',
-    title: name, subtitle: h.latin,
-    searchableText: joinText(name, h.latin, h.summary, h.use, h.taste, h.balances, h.aggravates),
-    snippet: h.summary,
-    route: '/herbs', params: { herb: name },
+  return herbFoodDatabase.map(h => ({
+    id: `herb:${h.name}`, source: 'herbs', sourceLabel: 'Herbs', group: 'content',
+    title: h.name, subtitle: h.latinName,
+    searchableText: joinText(h.name, h.latinName, h.types, h.taste, h.actions, h.medicineWhen, h.poisonWhen, h.lglowTranslation),
+    snippet: h.lglowTranslation || (h.medicineWhen || [])[0] || '',
+    route: '/herbs', params: { herb: h.name },
   }));
 }
 

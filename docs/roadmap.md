@@ -1185,30 +1185,20 @@ This content feeds into:
 
 ## Herb + Food Database — major new feature
 
-**36. L. Glôw Herb + Food Impact Database — content complete, build needed.**
-Source: `docs/LGlow_Herb_Food_Impact_Database_v2_filled.docx`. Thea has produced a complete A–Z herb and food database, hundreds of entries from Agrimony to Yerba Santa. This is the most substantial content asset produced to date and supersedes the draft `data/content/herbs.js` entirely. (See `docs/content-review-thea.md` §3.1 — this is why `herbs.js` didn't need a separate review pass despite never being flagged as draft.)
+~~**36. L. Glôw Herb + Food Impact Database — content complete, build needed.**~~
+Source: `docs/LGlow_Herb_Food_Impact_Database_v2_filled.docx`. Thea's complete A–Z herb and food database, 256 entries from Agrimony to Yerba Santa. Supersedes the old draft `data/content/herbs.js` for the main Herbs screen (see `docs/content-review-thea.md` §3.1).
 
-**What the document contains:**
-- A-Z entries, each with: name, type, Latin name, taste, energy, vipaka, dosha impact notation (VK- P+ style), integer dosha scores, actions array, medicine_when array, poison_when array, and an L. Glôw translation phrase
-- A complete developer JSON data model — ready to implement
-- App UX recommendations: card layout order (Snapshot → Medicine When → Poison When → Taste → Energy → Vipaka → Actions → Best Seasons → L. Glôw Tip), symptom-based search ("bloating", "anxiety", "PMS", "brain fog")
-- Extended CMS field checklist: adds best_season, best_constitution, avoid_when, pairs_well_with, safety_flags, source_notes, review_status
-- Safety and compliance copy guidance: practitioner guidance badges, pregnancy/medication flags, global disclaimer
+**Placement decided July 23 2026 (Matt):** expanded Herbs section under Tools (not a new top-level screen), one unified searchable database for herbs and foods together (not split) — the source data itself doesn't cleanly split: 216/256 entries are plain "herb," the rest are hybrids ("herb"+"food", "herb"+"spice", etc).
 
-**This is a different feature from the current herbs screen.** The current screen shows a small list of draft herb summaries. This database enables a searchable, filterable herb + food encyclopedia — users can search by name or symptom, expand cards, and see dosha-specific medicine/poison guidance.
+**Built July 23 2026:**
+1. `data/content/herbFoodDatabase.js` — new. All 256 entries parsed directly from the source .docx's actual Word **table cell structure** (not a flattened-paragraph text guess, which would have silently misaligned columns on rows with blank cells — verified this the hard way before committing to an approach). Schema: `name, types[], latinName, taste[], energy, vipaka, doshaRaw, doshaImpact, actions[], medicineWhen[], poisonWhen[], lglowTranslation, needsGuidance`.
+   - `doshaImpact` ({vata,pitta,kapha}, each -1/0/1) computed mechanically from `doshaRaw` shorthand (e.g. "PK- V+") only when unambiguous — 252/256 parsed cleanly; the 4 remaining (alternates like "VPK= / VPK-", or an inline exception like "VPK= (P-)") keep `doshaRaw` as display text with no computed bar rather than guessing.
+   - `needsGuidance` mechanically detected from Poison When containing Thea's own phrase "professional guidance" (30 entries) — not an invented flag.
+2. `app/herbs.js` — fully rewritten: symptom/name search (256 → e.g. 45 for "bloating"), type filter chips (all 13 real type tags from the data, not a hidden subset), list cards with dosha badges + energy pill + practitioner-guidance flag, expandable detail modal in the doc's recommended field order (Snapshot → Medicine When → Poison When → Actions → L. Glôw Tip — "Best Seasons"/"Best Constitutions" skipped, not present in the actual source data). Global safety disclaimer (education only, not diagnosis) shown persistently above the search box, from the doc's own compliance copy.
+3. `data/searchIndex.js` — `buildHerbEntries()` repointed at the new database.
+4. Verified end-to-end via Playwright: 256 entries load, symptom search and type filter both narrow correctly, detail modal renders all sections, deep link (`/herbs?herb=Turmeric`, same mechanism global search uses) opens the right entry.
 
-**⚠️ Decision needed before building:**
-- Does this live as an expanded Herbs section under Tools, or does it become its own top-level screen (e.g., "Encyclopedia" or "Herb + Food Guide")?
-- The document includes foods alongside herbs — confirm with Thea whether foods and herbs share one searchable database or live in separate sections.
-
-**Build order once placement is decided:**
-1. Migrate `data/content/herbs.js` to the new schema (name, type, latin_name, taste, energy, vipaka, dosha_impact, actions, medicine_when, poison_when, lglow_translation, safety_flags, source_status)
-2. Parse the document into structured JS data entries
-3. Build searchable/filterable list UI — search by name and by symptom keyword
-4. Build expandable card UI per the document's recommended field order
-5. Add practitioner guidance badges for flagged entries
-6. Add global safety disclaimer per compliance copy in the document
-7. Wire into Tools → Herbs route (or new route if placement decision changes)
+**Known follow-up, not done:** `app/recommendations.js`'s per-dosha "Herbs & Spices" chips still read the *old* `data/content/herbs.js` (21 curated names). Left as-is rather than migrated — 7 of those 21 names don't cleanly match the new database (e.g. "Ajwain" vs "Ajwan", "Brahmi" and "Trikatu" aren't in the new A-Z single-item database at all, being a Bacopa-species mismatch and a classical 3-herb compound respectively). Needs a real name-mapping decision, not a mechanical rename — separate task.
 
 **Content status:** v2 fields are filled. Document notes that Medicine When / Poison When are "L. Glôw interpretation fields — educational wellness cues, not diagnosis or dosing instructions." Source status field tracks whether each entry came from book photos, L. Glôw interpretation, or needs review.
 
