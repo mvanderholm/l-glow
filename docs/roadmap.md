@@ -1169,17 +1169,19 @@ Proposed shape:
 
 ---
 
-## Vata / Pitta / Kapha Food Recommendations — content ready
+## Vata / Pitta / Kapha Food Recommendations — data shape scaffolded, content blocked on Thea
 
-**38. Dosha food lists — Thea's content approved, ready to load.**
-Source: transcripts 23–25 (062126_04, 05, 06), June 2026. Thea has recorded detailed food recommendations for all three doshas with Best / Good / Not Beneficial / Avoid breakdowns across: grains, legumes, vegetables, fruits, nuts, oils, spices, animal products, and sweeteners. Authorship confirmed — her own words formed from multiple sources. **Note, July 2026:** several ingredient names came through garbled from Whisper transcription — see `docs/notes-transcript-23-25.md` for the specific spellings awaiting Thea's confirmation before this loads into the app.
+**38. Dosha food lists — shape scaffolded July 23 2026, content still blocked on Thea confirming garbled transcription.**
+Source: transcripts 23–25 (062126_04, 05, 06), June 2026. Thea recorded detailed food recommendations for all three doshas with Best / Good / Not Beneficial / Avoid breakdowns across eight categories — confirmed identical structure across all three transcripts by reading them directly (not just the excerpt notes file): grains & legumes, vegetables, fruits, nuts & seeds, oils, spices, dairy, sweeteners.
+
+**Still genuinely blocked on content** — this isn't a couple of typos. `docs/notes-transcript-23-25.md` logs roughly 30 ingredient names the Whisper transcription rendered ambiguously across the three recordings (e.g. "monkeys" for what's presumably mung beans, "grass" in a Pitta oils list that could be flaxseed or something else, an entire block where Pitta's nuts and oils categories appear to have merged mid-recording). Per CLAUDE.md's content-authorship rules, none of this gets guessed at and shipped as Thea's approved content — awaiting her direct confirmation on that notes file.
+
+**What's built (data shape only, zero content):** `data/content/doshaFoodLists.js` — `doshaFoodLists.{vata,pitta,kapha}.{grainsAndLegumes,vegetables,fruits,nutsAndSeeds,oils,spices,dairy,sweeteners}.{best,good,notBeneficial,avoid}`, every tier an empty array. Once Thea confirms the transcript notes, this is a fill-in-the-arrays pass, not a schema decision.
 
 This content feeds into:
-- Item 36 (Herb + Food Database) — the dosha-specific medicine/poison breakdowns per food
+- Item 36 (Herb + Food Database, shipped July 23 2026) — the dosha-specific medicine/poison breakdowns per food
 - The recommendations screen — food section per dosha
 - The food guide content (item 11c) — the practical examples section
-
-⚠️ **Not yet loaded into any data file.** Awaits the food database data structure decision (item 36 placement question) before loading. Do not load into the existing `data/content/herbs.js` — that schema is too narrow. This content belongs in the new food database schema once designed.
 
 ---
 
