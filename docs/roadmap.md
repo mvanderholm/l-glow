@@ -457,8 +457,8 @@ Build order: identify current screens with placeholder or no imagery first, sour
 
 ## Navigation expansion — four new top-level sections
 
-**13. Journey**
-A personal progress view. Likely home to check-in history, dosha trends over time, and the user's evolving relationship with the practice. Content and shape TBD — requires a conversation with Thea about what "progress" looks like in ayurveda (it's not a linear score). Do not build until that framing is clear.
+~~**13. Journey**~~
+Built — `app/journey.js`, four tabs (Overview, Ayurveda, Habits, Cycles). Overview, Ayurveda, and Cycles have real content. **Habits is still a "Coming Soon" placeholder** — that's the check-in-history/dosha-trends-over-time piece this item originally described, and it's correctly still gated: needs a conversation with Thea about what "progress" looks like in ayurveda before building, same reasoning as #17 below (which explicitly waits for real user data).
 
 **14. Tools**
 A curated toolkit of standalone ayurvedic practices — things the user can reach for on demand rather than as part of a daily flow. Scaffold is live with 2-column practice grid + education cards.
@@ -476,11 +476,11 @@ Confirmed sections (May 2026):
 *Education (full-width cards):*
 - Learn, About Thea — unchanged.
 
-**15. Journal**
-A free-form daily writing space, separate from the check-in note field. Could eventually connect to the check-in (surfacing yesterday's note before today's check-in) or the intention ("just for today" anchoring a longer reflection). Keep it simple — a dated text entry, stored locally. No prompts enforced; optional gentle framing from Thea's voice.
+~~**15. Journal**~~
+Built — `app/journal.js`. Three dated prompts (grateful/showed/tomorrow), stored locally and synced to Supabase, a real "Earlier" history list (`loadAllJournalEntries()`, replacing what used to be hardcoded mock data — see the global search work, roadmap #44). Mythbuster "Something to try" cards can deep-link in with a contextual "Reflecting on…" banner (#51, July 2026).
 
-**16. You**
-The personal profile section. Home for: dosha result and breakdown, quiz retake, saved intentions, and eventually session history and booking. Currently some of this lives on the home screen (returning user state) — this section gives it a permanent home and clears the home screen of account-management concerns.
+~~**16. You**~~
+Built — `app/you.js`. Dosha result + breakdown (`DoshaWheel`), quiz retake, colored result badges across all six assessments, intake form link, the User's Manual teaser (#48), Settings, and Account/sign-out. Session history and booking integration mentioned in the original scope aren't built and have no dedicated tracking item — flag if that becomes real work.
 
 **27. Goals section in "You" tab.**
 A personal goals section on the You screen — things the user is working toward in their practice, informed by their dosha and season.
@@ -755,7 +755,7 @@ Not yet done — account creation and DNS steps above are still open.
 
 ---
 
-**31. API endpoint spec — lglow routes on the existing panda-mobile API.**
+~~**31. API endpoint spec — lglow routes on the existing panda-mobile API.**~~
 
 ⚠️ **SUPERSEDED, July 2026 — literal endpoint spec no longer applies, but the data model below is still useful.** This was written for the ColdFusion/MSSQL plan, which was dropped entirely in favor of Supabase (see #29/#30). Supabase auto-generates a REST API from the Postgres schema (PostgREST) and enforces isolation via Row Level Security — there's no hand-written route layer to build the way this section assumes, and no Firebase JWT to verify. **Don't build against this spec literally.** What's still worth reading it for: the table names, fields, and per-resource operations implied by each route below are a solid first draft of the Postgres schema #30 needs — treat this as data-model reference material, not a build spec.
 
@@ -1320,9 +1320,9 @@ Source: Matt, July 17–18 2026. Supersedes/expands the "Vikriti visualization" 
 **Still open / not yet decided (unchanged from earlier framing discussions):**
 - How the three Prakriti tiers relate to the existing standalone Dosha Quiz (`/quiz`, 14 questions) and intake Section 14's Prakriti assessment — does this replace either, coexist, or feed into a reconciled reading? Explicitly left TBD — this build doesn't force that decision either way.
 - Scoring/weighting once tagging is done: does a blended (two-dosha) option contribute a full point to each tagged dosha, or split weight? Recommended full-point-per-tagged-dosha for consistency with how multi-select already lets one person contribute to two doshas across separate options, but not confirmed.
-- No consumer-facing quiz screen exists yet for any tier — only the admin editor and the Supabase storage. Building the actual quiz-taking UI is separate, future work.
+- ~~No consumer-facing quiz screen exists yet for any tier — only the admin editor and the Supabase storage.~~ **Wrong, corrected July 23 2026 during a roadmap hygiene pass.** `app/prakriti.js`/`app/vikriti.js` (tier hub — progressive unlock, retake, past-attempts history) and `app/prakriti-quiz.js`/`app/vikriti-quiz.js` (the quiz-taking flow itself) all exist and are registered in `_layout.js`. Remaining real gaps are the tagging/scoring work above and the first bullet in this list (how these tiers relate to `/quiz` and intake Section 14).
 
-**Prakriti content is now complete (108/108 questions across three tiers) — remaining Prakriti work is tagging (via the admin editor) and building the consumer quiz screen(s), not more content.**
+**Prakriti content is now complete (108/108 questions across three tiers) — remaining Prakriti work is tagging (via the admin editor), not more content or UI. The consumer quiz screens (`app/prakriti.js`, `app/prakriti-quiz.js`) are already built.**
 
 **Vikriti Level 1, "Check Your Signals," loaded** (21 questions, July 18 2026) — the first Vikriti content, and structurally different from every Prakriti tier in two ways: **four substantive options per question, not three** (vata/pitta/kapha-leaning plus a "balanced/no signal" fourth option, whose dosha tag is expected to stay empty *by design* — worth a pass once tagging starts so "deliberately balanced" doesn't get confused with "just not tagged yet"), and **`allow_none` is true on all 21, using different escape copy than Prakriti** — "None of these are speaking to me" vs. Prakriti's "None of these really sound like me." Read as an intentional wording distinction (Vikriti's "listening to the body right now" framing vs. Prakriti's identity framing), not a retroactive rename of Prakriti's already-set copy — flag if that read's wrong. The escape text itself isn't stored per-row; it'll be a screen-level constant keyed off `assessment` whenever the consumer quiz UI gets built. IDs prefixed `signal-` (matching "Check Your Signals") since a couple of topics overlap Foundation's slugs (`appetite`, `digestion`).
 
@@ -1340,7 +1340,7 @@ Sections (9, matching Matt's own Part 1/Part 2 grouping): energy, digestion_agni
 
 **The closing "Letter to Your Practitioner"** (free-text, same `input_type` mechanism as Level 2's closing reflection) is explicitly meant to carry more weight than Level 2's — Matt's framing: "it becomes part of the user's permanent story... when someone books a consultation, the practitioner doesn't just see scores and doshas, they begin with the person's own words." No schema field distinguishes that significance from Level 2's closing question yet — a note for whoever builds the consumer flow.
 
-**All six tiers across both assessments are now content-complete** (108 Prakriti + 142 Vikriti = 250 questions — corrected July 20 2026; an earlier version of this note said "66 Vikriti," which was actually just Level 3's count, not the assessment total: Vikriti is 21 + 55 + 66 = 142). Remaining work across the whole #52 feature is the dosha-tagging pass and building the consumer-facing quiz UI — not more content.
+**All six tiers across both assessments are now content-complete** (108 Prakriti + 142 Vikriti = 250 questions — corrected July 20 2026; an earlier version of this note said "66 Vikriti," which was actually just Level 3's count, not the assessment total: Vikriti is 21 + 55 + 66 = 142). ~~Remaining work across the whole #52 feature is the dosha-tagging pass and building the consumer-facing quiz UI~~ — the consumer quiz UI shipped the same day, see below; remaining work is the dosha-tagging pass only, not more content or UI.
 
 **Prakriti and Vikriti split apart everywhere, July 20 2026 (Matt's call).** Previously one shared table/admin screens/loader pair distinguished only by an `assessment` value — now fully separate at every layer:
 - **Database:** `constitution_questions` replaced by `prakriti_questions` (108 rows) and `vikriti_questions` (142 rows) — see `supabase/migrations/20260720120000_split_constitution_questions_into_prakriti_vikriti.sql`. Same RLS pattern on both (public read, practitioner write). Data-preserving migration, not a re-seed.
