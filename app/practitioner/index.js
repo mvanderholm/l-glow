@@ -117,7 +117,7 @@ function ClientList({ colors: c, onSelect, selectedId }) {
   useEffect(() => {
     supabase
       .from('users')
-      .select('id, email, display_name, checkins(date, physical, mental, emotional), intake_forms(data)')
+      .select('id, email, display_name, checkins(date, physical, mental, emotional), intake_forms(data), dosha_results(taken_at)')
       .eq('consented_to_practitioner_view', true)
       .eq('role', 'user')
       .order('date', { foreignTable: 'checkins', ascending: false })
@@ -132,6 +132,18 @@ function ClientList({ colors: c, onSelect, selectedId }) {
         setClients(withAttention);
       });
   }, []);
+
+  // Roadmap #53 follow-up — "are people getting lost after signup," scoped
+  // to what a practitioner can actually see. RLS only exposes dosha_results/
+  // checkins for consented clients, so this is a funnel across *consented*
+  // clients, not every signup — labeled as such below rather than presented
+  // as the full picture. supabase/queries/onboarding_funnel.sql has the real
+  // full-population version (run in the SQL Editor, bypasses RLS).
+  const funnel = clients && {
+    total: clients.length,
+    dosha: clients.filter(c => (c.dosha_results ?? []).length > 0).length,
+    checkin: clients.filter(c => (c.checkins ?? []).length > 0).length,
+  };
 
   if (error) {
     return (
@@ -166,6 +178,21 @@ function ClientList({ colors: c, onSelect, selectedId }) {
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20 }} showsVerticalScrollIndicator={false}>
+      {funnel && (
+        <View style={[s.funnelCard, { backgroundColor: c.surface, ...card }]}>
+          <Text style={[s.funnelLabel, { color: c.textMuted }]}>Getting started · consented clients</Text>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 8 }}>
+            <View style={s.funnelStat}>
+              <Text style={[s.funnelStatValue, { color: c.text }]}>{funnel.dosha}/{funnel.total}</Text>
+              <Text style={[s.funnelStatLabel, { color: c.textMuted }]}>Took the quiz</Text>
+            </View>
+            <View style={s.funnelStat}>
+              <Text style={[s.funnelStatValue, { color: c.text }]}>{funnel.checkin}/{funnel.total}</Text>
+              <Text style={[s.funnelStatLabel, { color: c.textMuted }]}>Have checked in</Text>
+            </View>
+          </View>
+        </View>
+      )}
       <TextInput
         style={[s.searchInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
         value={search}
@@ -1015,6 +1042,12 @@ const s = StyleSheet.create({
 
   centerPad: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 },
   emptyText: { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, textAlign: 'center' },
+
+  funnelCard: { borderRadius: 16, padding: 14, marginBottom: 14 },
+  funnelLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase' },
+  funnelStat: { flex: 1 },
+  funnelStatValue: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20, lineHeight: 26 },
+  funnelStatLabel: { fontFamily: 'Inter_400Regular', fontSize: 12 },
 
   searchInput: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 10, fontSize: 14, fontFamily: 'Inter_400Regular', marginBottom: 10 },
   attentionToggle: { alignSelf: 'flex-start', borderWidth: 1, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, marginBottom: 16 },
