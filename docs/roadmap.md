@@ -414,20 +414,17 @@ Same placement question as 11a applies — weekly drip, special edition screen, 
 
 ---
 
-**51. Build the Mythbuster "challenge" card — currently unused data.**
-Source: Matt, July 2026, spotted while reviewing the practitioner Mythbusters admin editor. The `challenge` field (`title`, `instructions`, `track[]`) has been sitting in the schema and loaded on the `cold-drinks-healthy` entry (Dec 28 week, "The Ice Water Test") since #11b shipped, but nothing in the consumer app ever reads it — `MythbusterCard` in `app/index.js` only renders `myth`/`take`/`reframe`. Confirmed by grep: the only reference to `.challenge` anywhere in the app is the practitioner admin's read-only "edit via SQL for now" flag.
+~~**51. Build the Mythbuster "challenge" card — currently unused data.**~~
+Source: Matt, July 2026, spotted while reviewing the practitioner Mythbusters admin editor. The `challenge` field (`title`, `instructions`, `track[]`) had been sitting in the schema and loaded on the `cold-drinks-healthy` entry (Dec 28 week, "The Ice Water Test") since #11b shipped, but nothing in the consumer app ever read it.
 
-Design sketch approved by Matt, July 17 2026: **[Challenge Card sketch](https://claude.ai/code/artifact/fab363e5-120a-4269-94ea-7c5251f1fb5c)**. Four decisions the sketch settles, to carry into the build:
-1. **Not labeled "Challenge" in the UI.** Ties to the same voice-guide constraint #27 already flagged — "never call something a 'goal' or a 'challenge,' it should read as an offering." Sketch defaults to the eyebrow "Something to try" (alternative considered: "An experiment") over the literal "The Weekly Challenge." Thea's call on final wording.
-2. **`track[]` renders as soft tags ("Notice this week"), not a checklist.** A checklist implies completion and a reason to feel behind if left unchecked — tags are just things worth paying attention to, no tap target or state.
-3. **Single interaction: "Reflect in Journal."** Routes into the existing Journal screen (pre-filled with a prompt tied to that week's practice) instead of building new tracking storage — no new table, no completion/streak state, reuses a screen users already know.
-4. **Renders as a fourth section on the existing Mythbuster card**, not a separate card or screen — `challenge` is already nested on the same weekly entry as `myth`/`take`/`reframe`, so "does this show this week" logic already exists for free, same pattern as the `reframe` box.
+Design sketch approved by Matt, July 17 2026: **[Challenge Card sketch](https://claude.ai/code/artifact/fab363e5-120a-4269-94ea-7c5251f1fb5c)**. Built exactly per its four decisions: not labeled "Challenge" (eyebrow reads "Something to try"), `track[]` renders as soft "Notice this week" tags with no tap target or completion state, single interaction is "Reflect in Journal," rendered as a fourth section on the existing Mythbuster card rather than a new screen.
 
-**Build order:**
-1. Add the challenge section to `MythbusterCard` in `app/index.js` (styling per the sketch — distinct warm wash, not the neutral `reframe` box treatment)
-2. Wire the "Reflect in Journal" tap — needs a way to pass a pre-filled prompt into `app/journal.js` (check whether it already accepts a route param for this, or needs one added)
-3. Confirm final eyebrow wording with Thea ("Something to try" vs. "An experiment" vs. her own phrase)
-4. Content-wise, only one entry has `challenge` data today (`cold-drinks-healthy`) — works as the first real test case, no new content needed to ship this
+**Built July 23 2026:**
+1. `app/index.js` — `MythbusterCard` now renders a `challenge` section when present: warm honey-amber wash (visually distinct from the neutral `reframe` box), title, instructions, `track[]` as pill tags, and a "Reflect in Journal →" link.
+2. `app/journal.js` — added `useLocalSearchParams()` and a `reflect` param. When present, shows a contextual "Reflecting on: {title}" banner above the prompts — doesn't pre-write any answer text, purely orients the user to what they clicked through for. No new storage, no tracking state.
+3. Verified end-to-end via Playwright (date pinned into `cold-drinks-healthy`'s week to trigger `currentMythbuster()`): card renders, tap navigates to `/journal?reflect=The%20Ice%20Water%20Test`, banner shows correctly.
+
+**Still open:** final eyebrow wording ("Something to try" vs. "An experiment" vs. Thea's own phrase) — shipped with the sketch's default, flagged for her sign-off same as other draft copy.
 
 ---
 

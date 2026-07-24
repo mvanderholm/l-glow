@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TextInput, Pressable, ScrollView, KeyboardAvoid
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import { supabase } from '../config/supabase';
@@ -82,6 +82,7 @@ const PROMPTS = [
 
 export default function Journal() {
   const { theme: { colors: c, spacing } } = useTheme();
+  const { reflect } = useLocalSearchParams();
   const today = new Date();
   const todayDateStr = today.toISOString().slice(0, 10);
   const [answers, setAnswers] = useState({ grateful: '', showed: '', tomorrow: '' });
@@ -140,6 +141,16 @@ export default function Journal() {
             <View style={styles.formBody}>
               <Text style={[styles.formTitle, { color: c.text }]}>Evening Reflection</Text>
               <Text style={[styles.formSub, { color: c.textMuted }]}>A few honest lines before rest.</Text>
+
+              {/* Context from a Mythbuster's "Something to try" card, if that's
+                  how the user got here — purely contextual, doesn't pre-write
+                  any answer. See roadmap #51. */}
+              {reflect ? (
+                <View style={[styles.reflectBanner, { backgroundColor: c.honeyAmber + '14', borderColor: c.honeyAmber + '33' }]}>
+                  <Text style={[styles.reflectBannerLabel, { color: c.honeyAmber }]}>Reflecting on</Text>
+                  <Text style={[styles.reflectBannerText, { color: c.text }]}>{reflect}</Text>
+                </View>
+              ) : null}
 
               {PROMPTS.map((p, idx) => (
                 <View key={p.id}>
@@ -259,6 +270,10 @@ const styles = StyleSheet.create({
   formBody:  { padding: 20, paddingTop: 0 },
   formTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 23, lineHeight: 30 },
   formSub:   { fontFamily: 'Inter_400Regular', fontSize: 13, marginTop: 4, marginBottom: 20, lineHeight: 18 },
+
+  reflectBanner:     { borderWidth: 1, borderRadius: 14, padding: 12, marginBottom: 20 },
+  reflectBannerLabel:{ fontFamily: 'Inter_600SemiBold', fontSize: 10.5, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 3 },
+  reflectBannerText: { fontFamily: 'Inter_500Medium', fontSize: 14, lineHeight: 19 },
 
   promptBlock:{ paddingBottom: 0 },
   promptLabel:{ fontFamily: 'PlayfairDisplay_400Regular', fontSize: 15.5, fontStyle: 'italic', lineHeight: 21, flex: 1 },

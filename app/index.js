@@ -177,6 +177,7 @@ function MusicCard({ dosha, colors: c }) {
 
 function MythbusterCard({ colors: c, spacing }) {
   const [list, setList] = useState(null);
+  const router = useRouter();
 
   useEffect(() => {
     loadMythbusters().then(setList);
@@ -198,6 +199,38 @@ function MythbusterCard({ colors: c, spacing }) {
           <View style={[styles.mythReframe, { backgroundColor: c.surfaceAlt, borderLeftColor: c.accentAlt }]}>
             <Text style={[styles.overline, { color: c.textMuted, marginBottom: 4 }]}>The reframe</Text>
             <Text style={[styles.mythBody, { color: c.text }]}>{myth.reframe}</Text>
+          </View>
+        )}
+        {myth.challenge && (
+          // Deliberately not labeled "Challenge" — voice-guide constraint #27,
+          // reads as an offering, not a task. track[] are soft tags to notice,
+          // not a checklist — no tap target, no completion/streak state. Single
+          // interaction routes into the existing Journal screen rather than
+          // building new tracking storage. See roadmap #51 / the approved sketch.
+          <View style={[styles.mythChallenge, { backgroundColor: c.honeyAmber + '14', borderColor: c.honeyAmber + '33' }]}>
+            <Text style={[styles.overline, { color: c.honeyAmber, marginBottom: 4 }]}>Something to try</Text>
+            <Text style={[styles.mythChallengeTitle, { color: c.text }]}>{myth.challenge.title}</Text>
+            {myth.challenge.instructions && (
+              <Text style={[styles.mythBody, { color: c.textMedium, marginTop: 6 }]}>{myth.challenge.instructions}</Text>
+            )}
+            {myth.challenge.track?.length > 0 && (
+              <View style={{ marginTop: 12 }}>
+                <Text style={[styles.overline, { color: c.textMuted, fontSize: 10, marginBottom: 6 }]}>Notice this week</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                  {myth.challenge.track.map(item => (
+                    <View key={item} style={[styles.trackTag, { backgroundColor: c.honeyAmber + '1A' }]}>
+                      <Text style={[styles.trackTagText, { color: c.honeyAmber }]}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            )}
+            <Pressable
+              style={{ marginTop: 14, alignSelf: 'flex-start' }}
+              onPress={() => router.push({ pathname: '/journal', params: { reflect: myth.challenge.title } })}
+            >
+              <Text style={{ color: c.honeyAmber, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Reflect in Journal →</Text>
+            </Pressable>
           </View>
         )}
       </View>
@@ -618,5 +651,25 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 14,
     borderLeftWidth: 3,
+  },
+  mythChallenge: {
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  mythChallengeTitle: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15.5,
+    lineHeight: 20,
+  },
+  trackTag: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  trackTagText: {
+    fontFamily: 'Inter_500Medium',
+    fontSize: 11.5,
   },
 });
