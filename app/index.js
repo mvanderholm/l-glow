@@ -8,7 +8,7 @@ import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadRecentCheckins } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
@@ -46,11 +46,16 @@ export default function Home() {
   const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [hasCheckedIn, setHasCheckedIn] = useState(null); // null = loading
   const scrollRef = useRef(null);
 
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
     loadOnboarded().then(flag => { if (!flag) router.replace('/welcome'); });
+    // 365-day window as a practical stand-in for "ever checked in" — same
+    // proxy app/you.js's stats already use, no dedicated "any row exists"
+    // query needed.
+    loadRecentCheckins(365).then(list => setHasCheckedIn(list.length > 0));
   }, []);
 
   // No more anonymous "what's your name" prompt — name only shows once
@@ -100,6 +105,15 @@ export default function Home() {
 
         {/* CTA button */}
         <CtaButton colors={c} />
+
+        {/* Getting started — only while there's something left to start.
+            Both steps are independently tappable in any order (no locking,
+            no streaks) — the only "guidance" is which row gets the
+            emphasized treatment. Disappears entirely once both are done,
+            not a permanent nag. */}
+        {savedDosha !== null && hasCheckedIn !== null && (!savedDosha || !hasCheckedIn) && (
+          <GettingStartedCard hasDosha={!!savedDosha} hasCheckedIn={hasCheckedIn} colors={c} />
+        )}
 
         {/* Affirmation card */}
         <View style={[styles.affirmCard, { backgroundColor: c.surface, ...card }]}>
@@ -243,6 +257,40 @@ function MythbusterCard({ colors: c, spacing }) {
       <Text style={[styles.mythBody, { color: c.textMedium, fontStyle: 'italic' }]}>
         Every week, Thea takes apart one wellness belief that deserves a closer look. Check back soon.
       </Text>
+    </View>
+  );
+}
+
+function GettingStartedCard({ hasDosha, hasCheckedIn, colors: c }) {
+  const router = useRouter();
+  const steps = [
+    { key: 'dosha', label: 'Find your type', sub: 'A short quiz to learn your constitution.', done: hasDosha, href: '/quiz' },
+    { key: 'checkin', label: 'Try today\'s check-in', sub: 'A minute to notice how you\'re doing.', done: hasCheckedIn, href: '/checkin' },
+  ];
+  const nextIndex = steps.findIndex(s => !s.done);
+
+  return (
+    <View style={[styles.gsCard, { backgroundColor: c.surface, ...card }]}>
+      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 10 }]}>A few places to begin</Text>
+      {steps.map((s, i) => {
+        const isNext = i === nextIndex;
+        return (
+          <Pressable
+            key={s.key}
+            style={[styles.gsRow, isNext && { backgroundColor: c.accent + '14' }]}
+            onPress={() => router.push(s.href)}
+          >
+            <View style={[styles.gsDot, { borderColor: s.done ? c.accent : c.border, backgroundColor: s.done ? c.accent : 'transparent' }]}>
+              {s.done && <Text style={{ color: '#FBF9F4', fontSize: 10, fontFamily: 'Inter_700Bold' }}>✓</Text>}
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.gsLabel, { color: c.text, opacity: s.done ? 0.5 : 1 }]}>{s.label}</Text>
+              {isNext && <Text style={[styles.gsSub, { color: c.textMuted }]}>{s.sub}</Text>}
+            </View>
+            {!s.done && <Text style={{ color: isNext ? c.accent : c.textMuted, fontSize: 16 }}>›</Text>}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -526,6 +574,38 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_600SemiBold',
     fontSize: 13,
     letterSpacing: 1.4,
+  },
+
+  gsCard: {
+    borderRadius: 26,
+    padding: 18,
+    marginBottom: 16,
+  },
+  gsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+  },
+  gsDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gsLabel: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 15,
+  },
+  gsSub: {
+    fontFamily: 'Inter_400Regular',
+    fontSize: 12.5,
+    marginTop: 2,
+    lineHeight: 17,
   },
 
   affirmCard: {

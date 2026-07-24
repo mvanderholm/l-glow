@@ -1371,6 +1371,21 @@ Everything else shipped in `app/prakriti-quiz.js`/`app/vikriti-quiz.js`:
 
 ---
 
+## Home screen — "Getting Started" card
+
+~~**53. New signups were getting lost with no guided first steps.**~~
+Source: Matt, July 23 2026 — "we think people are getting lost once they create a profile and login." Confirmed a real gap while scoping, not just a hunch: the dosha quiz wasn't linked anywhere on the home screen at all, and `CtaButton` always says "START MY DAY" straight to `/checkin` regardless of whether the user has a dosha result yet — a brand-new signee could check in without ever being pointed at the quiz.
+
+**Shapes discussed:** a single dynamic "next step" banner (lowest friction, but hides the app's breadth), a checklist card (shows the whole picture, but flat/task-list-feeling if every item gets equal visual weight), a full-screen guided wizard bolted onto signup (hardest to get lost in, but real friction and cuts against the quiet-app voice), reframing the dosha quiz as literally the last step of account creation, a coach-mark nav tour, and leaning on existing empty states instead of new UI. Landed on a merge of the first two.
+
+**Built:** `GettingStartedCard` in `app/index.js`, rendered between the CTA button and the Affirmation card. Two steps — "Find your type" (`/quiz`) and "Try today's check-in" (`/checkin`) — both independently tappable in any order, no locking, no streak/shame mechanics. Only the next undone step gets the emphasized treatment (tinted row, bold label, one-line description); done steps go quiet with a small filled checkmark dot. The whole card doesn't render until both `savedDosha` and a 365-day check-in lookback have resolved (avoids a flash of the wrong state), and disappears entirely — not just fades — once both steps are done, so it's a first-run aid, not a permanent nag. "Has ever checked in" uses `loadRecentCheckins(365).length > 0` as a practical proxy for "ever," same pattern `app/you.js`'s stats already use — no new query needed.
+
+Verified via Playwright across all three states (neither done, one done, both done) plus a tap-through on "Find your type" confirming it routes to `/quiz`.
+
+**Not done / explicitly out of scope for this pass:** the "START MY DAY" CTA button itself was left untouched (still always routes to check-in regardless of quiz status) — didn't want to change existing behavior nobody asked to change. If it turns out the CTA itself is part of the confusion, that's a separate follow-up.
+
+---
+
 ## Out of scope (staying that way unless explicitly reopened)
 
 - Monetization. The app's job is to build Thea's reputation and funnel to the center.
