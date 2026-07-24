@@ -1165,7 +1165,7 @@ Proposed shape:
 2. ~~Data structure: `@lglow/agni_result` in AsyncStorage — `agni_type`, `taken_at`~~ — done, `saveAgniResult`/`loadAgniResult` in `data/user/storage.js`, June 2026
 3. ~~Build quiz screen (can reuse guna-quiz.js pattern)~~ — done, `app/agni-quiz.js`, June 2026
 4. ~~Build result screen~~ — done, `app/agni-result.js`, June 2026. Result copy DRAFT from transcript 21 — Thea to review before launch. Questions are structural scaffolding — Thea must rewrite all before launch.
-5. Wire Agni result into recommendations as a secondary signal alongside dosha
+5. ~~Wire Agni result into recommendations as a secondary signal alongside dosha~~ — done July 23 2026. `app/recommendations.js`: new "Your Agni" section rendered right after "Your Constitution" when the user has taken the Agni quiz (reuses the existing `agniResults` content — name, subtitle, first 3 diet practices — nothing new invented), with a link through to the full `/agni-result` screen. If they haven't taken it, a soft one-line invite to `/agni-quiz` instead — no pressure, no blocking. Verified both states via Playwright.
 
 ---
 

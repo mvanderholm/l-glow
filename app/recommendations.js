@@ -6,10 +6,11 @@ import { recommendations, currentSeason } from '../data/content/recommendations'
 import { doshaInfo } from '../data/content/quiz';
 import { herbs, tasteColors } from '../data/content/herbs';
 import { asanas } from '../data/content/movement';
+import { agniResults } from '../data/content/agniQuiz';
 import { useTheme } from '../context/ThemeContext';
 import { routineAnchors, routines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
-import { loadDoshaResult } from '../data/user/storage';
+import { loadDoshaResult, loadAgniResult } from '../data/user/storage';
 import BackButton, { smartBack } from '../components/BackButton';
 import SearchButton from '../components/SearchButton';
 
@@ -23,10 +24,12 @@ export default function Recommendations() {
   const [selectedAsana, setSelectedAsana] = useState(null);
   const [redirecting, setRedirecting] = useState(false);
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines });
+  const [agniResult, setAgniResult] = useState(null); // null = loading, false = not taken
 
   useEffect(() => {
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
+    loadAgniResult().then(r => setAgniResult(r || false));
   }, []);
 
   useEffect(() => {
@@ -86,6 +89,45 @@ export default function Recommendations() {
           <Text style={type.body}>{info.constitution}</Text>
           <Text style={[type.body, { marginTop: spacing.sm }]}>{info.movementFocus}</Text>
         </Section>
+
+        {/* Agni — secondary signal alongside dosha, not a replacement for it.
+            Reuses the existing (Thea-review-pending) Agni result content
+            rather than inventing new copy. See roadmap #37 step 5. */}
+        {agniResult && (() => {
+          const agni = agniResults[agniResult.agniType] ?? agniResults.sama;
+          return (
+            <Section title="Your Agni" accent={agni.color}>
+              <Text style={[type.body, { fontWeight: '600' }]}>{agni.name} · {agni.subtitle}</Text>
+              {agni.practices?.diet?.length > 0 && (
+                <View style={{ marginTop: spacing.sm }}>
+                  {agni.practices.diet.slice(0, 3).map(tip => <Bullet key={tip}>{tip}</Bullet>)}
+                </View>
+              )}
+              <Pressable
+                style={{ marginTop: spacing.sm }}
+                onPress={() => router.push({
+                  pathname: '/agni-result',
+                  params: {
+                    dominant: agniResult.agniType,
+                    sama:    agniResult.counts?.sama    ?? 0,
+                    vishama: agniResult.counts?.vishama ?? 0,
+                    tikshna: agniResult.counts?.tikshna ?? 0,
+                    manda:   agniResult.counts?.manda   ?? 0,
+                  },
+                })}
+              >
+                <Text style={{ color: agni.color, fontWeight: '600', fontSize: 13 }}>See your full Agni picture →</Text>
+              </Pressable>
+            </Section>
+          );
+        })()}
+        {agniResult === false && (
+          <Pressable style={{ marginTop: spacing.lg }} onPress={() => router.push('/agni-quiz')}>
+            <Text style={[type.muted, { textAlign: 'center', fontStyle: 'italic' }]}>
+              Curious about your digestive fire too? Take the Agni check-in →
+            </Text>
+          </Pressable>
+        )}
 
         <Section title="Foods to Favor" accent={colors.sage}>
           {rec.foods.favor.map(f => <Bullet key={f}>{f}</Bullet>)}
