@@ -532,6 +532,8 @@ Built July 25 2026, once real data actually existed — checked a real early tes
 
 Verified via Playwright against both a realistic seeded dataset (matching the real tester's actual gap pattern) and the sparse/empty-state path — no console errors, no visual collisions after the axis-label fix.
 
+**Known limitation, not fixed — deliberately, July 25 2026.** Tested a dense synthetic dataset (85 daily check-ins) to check the other end of the range: the trend line itself still reads fine, but individual point markers overlap into indistinguishable clumps at repeated peak/valley values, and tap-to-select gets unreliable in those clusters. Nobody has this much history yet — the most active real tester has 9 check-ins over 6 weeks, not 85 daily — so this is left as-is rather than adding point-thinning/clustering complexity for a scenario that doesn't exist in real data. Matt's explicit call. Revisit once a real user's data actually gets dense enough for it to matter.
+
 ~~**44. Search — global, direction decided July 17 2026; scope/build still open.**~~
 Source: Matt, July 2026, originally flagged as the app's content footprint grows (Learn, Herbs, Mythbusters, Recipes, and eventually the Herb + Food Database in #36, Freedom with Food in #40, Weight Balancing in #41).
 
