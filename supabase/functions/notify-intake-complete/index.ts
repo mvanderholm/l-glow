@@ -33,7 +33,7 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 // Thea's real notification inbox. Change here if that ever changes —
 // deliberately not read from a client-supplied value.
 const NOTIFY_TO = 'thea@lglowliving.com';
-const NOTIFY_FROM = 'L. Glow <notifications@lglowliving.com>';
+const NOTIFY_FROM = 'L. Glow <hello@lglowliving.com>';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
