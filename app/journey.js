@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -6,8 +6,10 @@ import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { SEASONAL_CONTENT, LUNAR_CONTENT } from '../data/content/cycles';
-import { loadDoshaResult } from '../data/user/storage';
+import { loadDoshaResult, loadRecentCheckins } from '../data/user/storage';
+import { loadCheckinDimensions, refreshCheckinDimensions } from '../data/content/remote';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
+import CheckinTrendChart from '../components/CheckinTrendChart';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
 import SearchButton from '../components/SearchButton';
@@ -130,7 +132,7 @@ export default function Journey() {
           />
         )}
         {activeTab === 1 && <AyurvedaTab c={c} type={type} doshaResult={doshaResult} router={router} />}
-        {activeTab === 2 && <ComingSoonTab c={c} type={type} title="Habits" desc="Track your daily rituals over time and see what sticks." />}
+        {activeTab === 2 && <HabitsTab c={c} type={type} />}
         {activeTab === 3 && <CyclesTab c={c} type={type} />}
       </ScrollView>
     </SafeAreaView>
@@ -375,13 +377,86 @@ function CyclesTab({ c, type }) {
   );
 }
 
-function ComingSoonTab({ c, type, title, desc }) {
+// Roadmap #17 — held until real users had at least a week of data, per the
+// original note. Built July 25 2026 once that data existed; the exact shape
+// (gap-breaking, 90-day window, default dimension) was checked against a
+// real early tester's actual check-in history before deciding on any of it,
+// not assumed — see components/CheckinTrendChart.js's own comments.
+function HabitsTab({ c, type }) {
+  const [checkins, setCheckins] = useState(null); // null = loading
+  const [dimensions, setDimensions] = useState(null);
+  const [activeDim, setActiveDim] = useState('hunger'); // "the first diagnostically interesting view" per the original roadmap note
+
+  useEffect(() => {
+    loadRecentCheckins(90).then(list => setCheckins(list.slice().reverse())); // storage returns newest-first; the chart wants ascending
+    loadCheckinDimensions().then(setDimensions);
+    refreshCheckinDimensions().then(() => loadCheckinDimensions()).then(setDimensions);
+  }, []);
+
+  if (!checkins || !dimensions) {
+    return <View style={{ paddingVertical: 40, alignItems: 'center' }}><ActivityIndicator color={c.accent} /></View>;
+  }
+
+  const activeMeta = dimensions.find(d => d.key === activeDim) || dimensions[0];
+  const series = checkins
+    .filter(ci => ci[activeDim] != null)
+    .map(ci => ({ date: ci.date, value: ci[activeDim] }));
+
   return (
-    <View style={[styles.contentCard, { backgroundColor: c.surface, borderLeftColor: c.border, ...card }]}>
-      <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>Coming soon</Text>
-      <Text style={[type.h2, { color: c.text, marginBottom: 8 }]}>{title}</Text>
-      <Text style={[type.muted, { lineHeight: 22 }]}>{desc}</Text>
-    </View>
+    <>
+      <View style={{ marginBottom: 4 }}>
+        <Text style={[type.label, { color: c.textMuted }]}>Your habits</Text>
+        <Text style={[type.h1, { color: c.text, marginTop: 4 }]}>Check-in trends</Text>
+        <Text style={[type.muted, { marginTop: 6, lineHeight: 22 }]}>
+          How you've been showing up, one check-in at a time.
+        </Text>
+      </View>
+
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4, marginBottom: 4 }}>
+        {dimensions.map(d => {
+          const active = d.key === activeDim;
+          return (
+            <Pressable
+              key={d.key}
+              onPress={() => setActiveDim(d.key)}
+              style={{
+                paddingHorizontal: 13, paddingVertical: 7, borderRadius: 999,
+                borderWidth: 1, borderColor: active ? c.accent : c.border,
+                backgroundColor: active ? c.accent : c.surface,
+              }}
+            >
+              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 12.5, color: active ? '#FBF9F4' : c.textMedium }}>
+                {d.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View style={[styles.contentCard, { backgroundColor: c.surface, borderLeftColor: c.honeyAmber, ...card }]}>
+        {series.length >= 3 ? (
+          <>
+            <Text style={[type.label, { color: c.textMuted, marginBottom: activeMeta.hint ? 2 : 10 }]}>{activeMeta.label}</Text>
+            {activeMeta.hint && (
+              <Text style={[type.captionSm, { color: c.textMuted, marginBottom: 10 }]}>
+                1 = {activeMeta.hint.low} · 5 = {activeMeta.hint.high}
+              </Text>
+            )}
+            <CheckinTrendChart data={series} color={c.accent} />
+            <Text style={[type.caption, { color: c.textMuted, marginTop: 10, textAlign: 'center' }]}>
+              {series.length} check-ins logged
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>{activeMeta.label}</Text>
+            <Text style={[type.muted, { lineHeight: 22 }]}>
+              Not quite enough here yet — a few more check-ins and this will start to take real shape.
+            </Text>
+          </>
+        )}
+      </View>
+    </>
   );
 }
 

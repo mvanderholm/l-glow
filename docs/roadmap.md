@@ -518,8 +518,19 @@ Done — Check In is now its own pillar tab at `/checkin`.
 
 ## Architectural work — do when needed, not preemptively
 
-**17. Check-in history view.**
-Hold until real users have at least a week of data. A simple trend of morning hunger over time is the first diagnostically interesting view. Don't over-design before the data exists.
+~~**17. Check-in history view.**~~
+Built July 25 2026, once real data actually existed — checked a real early tester's actual check-in history first rather than guessing at the shape (9 check-ins over 6 weeks, irregular gaps up to 16 days, real value variance), and designed around what that showed rather than an assumed daily-density pattern.
+
+**Built:** new `components/CheckinTrendChart.js` (react-native-svg line+area chart, no new dependency) and `app/journey.js`'s Habits tab (previously a "Coming Soon" placeholder). A single dimension's trend shows at a time — Physical/Mental/Emotional/Morning hunger/Tongue coating, picked via chips, defaulting to Morning hunger per this item's own original note ("the first diagnostically interesting view"). Labels/hints load from the live-editable `checkin_dimensions` content (same pattern as Mythbusters etc, #50) rather than the static fallback, so they automatically match whatever Thea's renamed them to in the practitioner hub (confirmed live — her real current wording is noticeably more voice-y than the static file's plain labels, e.g. "Good Morning, Belly" for hunger).
+
+**Design decisions, made after looking at real data, not before:**
+- **Gaps in checking in break the line instead of interpolating across them** (threshold: 4+ days) — a straight line across a real 16-day gap would visually imply a trend that was never measured. Isolated points (no neighbor within the threshold) still render as a dot, just unconnected.
+- **90-day window**, not 30 — a tight 30-day window would have cut off more than half of the real test data used to validate this.
+- Y-axis is plain numeric (1/3/5) only. First attempt tried putting a dimension's hint text (e.g. "genuinely hungry") directly on the axis — caught via actual rendering + screenshot (not assumed) that it wraps into an unreadable vertical letter-stack in the narrow axis column and collides with the x-axis date label. Moved hint text to a normal-width caption line above the chart instead.
+- Empty state (fewer than 3 real points for the selected dimension) shows an encouraging line, not a sparse/broken-looking chart — "Not quite enough here yet — a few more check-ins and this will start to take real shape."
+- Tap-to-select any point shows its exact value + date below the chart (mobile-appropriate stand-in for hover, since there's no cursor on a phone); most recent point is selected by default.
+
+Verified via Playwright against both a realistic seeded dataset (matching the real tester's actual gap pattern) and the sparse/empty-state path — no console errors, no visual collisions after the axis-label fix.
 
 ~~**44. Search — global, direction decided July 17 2026; scope/build still open.**~~
 Source: Matt, July 2026, originally flagged as the app's content footprint grows (Learn, Herbs, Mythbusters, Recipes, and eventually the Herb + Food Database in #36, Freedom with Food in #40, Weight Balancing in #41).
