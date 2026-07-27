@@ -1411,6 +1411,28 @@ Real React Native + web SDKs from one vendor (most alternatives are web-first), 
 
 ---
 
+## Full QA pass, July 2026 — one deploy-pipeline incident, one code fix
+
+~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
+Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
+
+**Real bug found and fixed: `today.js`'s back button silently did nothing.** `/today` is only ever reached via `router.replace('/today')` from check-in, which clears navigation history — its back button used a plain `router.back()` (not the `smartBack()` pattern ~20 other screens already use), so tapping it had nothing to go back to and no-op'd. Not a hard trap (the bottom nav bar still renders on that screen and works fine), but a dead click on a control that visually promises to do something. Fixed: switched to `smartBack('/')`. Verified live before and after.
+
+**Bigger finding: production had been stale for 4+ days.** `l-glow.vercel.app` was serving a build from before the Herb Database (#36), the Getting Started card (#53), the check-in history view (#17), the User's Manual feature (#48), and everything else since — confirmed concretely (production's herbs page still showed the old 23-entry draft list and "Content pending Thea's review" copy). Root cause, traced via `vercel` CLI:
+- GitHub's default branch (`main`) is frozen at a single "Initial commit" — all 123+ real commits in this project's history have only ever gone to `master`.
+- Every deployment on record (Preview and the older Production ones alike) is attributed to the same CLI username, meaning deploys have been triggered manually via `vercel` CLI rather than automatic GitHub-push-triggered CI/CD.
+- The most recent several deploys landed as **Preview** rather than **Production** — almost certainly because they were run without the `--prod` flag.
+
+**Fixed for now:** ran `vercel --prod` manually, confirmed aliased to `l-glow.vercel.app`, verified live (Getting Started card, full 256-entry herb database, You tab's Manual section, today.js's fixed back button — all present, zero console errors on the production URL itself).
+
+⚠️ **Not fixed at the process level — this can silently recur.** Two real options, not decided:
+1. Make `--prod` deploys a hard habit after every push that should go live (cheapest, but relies on remembering every time — exactly what already lapsed once).
+2. Wire up Vercel's GitHub integration properly (set Production Branch to `master`, or actually adopt `main` as the real branch and retire `master`) so pushes auto-deploy to production without a manual step — the more robust fix, but a real one-time reconfiguration.
+
+Worth deciding before this happens again, especially since nothing about it is visible from inside this repo — the only way to catch it is to actually check the live URL against what's in `master`, which is exactly what this QA pass did.
+
+---
+
 ## Out of scope (staying that way unless explicitly reopened)
 
 - Monetization. The app's job is to build Thea's reputation and funnel to the center.
