@@ -1423,13 +1423,9 @@ Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Scr
 - Every deployment on record (Preview and the older Production ones alike) is attributed to the same CLI username, meaning deploys have been triggered manually via `vercel` CLI rather than automatic GitHub-push-triggered CI/CD.
 - The most recent several deploys landed as **Preview** rather than **Production** — almost certainly because they were run without the `--prod` flag.
 
-**Fixed for now:** ran `vercel --prod` manually, confirmed aliased to `l-glow.vercel.app`, verified live (Getting Started card, full 256-entry herb database, You tab's Manual section, today.js's fixed back button — all present, zero console errors on the production URL itself).
+**Fixed immediately:** ran `vercel --prod` manually, confirmed aliased to `l-glow.vercel.app`, verified live (Getting Started card, full 256-entry herb database, You tab's Manual section, today.js's fixed back button — all present, zero console errors on the production URL itself).
 
-⚠️ **Not fixed at the process level — this can silently recur.** Two real options, not decided:
-1. Make `--prod` deploys a hard habit after every push that should go live (cheapest, but relies on remembering every time — exactly what already lapsed once).
-2. Wire up Vercel's GitHub integration properly (set Production Branch to `master`, or actually adopt `main` as the real branch and retire `master`) so pushes auto-deploy to production without a manual step — the more robust fix, but a real one-time reconfiguration.
-
-Worth deciding before this happens again, especially since nothing about it is visible from inside this repo — the only way to catch it is to actually check the live URL against what's in `master`, which is exactly what this QA pass did.
+**Fixed at the root, same day.** Vercel's Git settings page (Settings → Git) didn't expose an editable "Production Branch" field in the current dashboard UI — checked directly, not assumed, and it genuinely wasn't there (only Connected Git Repository, PR/Commit Comments, deployment_status/repository_dispatch webhook toggles, Git Commits, LFS, Deploy Hooks). Rather than keep hunting Vercel's UI, went at it from the git side instead: confirmed `main` (Vercel's actual configured production branch — confirmed via its own "push to the `main` branch to update Production" messaging) held nothing but a single throwaway "Initial commit" (a 2-line README, checked before touching anything), or, then force-pushed `master`'s full history onto `main` (`git push origin master:main --force`) so the two are now identical — `main` is real and current, not a stale relic. Verified end-to-end: pushed the QA-findings commit with zero manual deploy step afterward, and Vercel auto-built and auto-promoted it to Production within a minute, confirmed live on `l-glow.vercel.app`. The recurring-risk problem is closed, not just patched — every future `git push origin master` now auto-deploys to production the way it always should have.
 
 ---
 
