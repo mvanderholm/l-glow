@@ -95,6 +95,20 @@ When adding features, prefer: local state + AsyncStorage over network calls; bui
 
 ---
 
+## Deploying to production — read this before pushing
+
+Vercel's Production Branch is `main`, but all real development happens on `master` — GitHub's default branch (`main`) was left frozen at a single placeholder "Initial commit" since this repo's creation, while every actual commit (100+) has only ever gone to `master`. Found and fixed July 2026 after production silently went 4+ days stale (deploys were landing as Preview, not Production, with nobody noticing since nothing about it is visible from inside this repo).
+
+**Every push meant to go live must update both branches:**
+```
+git push origin master && git push origin master:main
+```
+A plain `git push origin master` alone will NOT update production, no matter how many commits are in it — it only updates `master`, which Vercel doesn't watch. This local repo has a `git deploy` alias configured for this (`git config alias.deploy`), but that alias lives only in this machine's `.git/config`, not the repo — it will NOT exist on a fresh clone or another machine. Don't rely on it existing; use the full two-branch push command, or recreate the alias, on any new setup.
+
+We tried to fix this at the Vercel-settings level instead (Settings → Git → Production Branch) but the field wasn't exposed in the current dashboard UI, and the REST API rejected direct attempts to update `link.productionBranch`. Pushing to both branches is the actual fix in place, not a workaround — revisit only if Vercel's UI/API changes to make the branch-level fix reachable again.
+
+---
+
 ## Directory conventions
 
 - `app/` — expo-router screens. One file per route.
