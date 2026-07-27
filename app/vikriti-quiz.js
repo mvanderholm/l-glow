@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextI
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { loadVikritiQuestions, refreshVikritiQuestions } from '../data/content/remote';
-import { saveVikritiTierAnswers, loadVikritiProgress } from '../data/user/storage';
+import { saveVikritiTierAnswers, loadVikritiProgress, loadReproductiveHealthPref, saveReproductiveHealthPref } from '../data/user/storage';
 import { tierClosings } from '../data/content/tierClosings';
 import { useTheme } from '../context/ThemeContext';
 import BackButton, { smartBack } from '../components/BackButton';
@@ -71,10 +71,24 @@ export default function VikritiQuiz() {
     setCompleted(false);
     setSavedAnswers([]);
     setLocked(false);
-    setGatingDone(tier !== 'level3');
-    setIncludeWomensHealth(true);
     loadVikritiQuestions(tier).then(setQuestions);
     refreshVikritiQuestions(tier).then(() => loadVikritiQuestions(tier)).then(setQuestions);
+
+    if (tier !== 'level3') {
+      setGatingDone(true);
+      setIncludeWomensHealth(true);
+      return;
+    }
+    // Reuse a prior answer if this user already told us (here or in the
+    // intake form) whether they want this content — only ask fresh when
+    // nobody's ever been asked. See data/user/storage.js.
+    setGatingDone(false);
+    loadReproductiveHealthPref().then(pref => {
+      if (pref !== null) {
+        setIncludeWomensHealth(pref);
+        setGatingDone(true);
+      }
+    });
   }, [tier]);
 
   useEffect(() => {
@@ -110,10 +124,10 @@ export default function VikritiQuiz() {
         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, color: c.textMuted, textAlign: 'center', marginTop: 12, marginBottom: 28 }}>
           Want to answer questions about menstrual and reproductive health? Totally your call.
         </Text>
-        <Pressable style={[s.primaryBtn, { backgroundColor: c.accent, alignSelf: 'stretch' }]} onPress={() => { setIncludeWomensHealth(true); setDrafts([]); setIndex(0); setGatingDone(true); }}>
+        <Pressable style={[s.primaryBtn, { backgroundColor: c.accent, alignSelf: 'stretch' }]} onPress={() => { setIncludeWomensHealth(true); setDrafts([]); setIndex(0); setGatingDone(true); saveReproductiveHealthPref(true); }}>
           <Text style={s.primaryBtnText}>Yes, include those</Text>
         </Pressable>
-        <Pressable style={{ marginTop: 16 }} onPress={() => { setIncludeWomensHealth(false); setDrafts([]); setIndex(0); setGatingDone(true); }}>
+        <Pressable style={{ marginTop: 16 }} onPress={() => { setIncludeWomensHealth(false); setDrafts([]); setIndex(0); setGatingDone(true); saveReproductiveHealthPref(false); }}>
           <Text style={{ color: c.textMuted, fontFamily: 'Inter_500Medium', fontSize: 14 }}>Skip this section</Text>
         </Pressable>
       </SafeAreaView>

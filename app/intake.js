@@ -7,7 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import { BOOKING_URL } from '../data/booking';
 import { supabase } from '../config/supabase';
-import { syncToSupabase } from '../data/user/storage';
+import { syncToSupabase, loadReproductiveHealthPref, saveReproductiveHealthPref } from '../data/user/storage';
 import BackButton from '../components/BackButton';
 import Svg, { Path, Circle } from 'react-native-svg';
 
@@ -702,6 +702,49 @@ function AgeGate({ onAcknowledge, onSkip, colors: c }) {
   );
 }
 
+// ── Reproductive health content-relevance gate ─────────────────────────────
+// Distinct from the 18+ gate above — that one's about age, this one's about
+// whether this content is relevant to this person at all. Deliberately not
+// derived from Section 1's free-text gender identity field (see roadmap #33
+// and migration 20260726000000_reproductive_health_pref.sql for why).
+// Asked once; the answer is shared with Vikriti Level 3's Women's Health
+// section via wants_reproductive_health_questions on the user record, so
+// nobody answers this question twice across the app.
+
+function ReproductiveHealthGate({ onYes, onSkip, colors: c }) {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', padding: 28 }}>
+      <Text style={[fs.gateTitle, { color: c.text }]}>Before we continue</Text>
+      <Text style={[fs.gateBody, { color: c.textMedium }]}>
+        Want to answer questions about menstrual and reproductive health? Totally your call.
+      </Text>
+      <Pressable style={[fs.gateBtn, { backgroundColor: c.accent }]} onPress={onYes}>
+        <Text style={fs.gateBtnText}>Yes, include those</Text>
+      </Pressable>
+      <Pressable style={[fs.gateSkipBtn, { borderColor: c.border }]} onPress={onSkip}>
+        <Text style={[fs.gateSkipText, { color: c.textMuted }]}>Skip this section</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function ReproductiveOptedOutGate({ onInclude, onBack, colors: c }) {
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', padding: 28 }}>
+      <Text style={[fs.gateTitle, { color: c.text }]}>You skipped these before</Text>
+      <Text style={[fs.gateBody, { color: c.textMedium }]}>
+        You told us you didn't want menstrual and reproductive health questions. That's still saved — no need to answer again unless you've changed your mind.
+      </Text>
+      <Pressable style={[fs.gateBtn, { backgroundColor: c.accent }]} onPress={onInclude}>
+        <Text style={fs.gateBtnText}>Actually, I'd like to answer these</Text>
+      </Pressable>
+      <Pressable style={[fs.gateSkipBtn, { borderColor: c.border }]} onPress={onBack}>
+        <Text style={[fs.gateSkipText, { color: c.textMuted }]}>Never mind — back to sections</Text>
+      </Pressable>
+    </View>
+  );
+}
+
 // ── Section form view ──────────────────────────────────────────────────────
 
 function SectionForm({ section, intake, update, onBack, colors: c }) {
@@ -736,7 +779,7 @@ function SectionForm({ section, intake, update, onBack, colors: c }) {
 
 // ── Section list view ──────────────────────────────────────────────────────
 
-function SectionList({ intake, onSelect, colors: c }) {
+function SectionList({ intake, onSelect, reproductivePref, colors: c }) {
   const totalFilled   = SECTIONS.reduce((sum, s) => sum + (sectionProgress(s, intake)?.filled || 0), 0);
   const totalFields   = SECTIONS.reduce((sum, s) => sum + (sectionProgress(s, intake)?.total || 0), 0);
   const overallPct    = totalFields ? Math.round((totalFilled / totalFields) * 100) : 0;
@@ -764,6 +807,7 @@ function SectionList({ intake, onSelect, colors: c }) {
           const progress = sectionProgress(section, intake);
           const done = progress ? progress.filled === progress.total && progress.total > 0 : false;
           const isGated = section.gate && !intake.ageGateAcknowledged;
+          const isOptedOut = section.id === 'reproductive' && reproductivePref === false;
 
           return (
             <Pressable
@@ -783,11 +827,13 @@ function SectionList({ intake, onSelect, colors: c }) {
               </View>
               {isGated
                 ? <LockIcon color={c.textMuted} />
-                : progress
-                  ? <Text style={[fs.progressMini, { color: done ? c.accent : c.textMuted }]}>
-                      {progress.filled}/{progress.total}
-                    </Text>
-                  : null
+                : isOptedOut
+                  ? <Text style={[fs.progressMini, { color: c.textMuted, fontStyle: 'italic' }]}>Skipped</Text>
+                  : progress
+                    ? <Text style={[fs.progressMini, { color: done ? c.accent : c.textMuted }]}>
+                        {progress.filled}/{progress.total}
+                      </Text>
+                    : null
               }
               <ChevronIcon color={c.textMuted} />
             </Pressable>
@@ -828,8 +874,12 @@ export default function Intake() {
   const [activeId, setActiveId]     = useState(null);
   const [showGate, setShowGate]     = useState(false);
   const [pendingId, setPendingId]   = useState(null);
+  const [reproductivePref, setReproductivePref] = useState(null); // null = never asked; true/false = their answer
+  const [showReproGate, setShowReproGate]         = useState(false);
+  const [showReproOptedOutGate, setShowReproOptedOutGate] = useState(false);
 
   useEffect(() => { loadIntake().then(setIntake); }, []);
+  useEffect(() => { loadReproductiveHealthPref().then(setReproductivePref); }, []);
 
   const update = useCallback((key, val) => {
     setIntake(prev => {
@@ -851,20 +901,68 @@ export default function Intake() {
     if (section?.gate && !intake.ageGateAcknowledged) {
       setPendingId(id);
       setShowGate(true);
-    } else {
-      setActiveId(id);
+      return;
     }
+    if (id === 'reproductive' && reproductivePref === null) {
+      setPendingId(id);
+      setShowReproGate(true);
+      return;
+    }
+    if (id === 'reproductive' && reproductivePref === false) {
+      setPendingId(id);
+      setShowReproOptedOutGate(true);
+      return;
+    }
+    setActiveId(id);
   }
 
   function handleGateAcknowledge() {
     update('ageGateAcknowledged', true);
     setShowGate(false);
+    // Age gate passed — still need the separate content-relevance check for
+    // reproductive health before actually opening the section.
+    if (pendingId === 'reproductive' && reproductivePref === null) {
+      setShowReproGate(true);
+      return;
+    }
+    if (pendingId === 'reproductive' && reproductivePref === false) {
+      setShowReproOptedOutGate(true);
+      return;
+    }
     setActiveId(pendingId);
     setPendingId(null);
   }
 
   function handleGateSkip() {
     setShowGate(false);
+    setPendingId(null);
+  }
+
+  function handleReproGateYes() {
+    setReproductivePref(true);
+    saveReproductiveHealthPref(true);
+    setShowReproGate(false);
+    setActiveId(pendingId);
+    setPendingId(null);
+  }
+
+  function handleReproGateSkip() {
+    setReproductivePref(false);
+    saveReproductiveHealthPref(false);
+    setShowReproGate(false);
+    setPendingId(null);
+  }
+
+  function handleReproOptedOutInclude() {
+    setReproductivePref(true);
+    saveReproductiveHealthPref(true);
+    setShowReproOptedOutGate(false);
+    setActiveId(pendingId);
+    setPendingId(null);
+  }
+
+  function handleReproOptedOutBack() {
+    setShowReproOptedOutGate(false);
     setPendingId(null);
   }
 
@@ -879,6 +977,10 @@ export default function Intake() {
 
       {showGate ? (
         <AgeGate onAcknowledge={handleGateAcknowledge} onSkip={handleGateSkip} colors={c} />
+      ) : showReproGate ? (
+        <ReproductiveHealthGate onYes={handleReproGateYes} onSkip={handleReproGateSkip} colors={c} />
+      ) : showReproOptedOutGate ? (
+        <ReproductiveOptedOutGate onInclude={handleReproOptedOutInclude} onBack={handleReproOptedOutBack} colors={c} />
       ) : activeSection ? (
         <SectionForm
           section={activeSection}
@@ -888,7 +990,7 @@ export default function Intake() {
           colors={c}
         />
       ) : (
-        <SectionList intake={intake} onSelect={handleSelect} colors={c} />
+        <SectionList intake={intake} onSelect={handleSelect} reproductivePref={reproductivePref} colors={c} />
       )}
     </SafeAreaView>
   );

@@ -23,6 +23,27 @@ export async function syncToSupabase(fn) {
   }
 }
 
+// ── Reproductive/menstrual health question preference ──────────────────────
+// Shared between the intake form's Reproductive Health section and Vikriti
+// Level 3's Women's Health section — asked once, remembered everywhere after
+// that. Deliberately not derived from Section 1's free-text gender identity
+// field — see migration 20260726000000_reproductive_health_pref.sql for why.
+// null = never asked yet (caller should show the opt-in prompt); true/false
+// is their actual answer. Signed-out users get null every time — there's no
+// user row to persist against, so callers fall back to asking fresh, same as
+// this behaved everywhere before this shared version existed.
+
+export async function loadReproductiveHealthPref() {
+  const userId = await currentUserId();
+  if (!userId) return null;
+  const { data } = await supabase.from('users').select('wants_reproductive_health_questions').eq('id', userId).maybeSingle();
+  return data?.wants_reproductive_health_questions ?? null;
+}
+
+export async function saveReproductiveHealthPref(value) {
+  await syncToSupabase(userId => supabase.from('users').update({ wants_reproductive_health_questions: value }).eq('id', userId));
+}
+
 const KEYS = {
   PRIMARY_DOSHA:  '@lglow/primary_dosha',
   DOSHA_SCORES:   '@lglow/dosha_scores',
