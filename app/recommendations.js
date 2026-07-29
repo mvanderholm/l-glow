@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { recommendations, currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { herbs, tasteColors } from '../data/content/herbs';
+import { herbFoodDatabase } from '../data/content/herbFoodDatabase';
 import { asanas } from '../data/content/movement';
 import { agniResults } from '../data/content/agniQuiz';
 import { useTheme } from '../context/ThemeContext';
@@ -13,6 +13,29 @@ import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import { loadDoshaResult, loadAgniResult } from '../data/user/storage';
 import BackButton, { smartBack } from '../components/BackButton';
 import SearchButton from '../components/SearchButton';
+
+// data/content/recommendations.js's per-dosha herb lists (Thea's authored
+// content, untouched here) predate the 256-entry database (#36) and use
+// slightly different names for the same herb in a few spots — checked
+// directly against the real data, not assumed, July 2026. Two of the 21
+// referenced herbs genuinely aren't single entries in the new database at
+// all (not a naming issue): Brahmi/Bacopa was never captured, and Trikatu
+// is a 3-herb compound formula, not a single plant — those stay as plain
+// labels with no tap-to-detail rather than fabricating a match or quietly
+// dropping them from the dosha's herb list.
+const HERB_NAME_ALIASES = {
+  Ajwain: 'Ajwan',
+  Sesame: 'Sesame Seeds',
+  Guggulu: 'Guggul',
+  Mint: 'Mint / Peppermint',
+  Rose: 'Rose Flowers / Petals',
+  Tulsi: 'Basil / Tulsi',
+};
+
+function findHerb(name) {
+  const resolved = HERB_NAME_ALIASES[name] || name;
+  return herbFoodDatabase.find(h => h.name === resolved) || null;
+}
 
 export default function Recommendations() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -142,15 +165,25 @@ export default function Recommendations() {
             Tap any herb for details
           </Text>
           <View style={styles.chipRow}>
-            {rec.herbs.map(h => (
-              <Pressable
-                key={h}
-                style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
-                onPress={() => setSelectedHerb(herbs[h] ? { name: h, ...herbs[h] } : null)}
-              >
-                <Text style={styles.chipText}>{h}</Text>
-              </Pressable>
-            ))}
+            {rec.herbs.map(h => {
+              const found = findHerb(h);
+              if (!found) {
+                return (
+                  <View key={h} style={[styles.chip, { opacity: 0.5 }]}>
+                    <Text style={styles.chipText}>{h}</Text>
+                  </View>
+                );
+              }
+              return (
+                <Pressable
+                  key={h}
+                  style={({ pressed }) => [styles.chip, pressed && styles.chipPressed]}
+                  onPress={() => setSelectedHerb(found)}
+                >
+                  <Text style={styles.chipText}>{h}</Text>
+                </Pressable>
+              );
+            })}
           </View>
         </Section>
 
@@ -216,61 +249,74 @@ function HerbModal({ herb, onClose }) {
         <ScrollView showsVerticalScrollIndicator={false}>
           <Text style={type.label}>Herb & Spice</Text>
           <Text style={[type.h1, { marginTop: spacing.xs }]}>{herb.name}</Text>
-          <Text style={[type.muted, { fontStyle: 'italic', marginTop: 2 }]}>{herb.latin}</Text>
+          {herb.latinName && <Text style={[type.muted, { fontStyle: 'italic', marginTop: 2 }]}>{herb.latinName}</Text>}
 
           <View style={styles.row}>
-            <View style={styles.metaBlock}>
-              <Text style={styles.metaLabel}>Potency</Text>
-              <View style={[styles.potencyBadge, herb.potency === 'cooling' ? styles.potencyCool : styles.potencyWarm]}>
-                <Text style={styles.potencyText}>{herb.potency}</Text>
-              </View>
-            </View>
-
-            <View style={styles.metaBlock}>
-              <Text style={styles.metaLabel}>Balances</Text>
-              <View style={styles.doshaPills}>
-                {herb.balances.map(d => (
-                  <View key={d} style={[styles.doshaPill, { backgroundColor: doshaInfo[d]?.color + '33' }]}>
-                    <Text style={[styles.doshaPillText, { color: doshaInfo[d]?.color }]}>{d}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-
-            {herb.aggravates?.length > 0 && (
+            {herb.energy && (
               <View style={styles.metaBlock}>
-                <Text style={styles.metaLabel}>Use care with</Text>
-                <View style={styles.doshaPills}>
-                  {herb.aggravates.map(d => (
-                    <View key={d} style={[styles.doshaPill, { backgroundColor: colors.surfaceAlt }]}>
-                      <Text style={[styles.doshaPillText, { color: colors.textMuted }]}>{d}</Text>
-                    </View>
-                  ))}
+                <Text style={styles.metaLabel}>Energy</Text>
+                <View style={[styles.potencyBadge, herb.energy === 'cooling' ? styles.potencyCool : styles.potencyWarm]}>
+                  <Text style={styles.potencyText}>{herb.energy}</Text>
                 </View>
               </View>
             )}
-          </View>
 
-          <View style={styles.tasteRow}>
-            <Text style={styles.metaLabel}>Taste  </Text>
-            {herb.taste.map(t => (
-              <View key={t} style={[styles.tastePill, { backgroundColor: tasteColors[t] + '33', borderColor: tasteColors[t] + '66' }]}>
-                <Text style={[styles.tastePillText, { color: tasteColors[t] }]}>{t}</Text>
+            <View style={styles.metaBlock}>
+              <Text style={styles.metaLabel}>Dosha effect</Text>
+              <View style={styles.doshaPills}>
+                {herb.doshaImpact
+                  ? ['vata', 'pitta', 'kapha'].filter(d => herb.doshaImpact[d] !== 0).map(d => (
+                      <View key={d} style={[styles.doshaPill, { backgroundColor: doshaInfo[d]?.color + '33' }]}>
+                        <Text style={[styles.doshaPillText, { color: doshaInfo[d]?.color }]}>{d} {herb.doshaImpact[d] < 0 ? '↓' : '↑'}</Text>
+                      </View>
+                    ))
+                  : herb.doshaRaw ? (
+                      <View style={[styles.doshaPill, { backgroundColor: colors.surfaceAlt }]}>
+                        <Text style={[styles.doshaPillText, { color: colors.textMuted }]}>{herb.doshaRaw}</Text>
+                      </View>
+                    ) : null}
               </View>
-            ))}
+            </View>
           </View>
 
-          <Text style={[type.body, { marginTop: spacing.lg, lineHeight: 26 }]}>{herb.summary}</Text>
+          {herb.taste?.length > 0 && (
+            <View style={styles.tasteRow}>
+              <Text style={styles.metaLabel}>Taste  </Text>
+              <Text style={[type.muted, { textTransform: 'capitalize' }]}>{herb.taste.join(', ')}</Text>
+            </View>
+          )}
 
-          <View style={styles.useBlock}>
-            <Text style={styles.metaLabel}>How to use</Text>
-            <Text style={[type.body, { marginTop: spacing.xs, lineHeight: 24 }]}>{herb.use}</Text>
-          </View>
+          {herb.needsGuidance && (
+            <View style={{ marginTop: spacing.sm, alignSelf: 'flex-start', paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.pill, backgroundColor: (colors.terracotta || '#C97855') + '1A', borderWidth: 1, borderColor: (colors.terracotta || '#C97855') + '55' }}>
+              <Text style={{ color: colors.terracotta || '#C97855', fontWeight: '600', fontSize: 13 }}>Worth checking with a practitioner first</Text>
+            </View>
+          )}
 
-          {herb.prabhav && (
-            <View style={[styles.useBlock, { marginTop: spacing.md, borderLeftWidth: 2, borderLeftColor: colors.accent + '66' }]}>
-              <Text style={styles.metaLabel}>Prabhav — Special Power</Text>
-              <Text style={[type.muted, { marginTop: spacing.xs, lineHeight: 24, fontStyle: 'italic' }]}>{herb.prabhav}</Text>
+          {herb.medicineWhen?.length > 0 && (
+            <View style={styles.useBlock}>
+              <Text style={styles.metaLabel}>Medicine when</Text>
+              <Text style={[type.body, { marginTop: spacing.xs, lineHeight: 24 }]}>{herb.medicineWhen.join(', ')}</Text>
+            </View>
+          )}
+
+          {herb.poisonWhen?.length > 0 && (
+            <View style={[styles.useBlock, { marginTop: spacing.md }]}>
+              <Text style={styles.metaLabel}>Poison when</Text>
+              <Text style={[type.body, { marginTop: spacing.xs, lineHeight: 24 }]}>{herb.poisonWhen.join(', ')}</Text>
+            </View>
+          )}
+
+          {herb.actions?.length > 0 && (
+            <View style={[styles.useBlock, { marginTop: spacing.md }]}>
+              <Text style={styles.metaLabel}>Actions</Text>
+              <Text style={[type.body, { marginTop: spacing.xs, lineHeight: 24, textTransform: 'capitalize' }]}>{herb.actions.join(', ')}</Text>
+            </View>
+          )}
+
+          {herb.lglowTranslation && (
+            <View style={[styles.useBlock, { marginTop: spacing.md, borderLeftWidth: 2, borderLeftColor: colors.honeyAmber + '66' }]}>
+              <Text style={[styles.metaLabel, { color: colors.honeyAmber }]}>L. Glôw tip</Text>
+              <Text style={[type.muted, { marginTop: spacing.xs, lineHeight: 24, color: colors.text }]}>{herb.lglowTranslation}</Text>
             </View>
           )}
         </ScrollView>
