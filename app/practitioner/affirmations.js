@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { refreshAffirmations } from '../../data/content/remote';
+import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
 
 // Second admin-editable content type — same pattern as mythbusters.js.
 
@@ -98,7 +99,7 @@ export default function AffirmationsAdmin() {
 
   async function save() {
     if (!draft.id.trim() || !draft.text.trim()) {
-      Alert.alert('Missing fields', 'ID and text are required.');
+      notify('Missing fields', 'ID and text are required.');
       return;
     }
     setSaving(true);
@@ -108,24 +109,19 @@ export default function AffirmationsAdmin() {
     };
     const { error } = await supabase.from('affirmations').upsert(payload, { onConflict: 'id' });
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingId(null);
     await load();
     refreshAffirmations();
   }
 
-  function deleteItem(item) {
-    Alert.alert('Delete this affirmation?', `"${item.text}" — this can't be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('affirmations').delete().eq('id', item.id);
-          if (error) { Alert.alert('Couldn\'t delete', error.message); return; }
-          await load();
-          refreshAffirmations();
-        },
-      },
-    ]);
+  async function deleteItem(item) {
+    const ok = await confirmAsync('Delete this affirmation?', `"${item.text}" — this can't be undone.`);
+    if (!ok) return;
+    const { error } = await supabase.from('affirmations').delete().eq('id', item.id);
+    if (error) { notify('Couldn\'t delete', error.message); return; }
+    await load();
+    refreshAffirmations();
   }
 
   if (error) {

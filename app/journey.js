@@ -10,9 +10,7 @@ import { loadDoshaResult, loadRecentCheckins } from '../data/user/storage';
 import { loadCheckinDimensions, refreshCheckinDimensions } from '../data/content/remote';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import CheckinTrendChart from '../components/CheckinTrendChart';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
-import SearchButton from '../components/SearchButton';
+import Header from '../components/Header';
 
 const TABS = ['Overview', 'Ayurveda', 'Habits', 'Cycles'];
 
@@ -81,8 +79,6 @@ export default function Journey() {
   const { theme: { colors: c, spacing, type } } = useTheme();
   const router = useRouter();
   const { tab } = useLocalSearchParams();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
   const [activeTab, setActiveTab] = useState(0);
   const [checked, setChecked] = useState(() =>
     Object.fromEntries(PRACTICES.map(p => [p.id, p.done]))
@@ -99,12 +95,7 @@ export default function Journey() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
-        <Text style={[styles.hTitle, { color: c.text }]}>My Journey</Text>
-        <SearchButton color={c.text} style={styles.hBtn} />
-      </View>
+      <Header title="My Journey" left="menu" right="search" />
 
       {/* Tab strip */}
       <View style={{ paddingHorizontal: 20, paddingBottom: 12 }}>
@@ -462,11 +453,6 @@ function HabitsTab({ c, type }) {
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 
-function MenuIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-  </Svg>;
-}
 function SlidersIcon({ color }) {
   return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Path d="M4 6h16M4 12h16M4 18h16" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
@@ -514,9 +500,6 @@ function MoonIcon({ color, size }) {
 // ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
-  hBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
 
   tabRow:        { flexDirection: 'row', borderRadius: 999, padding: 3, gap: 2 },
   tabPill:       { flex: 1, paddingVertical: 7, paddingHorizontal: 2, borderRadius: 999, alignItems: 'center' },

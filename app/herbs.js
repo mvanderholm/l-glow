@@ -1,13 +1,11 @@
-import { View, Text, Pressable, ScrollView, Modal, TextInput, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ScrollView, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useMemo } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { herbFoodDatabase, HERB_FOOD_TYPES } from '../data/content/herbFoodDatabase';
 import { DOSHA_COLORS } from '../components/DoshaWheel';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
-import SearchButton from '../components/SearchButton';
+import Header from '../components/Header';
 import Svg, { Path } from 'react-native-svg';
 
 const ENERGY_COLOR = { heating: '#C97855', cooling: '#4A8FA8' };
@@ -24,8 +22,6 @@ function searchableText(h) {
 
 export default function Herbs() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
   const { herb } = useLocalSearchParams();
   const [selected, setSelected] = useState(null);
   const [query, setQuery] = useState('');
@@ -50,11 +46,7 @@ export default function Herbs() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={[herbStyles.header, { paddingHorizontal: 20 }]}>
-        {isWebMode ? <View style={herbStyles.hBtn} /> : <Pressable style={herbStyles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
-        <Text style={[herbStyles.hTitle, { color: c.text }]}>Herbs</Text>
-        <SearchButton color={c.text} style={herbStyles.hBtn} />
-      </View>
+      <Header title="Herbs" left="menu" right="search" />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Text style={[type.muted, { marginBottom: spacing.md, fontStyle: 'italic', lineHeight: 18 }]}>
           For education and wellness support only — not diagnosis or dosing instructions. Nothing here is for everybody; it's for somebody.
@@ -279,16 +271,3 @@ function HerbModal({ herb: h, onClose }) {
   );
 }
 
-function MenuIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
-
-const herbStyles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
-  hBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
-});

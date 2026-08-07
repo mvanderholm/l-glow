@@ -49,7 +49,7 @@ function buildRecap(answers) {
 }
 
 export default function PrakritiQuiz() {
-  const { theme: { colors: c } } = useTheme();
+  const { theme: { colors: c, spacing } } = useTheme();
   const params = useLocalSearchParams();
   const tier = TIER_ORDER.includes(params.tier) ? params.tier : 'foundation';
 
@@ -106,7 +106,7 @@ export default function PrakritiQuiz() {
     const sections = Object.keys(recap);
     return (
       <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
-        <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ padding: spacing.screenPad, paddingBottom: spacing.screenPadBottom }} showsVerticalScrollIndicator={false}>
           <Text style={[s.doneTitle, { color: c.text }]}>Nice — {TIER_LABELS[tier]} done.</Text>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 21, color: c.textMuted, marginTop: 8, marginBottom: 20 }}>
             {tierClosings.prakriti[tier]}

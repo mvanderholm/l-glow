@@ -43,8 +43,30 @@ function getRedirectUrl() {
 //   null      — confirmed not signed in
 //   object    — Supabase User object (signed in)
 
+// role mirrors the same three-state shape as user, checked once here instead
+// of in every screen that cares whether this account is a practitioner (the
+// hamburger drawer's Practitioner Hub entry, and app/practitioner/_layout.js's
+// route gate, which used to run this exact query itself — see that file):
+//   undefined — still checking, or no session yet
+//   null      — signed in but the role lookup failed or returned nothing
+//   string    — the real value from users.role ('user' or 'practitioner')
+//
+// Returns false if the account's own row is invisible under RLS — the only
+// signal the app gets that a soft-delete happened (a deactivated account's
+// own "read their own row" policy excludes it entirely, see
+// 20260730040000_soft_delete_users.sql). maybeSingle(), not single(), so a
+// missing row is `data: null` instead of throwing.
+async function fetchRole(userId, setRole) {
+  const { data, error } = await supabase.from('users').select('role').eq('id', userId).maybeSingle();
+  if (error) { console.error('Role fetch failed:', error.message, error); setRole(null); return true; }
+  if (!data) return false;
+  setRole(data.role ?? null);
+  return true;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser]           = useState(undefined);
+  const [role, setRole]           = useState(undefined);
   const [pendingRecovery, setPendingRecovery] = useState(false);
   // Set when an incoming auth link (magic link, email confirmation) fails to
   // exchange for a session — most commonly because it was opened on a
@@ -54,21 +76,36 @@ export function AuthProvider({ children }) {
   // device's local storage. So the recovery here is "request a new one from
   // this device," not "confirm your email and continue."
   const [magicLinkError, setMagicLinkError] = useState(null);
+  // Set when a session turns out to belong to a soft-deleted account — see
+  // fetchRole's comment. Forces sign-out the moment this is detected rather
+  // than leaving a half-authenticated session with no visible data.
+  const [accountDeactivated, setAccountDeactivated] = useState(false);
 
   // Initial session + auth state listener
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) { hydrateAll(session.user.id); migrateAll(session.user.id); }
-    });
+    async function handleSession(session) {
+      if (!session?.user) { setUser(null); setRole(null); return; }
+      const stillActive = await fetchRole(session.user.id, setRole);
+      if (!stillActive) {
+        await supabase.auth.signOut();
+        setUser(null);
+        setRole(null);
+        setAccountDeactivated(true);
+        return;
+      }
+      setUser(session.user);
+      hydrateAll(session.user.id);
+      migrateAll(session.user.id);
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY') {
         setPendingRecovery(true);
         return; // hold off on treating this as a normal signed-in state
       }
-      setUser(session?.user ?? null);
-      if (session?.user) { hydrateAll(session.user.id); migrateAll(session.user.id); }
+      handleSession(session);
     });
 
     return () => subscription.unsubscribe();
@@ -143,11 +180,18 @@ export function AuthProvider({ children }) {
     setMagicLinkError(null);
   }
 
+  function clearAccountDeactivated() {
+    setAccountDeactivated(false);
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
+      role,
+      isPractitioner: role === 'practitioner',
       pendingRecovery,
       magicLinkError,
+      accountDeactivated,
       signIn,
       signUp,
       signOut,
@@ -155,6 +199,7 @@ export function AuthProvider({ children }) {
       completeRecovery,
       sendMagicLink,
       clearMagicLinkError,
+      clearAccountDeactivated,
     }}>
       {children}
     </AuthContext.Provider>

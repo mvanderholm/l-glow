@@ -1292,6 +1292,8 @@ Some of that is earned — a real practice has more to offer than a single quiz 
 
 **Not scoped as a build task.** This is a flag for a future information-architecture pass — the same kind of conversation that produced the current 4-pillar bottom nav and the You-tab consolidation (see "Reworked July 13 2026" under Shipped) — not a specific fix to implement. Whether that means trimming the drawer, consolidating some of the duplicate entry points (Quizzes lives in both the drawer and You tab; Tools lives in both the drawer and its own tiles), or just accepting the sprawl as the cost of a full practice rather than a single-feature app is a call for Matt and Thea, not something to resolve unilaterally in code.
 
+**Dug in further, July 30 2026 — the overlap is now mapped exactly, not just gestured at.** Quizzes (drawer) turns out to be a near-total subset of You tab's "Your Assessments" section — same 6 items (My Dosha, Agni, Guna, Tongue Check, Prakriti, Vikriti), same order, You's version just adds Intake Form + Share with Thea. Tools (drawer) has zero destinations that aren't already reachable elsewhere: Recipes lives inside Nourishment, Herbs is its own bottom tab, Breathwork/Meditation/Self Massage live inside Movement, Journal is a Lifestyle-tab item and its own drawer entry, Tongue Check is in both Quizzes and You's Assessments, Learn/About Thea are drawer items directly. Tongue Check specifically has three separate entry points; Journal has three too. Matt's call: hold the structural question (trim the drawer? consolidate? accept it?) for an actual conversation with Thea rather than deciding unilaterally now — but fixed the one clear bug that surfaced along the way: Tools labeled its Journal tile "Journaling," every other entry point calls it "Journal." Now consistent.
+
 ---
 
 ## About Thea — image restructure
@@ -1471,6 +1473,27 @@ Source: Matt, July 26 2026. Closes out #33 build-order step 7, open since the in
 - `app/intake.js` — new content-relevance gate for the Reproductive Health section, layered on top of (not replacing) the existing 18+ age gate — both must clear before the section opens. Three states in the section list: never asked (tap to trigger the prompt), answered yes (normal section), answered no (shows "Skipped" instead of a fill count, and re-tapping offers a lightweight "actually, I'd like to answer these" way to change your mind rather than a dead end).
 
 **Verified end-to-end against live production Supabase, not just locally:** answered "skip" on a real signed-in test account, confirmed via a completely fresh page reload (not cached state) that the answer persisted and the section correctly shows the opted-out re-entry screen instead of re-asking. Couldn't directly observe the Vikriti Level 3 side reading the same answer in this pass — that account hadn't completed Levels 1–2, so Level 3 itself is locked for an unrelated reason — but it reads via the identical shared function, so this is considered verified by construction, not by assumption.
+
+---
+
+**59. In-app messaging between practitioner and client — sketched, not built.**
+Source: Matt, July 30 2026, asked what it would take to let Thea and a client message each other in-app, and how to do it cheapest.
+
+**Confirmed with Matt, July 30 2026: push notifications are a day-one requirement, not a later phase.** Revises the original sketch below — notifications are now core scope, not deferred.
+
+**What it entails, revised scope:**
+- A new `messages` table (sender, recipient/thread, body, timestamps) with RLS following the same consent-gated shape every other client-data table already uses.
+- Two screens — a thread view on the client side (new, doesn't exist yet — probably under You or its own nav entry) and a "Messages" tab in the Practitioner Hub's `ClientDetail` alongside Notes/Manual/etc.
+- Push token storage — a new table (or jsonb column on `users`) holding each signed-in device's Expo push token, registered via the `expo-notifications` package (not currently a dependency) with a permission-request step the app doesn't have anywhere yet.
+- A new Edge Function, e.g. `notify-new-message`, invoked from the client right after a message insert — same "client calls the function directly" pattern already used by `generate-ai-guidance`/`generate-user-manual`/`notify-intake-complete`, not a database trigger. Looks up the recipient's push token(s) and sends via Expo's push API.
+
+**Cheapest path: build it directly on Supabase + Expo's push service, no third-party vendor.** Twilio/Stream/SendBird/etc. (messaging) and OneSignal/Firebase Cloud Messaging (push) would all cost money or add a second vendor to duplicate what Supabase + Expo already cover for free. The only real cost here is engineering time.
+
+**Real-time vs. simple, still recommend starting simple — this is a separate question from push.** A push notification tells you a message arrived even with the app closed; that's independent of whether the open thread screen updates live or needs a reopen to refresh. True in-app real-time (Supabase Realtime subscriptions) is still a new pattern for this codebase and can wait — the push notification itself already solves "did I miss a message," so load-on-open for the thread view itself is still a reasonable v1.
+
+**One nuance push being core scope surfaces: web is meaningfully harder than native here.** Expo's push service covers iOS/Android cleanly. Browser push (for anyone using the Web View) is a different mechanism entirely — needs a service worker and VAPID keys, real extra work, not just "same thing on another platform." Worth deciding explicitly whether v1 ships native-only push (web users still get the message, just have to notice it by opening the app) or whether web push is truly required from day one too — that changes the estimate.
+
+**Not yet built.** No schema, no screens, no push infrastructure, no decision yet on where the client-side entry point lives in the nav (relevant to the still-open roadmap #58 conversation about nav surface area — one more destination to weigh there).
 
 ---
 

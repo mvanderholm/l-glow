@@ -16,6 +16,31 @@ export const cardSubtle = {
   elevation: 1,
 };
 
+// Shadow shape for accent-colored CTA buttons (shadowColor is theme-dependent
+// so it isn't baked in here — spread this alongside `{ shadowColor: c.accent }`
+// at the usage site). Previously hand-typed identically in three places
+// (app/index.js's ctaBtn and ReturningUser CTA, app/journal.js's save
+// button) — one of which hardcoded the shadow color as a literal hex that
+// only matched the cream/lavender themes, so the button's shadow was the
+// wrong color in Midnight.
+export const accentShadow = {
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.28,
+  shadowRadius: 18,
+  elevation: 4,
+};
+
+// Smaller variant of accentShadow, for secondary CTA buttons — same
+// shadowColor-is-dynamic rule applies. Found hand-typed identically (always
+// with the same hardcoded, Midnight-broken '#9A5151') in five files:
+// agni-result.js, guna-result.js, tongue-result.js, login.js, signup.js.
+export const accentShadowSm = {
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.22,
+  shadowRadius: 14,
+  elevation: 3,
+};
+
 function makeType(text, medium, muted, accent) {
   return {
     display:    { color: text,   fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 40, lineHeight: 41, letterSpacing: 0.2 },
@@ -34,7 +59,11 @@ function makeType(text, medium, muted, accent) {
 }
 
 const shared = {
-  spacing: { xs: 4, sm: 8, md: 16, lg: 20, xl: 32 },
+  // screenPad/screenPadBottom: the quiz/result screens' own consistent
+  // padding (agni-result, guna-result, tongue-result, prakriti-quiz,
+  // vikriti-quiz all independently agreed on 24/48) — named here so it's one
+  // source of truth instead of five copies of the same two numbers.
+  spacing: { xs: 4, sm: 8, md: 16, lg: 20, xl: 32, screenPad: 24, screenPadBottom: 48 },
   radius:  { sm: 12, md: 18, lg: 26, pill: 999 },
 };
 

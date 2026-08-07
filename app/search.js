@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import BackButton, { smartBack } from '../components/BackButton';
+import { smartBack } from '../components/BackButton';
+import Header from '../components/Header';
 import { buildContentIndex, buildUserIndex, matchEntries } from '../data/searchIndex';
 
 // Global search (#44). Content index (Learn/Herbs/Mythbusters/Recommendations/
@@ -17,7 +18,7 @@ import { buildContentIndex, buildUserIndex, matchEntries } from '../data/searchI
 const RESULT_CAP = 20;
 
 export default function Search() {
-  const { theme: { colors: c } } = useTheme();
+  const { theme: { colors: c, spacing } } = useTheme();
   const [query, setQuery] = useState('');
   const [contentIndex, setContentIndex] = useState([]);
   const [userIndex, setUserIndex] = useState([]);
@@ -39,11 +40,7 @@ export default function Search() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={[s.topHeader, { borderBottomColor: c.border }]}>
-        <BackButton onPress={() => smartBack('/')} color={c.text} />
-        <Text style={[s.topHeaderTitle, { color: c.text }]}>Search</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <Header title="Search" left="back" onBack={() => smartBack('/')} bordered />
 
       <View style={{ paddingHorizontal: 16, paddingTop: 16 }}>
         <TextInput
@@ -57,7 +54,7 @@ export default function Search() {
         />
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ padding: spacing.md, paddingBottom: spacing.screenPadBottom }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {query.trim() === '' && (
           <Text style={[s.hint, { color: c.textMuted }]}>
             Search Learn, Herbs, Mythbusters, your recommendations — plus your own journal and check-in notes.
@@ -123,8 +120,6 @@ function ResultGroup({ title, entries, onSelect, colors: c }) {
 }
 
 const s = StyleSheet.create({
-  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
 
   input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12, fontFamily: 'Inter_400Regular', fontSize: 15 },
   hint:  { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20 },

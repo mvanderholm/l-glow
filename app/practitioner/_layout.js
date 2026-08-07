@@ -1,10 +1,9 @@
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, ScrollView, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Slot, useRouter, usePathname } from 'expo-router';
-import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
-import { supabase } from '../../config/supabase';
-import BackButton from '../../components/BackButton';
+import { useAuth } from '../../context/AuthContext';
+import Header from '../../components/Header';
 
 // Practitioner hub — its own nav structure, separate from the rest of the
 // app (Matt's call, July 2026): a "Clients" dashboard plus an admin content
@@ -15,15 +14,16 @@ import BackButton from '../../components/BackButton';
 
 const NAV_ITEMS = [
   { key: 'clients',      label: 'Clients',      href: '/practitioner' },
-  { key: 'mythbusters',  label: 'Mythbusters',  href: '/practitioner/mythbusters' },
-  { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
-  { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
+  { key: 'dosha',        label: 'Dosha Quiz',   href: '/practitioner/dosha-questions' },
   { key: 'guna',         label: 'Guna Quiz',    href: '/practitioner/guna-questions' },
+  { key: 'prakriti',     label: 'Prakriti',     href: '/practitioner/prakriti-questions' },
+  { key: 'vikriti',      label: 'Vikriti',      href: '/practitioner/vikriti-questions' },
+  { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
+  { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
+  { key: 'mythbusters',  label: 'Mythbusters',  href: '/practitioner/mythbusters' },
   { key: 'intentions',   label: 'Intentions',   href: '/practitioner/intentions' },
   { key: 'routines',     label: 'Daily Rhythms',href: '/practitioner/routines' },
   { key: 'playlists',    label: 'Playlists',    href: '/practitioner/playlists' },
-  { key: 'prakriti', label: 'Prakriti', href: '/practitioner/prakriti-questions' },
-  { key: 'vikriti',  label: 'Vikriti',  href: '/practitioner/vikriti-questions' },
 ];
 
 // Sidebar nav on wide (desktop) screens, matching the pattern from the old
@@ -61,16 +61,13 @@ export default function PractitionerLayout() {
   const pathname = usePathname();
   const { width } = useWindowDimensions();
   const isWide = width >= SIDEBAR_BREAKPOINT;
-  const [authorized, setAuthorized] = useState(undefined); // undefined = checking, null = no session, false = signed in but not a practitioner, true = yes
-
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) { setAuthorized(null); return; }
-      const { data, error } = await supabase.from('users').select('role').eq('id', session.user.id).single();
-      if (error) console.error('Practitioner role check failed:', error.message, error);
-      setAuthorized(data?.role === 'practitioner');
-    });
-  }, []);
+  const { user, role, isPractitioner } = useAuth();
+  // Derived from AuthContext's user/role rather than its own query now — same
+  // undefined/null/false/true shape as before: undefined = still checking,
+  // null = no session, false = signed in but not a practitioner, true = yes.
+  const authorized = user === undefined || (user && role === undefined)
+    ? undefined
+    : user === null ? null : isPractitioner;
 
   if (authorized === undefined) {
     return (
@@ -88,11 +85,7 @@ export default function PractitionerLayout() {
     const noSession = authorized === null;
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-        <View style={[s.topHeader, { borderBottomColor: c.border }]}>
-          <BackButton onPress={() => router.back()} color={c.text} />
-          <Text style={[s.topHeaderTitle, { color: c.text }]}>Practitioner View</Text>
-          <View style={{ width: 40 }} />
-        </View>
+        <Header title="Practitioner View" left="back" onBack={() => router.back()} bordered />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, color: c.textMuted, textAlign: 'center' }}>
             {noSession ? "You'll need to sign in first." : 'This view is for practitioners only.'}
@@ -112,11 +105,7 @@ export default function PractitionerLayout() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={[s.topHeader, { borderBottomColor: c.border }]}>
-        <BackButton onPress={() => router.back()} color={c.text} />
-        <Text style={[s.topHeaderTitle, { color: c.text }]}>Practitioner Hub</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <Header title="Practitioner Hub" left="back" onBack={() => router.back()} bordered />
 
       {isWide ? (
         <View style={{ flex: 1, flexDirection: 'row' }}>
@@ -160,8 +149,6 @@ export default function PractitionerLayout() {
 }
 
 const s = StyleSheet.create({
-  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
   navBar:    { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   navBarContent: { flexDirection: 'row', paddingHorizontal: 16 },
   navBtn:    { paddingVertical: 12, paddingHorizontal: 14, marginRight: 4 },

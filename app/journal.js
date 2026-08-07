@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { card } from '../theme/index';
+import { card, accentShadow } from '../theme/index';
 import { supabase } from '../config/supabase';
 import { syncToSupabase } from '../data/user/storage';
-import BackButton from '../components/BackButton';
+import Header from '../components/Header';
 import Svg, { Path } from 'react-native-svg';
 
 const JOURNAL_PREFIX = '@lglow/journal2_';
@@ -51,7 +51,7 @@ export async function migrateJournal(userId) {
     const date = key.replace(JOURNAL_PREFIX, '');
     if (existingDates.has(date)) continue;
     const entry = JSON.parse(raw);
-    rows.push({ user_id: userId, date, grateful: entry.grateful || null, showed: entry.showed || null, tomorrow: entry.tomorrow || null });
+    rows.push({ user_id: userId, date, grateful: entry.grateful || null, showed: entry.showed || null, tomorrow: entry.tomorrow || null, platform: Platform.OS });
   }
   if (rows.length) await supabase.from('journal_entries').upsert(rows, { onConflict: 'user_id,date' });
 }
@@ -108,6 +108,7 @@ export default function Journal() {
       grateful: answers.grateful || null,
       showed: answers.showed || null,
       tomorrow: answers.tomorrow || null,
+      platform: Platform.OS,
     }, { onConflict: 'user_id,date' }));
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -115,12 +116,12 @@ export default function Journal() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        <BackButton onPress={() => router.back()} color={c.text} />
-        <Text style={[styles.hTitle, { color: c.text }]}>Journal</Text>
-        <Pressable style={styles.hBtn}><PlusIcon color={c.text} /></Pressable>
-      </View>
+      <Header
+        title="Journal"
+        left="back"
+        onBack={() => router.back()}
+        right={<Pressable style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}><PlusIcon color={c.text} /></Pressable>}
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
@@ -174,7 +175,7 @@ export default function Journal() {
 
               <Pressable
                 style={[styles.saveBtn, { backgroundColor: saved ? '#7AB878' : c.accent,
-                  shadowColor: c.accent, shadowOffset: {width:0,height:6}, shadowOpacity:0.28, shadowRadius:18, elevation:4 }]}
+                  shadowColor: c.accent, ...accentShadow }]}
                 onPress={save}
               >
                 <Text style={styles.saveBtnText}>{saved ? '✓  SAVED' : '✓  SAVE REFLECTION'}</Text>
@@ -256,9 +257,6 @@ function PlusIcon({ color }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
-  hBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
 
   formCard: { borderRadius: 26, overflow: 'hidden' },
   topRow:   { flexDirection: 'row', height: 80 },

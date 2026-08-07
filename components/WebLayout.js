@@ -2,7 +2,8 @@ import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useViewMode } from '../context/ViewModeContext';
-import { NAV_SECTIONS } from '../data/nav';
+import { useAuth } from '../context/AuthContext';
+import { NAV_SECTIONS, PRACTITIONER_NAV_SECTION } from '../data/nav';
 import { TABS as BOTTOM_TABS } from './BottomNav';
 import LogoMark from './LogoMark';
 
@@ -21,9 +22,13 @@ const NAV_SECTIONS_WITH_TABS = [
 export default function WebLayout({ children }) {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { setViewMode } = useViewMode();
+  const { isPractitioner } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const styles = makeStyles(c, spacing, radius);
+  // Same conditional append HamburgerDrawer.js does, kept in sync for the
+  // same reason NAV_SECTIONS itself is centralized (see data/nav.js).
+  const sections = isPractitioner ? [...NAV_SECTIONS_WITH_TABS, PRACTITIONER_NAV_SECTION] : NAV_SECTIONS_WITH_TABS;
 
   return (
     <View style={styles.root}>
@@ -35,7 +40,7 @@ export default function WebLayout({ children }) {
         </View>
 
         <View style={styles.nav}>
-          {NAV_SECTIONS_WITH_TABS.map((section, i) => (
+          {sections.map((section, i) => (
             <View key={i} style={[i > 0 && styles.navSection]}>
               {section.map(link => {
                 const active = !link.external && pathname === link.href;

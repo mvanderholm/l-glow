@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { supabase } from '../../config/supabase';
 
 // AsyncStorage stays the source of truth and the only thing any load*()
@@ -56,6 +57,13 @@ const KEYS = {
   CHECKIN_PREFIX: '@lglow/checkins/',
   INTENTION_PREFIX: '@lglow/intentions/',
   USER_NAME:      '@lglow/user_name',
+  FIRST_NAME:     '@lglow/first_name',
+  LAST_NAME:      '@lglow/last_name',
+  PHONE:          '@lglow/phone',
+  ADDRESS:        '@lglow/address',
+  CITY:           '@lglow/city',
+  STATE:          '@lglow/state',
+  ZIP:            '@lglow/zip',
   ONBOARDED:      '@lglow/onboarded',
   PRAKRITI_TIER_PREFIX: '@lglow/prakriti_answers/',
   VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
@@ -75,6 +83,7 @@ export async function saveDoshaResult(primaryDosha, scores, answers = null) {
     pitta_score: scores.pitta,
     kapha_score: scores.kapha,
     answers,
+    platform: Platform.OS,
   }));
 }
 
@@ -104,6 +113,7 @@ export async function saveGunaResult(dominant, scores, answers = null) {
     rajas_score: scores.rajas,
     tamas_score: scores.tamas,
     answers,
+    platform: Platform.OS,
   }));
 }
 
@@ -134,6 +144,7 @@ export async function saveAgniResult(agniType, counts, answers = null) {
     tikshna_count: counts.tikshna ?? 0,
     manda_count: counts.manda ?? 0,
     answers,
+    platform: Platform.OS,
   }));
 }
 
@@ -167,6 +178,7 @@ export async function saveTongueResult(reading, details) {
     shape: details.shape, size: details.size, color: details.color, coating: details.coating,
     ama_level: details.amaLevel ?? 0,
     signs: details.signs ?? [],
+    platform: Platform.OS,
   }));
 }
 
@@ -203,7 +215,7 @@ function vikritiTierKey(tier) {
 
 export async function savePrakritiTierAnswers(tier, answers) {
   await AsyncStorage.setItem(prakritiTierKey(tier), JSON.stringify({ answers, completedAt: new Date().toISOString() }));
-  await syncToSupabase(userId => supabase.from('prakriti_responses').insert({ user_id: userId, tier, answers }));
+  await syncToSupabase(userId => supabase.from('prakriti_responses').insert({ user_id: userId, tier, answers, platform: Platform.OS }));
 }
 
 export async function loadPrakritiTierAnswers(tier) {
@@ -219,7 +231,7 @@ export async function loadPrakritiProgress() {
 
 export async function saveVikritiTierAnswers(tier, answers) {
   await AsyncStorage.setItem(vikritiTierKey(tier), JSON.stringify({ answers, completedAt: new Date().toISOString() }));
-  await syncToSupabase(userId => supabase.from('vikriti_responses').insert({ user_id: userId, tier, answers }));
+  await syncToSupabase(userId => supabase.from('vikriti_responses').insert({ user_id: userId, tier, answers, platform: Platform.OS }));
 }
 
 export async function loadVikritiTierAnswers(tier) {
@@ -257,6 +269,73 @@ export async function loadUserName() {
   return AsyncStorage.getItem(KEYS.USER_NAME);
 }
 
+// --- Profile fields (first/last name, phone, address) ---
+// Same shape as display name above — local-first, best-effort sync to the
+// users table columns added in 20260730010000_user_profile_fields.sql.
+
+export async function saveFirstName(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.FIRST_NAME, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ first_name: trimmed }).eq('id', userId));
+}
+export async function loadFirstName() {
+  return AsyncStorage.getItem(KEYS.FIRST_NAME);
+}
+
+export async function saveLastName(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.LAST_NAME, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ last_name: trimmed }).eq('id', userId));
+}
+export async function loadLastName() {
+  return AsyncStorage.getItem(KEYS.LAST_NAME);
+}
+
+export async function savePhone(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.PHONE, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ phone: trimmed }).eq('id', userId));
+}
+export async function loadPhone() {
+  return AsyncStorage.getItem(KEYS.PHONE);
+}
+
+export async function saveAddress(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.ADDRESS, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ address: trimmed }).eq('id', userId));
+}
+export async function loadAddress() {
+  return AsyncStorage.getItem(KEYS.ADDRESS);
+}
+
+export async function saveCity(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.CITY, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ city: trimmed }).eq('id', userId));
+}
+export async function loadCity() {
+  return AsyncStorage.getItem(KEYS.CITY);
+}
+
+export async function saveState(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.STATE, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ state: trimmed }).eq('id', userId));
+}
+export async function loadState() {
+  return AsyncStorage.getItem(KEYS.STATE);
+}
+
+export async function saveZip(value) {
+  const trimmed = value.trim();
+  await AsyncStorage.setItem(KEYS.ZIP, trimmed);
+  await syncToSupabase(userId => supabase.from('users').update({ zip: trimmed }).eq('id', userId));
+}
+export async function loadZip() {
+  return AsyncStorage.getItem(KEYS.ZIP);
+}
+
 // --- Daily check-ins ---
 
 function checkinKey(date) {
@@ -281,6 +360,7 @@ export async function saveCheckin(values, note) {
     tongue: values.tongue ?? null,
     note: note || null,
     saved_at: entry.savedAt,
+    platform: Platform.OS,
   }, { onConflict: 'user_id,date' }));
 }
 
@@ -315,6 +395,7 @@ export async function saveIntention(text) {
     user_id: userId,
     date,
     text,
+    platform: Platform.OS,
   }, { onConflict: 'user_id,date' }));
 }
 
@@ -339,6 +420,7 @@ export async function hydrateFromSupabase() {
       hydrateAgniResult(userId),
       hydrateTongueResult(userId),
       hydrateUserName(userId),
+      hydrateProfileFields(userId),
       hydrateCheckins(userId),
       hydrateIntention(userId),
       hydratePrakritiTiers(userId),
@@ -425,6 +507,23 @@ async function hydrateUserName(userId) {
   if (data?.display_name) await AsyncStorage.setItem(KEYS.USER_NAME, data.display_name);
 }
 
+// One combined query/write for all four profile fields rather than four
+// separate hydrate functions (same "don't overwrite local" rule as
+// hydrateUserName above) — they live on the same users row anyway.
+async function hydrateProfileFields(userId) {
+  const { data } = await supabase.from('users').select('first_name, last_name, phone, address, city, state, zip').eq('id', userId).maybeSingle();
+  if (!data) return;
+  const pairs = [];
+  if (data.first_name && !(await loadFirstName())) pairs.push([KEYS.FIRST_NAME, data.first_name]);
+  if (data.last_name && !(await loadLastName())) pairs.push([KEYS.LAST_NAME, data.last_name]);
+  if (data.phone && !(await loadPhone())) pairs.push([KEYS.PHONE, data.phone]);
+  if (data.address && !(await loadAddress())) pairs.push([KEYS.ADDRESS, data.address]);
+  if (data.city && !(await loadCity())) pairs.push([KEYS.CITY, data.city]);
+  if (data.state && !(await loadState())) pairs.push([KEYS.STATE, data.state]);
+  if (data.zip && !(await loadZip())) pairs.push([KEYS.ZIP, data.zip]);
+  if (pairs.length) await AsyncStorage.multiSet(pairs);
+}
+
 async function hydrateCheckins(userId) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 365);
@@ -475,6 +574,7 @@ export async function migrateLocalToSupabase() {
       migrateAgniResult(userId),
       migrateTongueResult(userId),
       migrateUserName(userId),
+      migrateProfileFields(userId),
       migrateCheckins(userId),
       migrateIntentions(userId),
       migratePrakritiTiers(userId),
@@ -495,6 +595,7 @@ async function migrateDoshaResult(userId) {
   await supabase.from('dosha_results').insert({
     user_id: userId, dosha: local.dosha,
     vata_score: local.scores?.vata ?? 0, pitta_score: local.scores?.pitta ?? 0, kapha_score: local.scores?.kapha ?? 0,
+    platform: Platform.OS,
   });
 }
 
@@ -506,6 +607,7 @@ async function migrateGunaResult(userId) {
   await supabase.from('guna_results').insert({
     user_id: userId, dominant: local.dominant,
     sattva_score: local.scores?.sattva ?? 0, rajas_score: local.scores?.rajas ?? 0, tamas_score: local.scores?.tamas ?? 0,
+    platform: Platform.OS,
   });
 }
 
@@ -518,6 +620,7 @@ async function migrateAgniResult(userId) {
     user_id: userId, agni_type: local.agniType,
     sama_count: local.counts?.sama ?? 0, vishama_count: local.counts?.vishama ?? 0,
     tikshna_count: local.counts?.tikshna ?? 0, manda_count: local.counts?.manda ?? 0,
+    platform: Platform.OS,
   });
 }
 
@@ -530,6 +633,7 @@ async function migrateTongueResult(userId) {
     user_id: userId, reading: local.reading,
     shape: local.details?.shape, size: local.details?.size, color: local.details?.color, coating: local.details?.coating,
     ama_level: local.details?.amaLevel ?? 0, signs: local.details?.signs ?? [],
+    platform: Platform.OS,
   });
 }
 
@@ -539,7 +643,7 @@ async function migratePrakritiTiers(userId) {
     if (!local) return;
     const { count } = await supabase.from('prakriti_responses').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('tier', tier);
     if (count > 0) return; // Supabase already has history for this user+tier — don't guess which is newer
-    await supabase.from('prakriti_responses').insert({ user_id: userId, tier, answers: local.answers });
+    await supabase.from('prakriti_responses').insert({ user_id: userId, tier, answers: local.answers, platform: Platform.OS });
   }));
 }
 
@@ -549,7 +653,7 @@ async function migrateVikritiTiers(userId) {
     if (!local) return;
     const { count } = await supabase.from('vikriti_responses').select('id', { count: 'exact', head: true }).eq('user_id', userId).eq('tier', tier);
     if (count > 0) return;
-    await supabase.from('vikriti_responses').insert({ user_id: userId, tier, answers: local.answers });
+    await supabase.from('vikriti_responses').insert({ user_id: userId, tier, answers: local.answers, platform: Platform.OS });
   }));
 }
 
@@ -559,6 +663,23 @@ async function migrateUserName(userId) {
   const { data } = await supabase.from('users').select('display_name').eq('id', userId).maybeSingle();
   if (data?.display_name) return; // Supabase already has a name — don't overwrite
   await supabase.from('users').update({ display_name: local }).eq('id', userId);
+}
+
+async function migrateProfileFields(userId) {
+  const [firstName, lastName, phone, address, city, state, zip] = await Promise.all([
+    loadFirstName(), loadLastName(), loadPhone(), loadAddress(), loadCity(), loadState(), loadZip(),
+  ]);
+  if (!firstName && !lastName && !phone && !address && !city && !state && !zip) return;
+  const { data } = await supabase.from('users').select('first_name, last_name, phone, address, city, state, zip').eq('id', userId).maybeSingle();
+  const patch = {};
+  if (firstName && !data?.first_name) patch.first_name = firstName;
+  if (lastName && !data?.last_name) patch.last_name = lastName;
+  if (phone && !data?.phone) patch.phone = phone;
+  if (address && !data?.address) patch.address = address;
+  if (city && !data?.city) patch.city = city;
+  if (state && !data?.state) patch.state = state;
+  if (zip && !data?.zip) patch.zip = zip;
+  if (Object.keys(patch).length) await supabase.from('users').update(patch).eq('id', userId);
 }
 
 async function migrateCheckins(userId) {
@@ -579,6 +700,7 @@ async function migrateCheckins(userId) {
       physical: entry.values.physical, mental: entry.values.mental, emotional: entry.values.emotional,
       hunger: entry.values.hunger ?? null, tongue: entry.values.tongue ?? null,
       note: entry.note || null, saved_at: entry.savedAt,
+      platform: Platform.OS,
     });
   }
   if (rows.length) await supabase.from('checkins').upsert(rows, { onConflict: 'user_id,date' });
@@ -596,7 +718,7 @@ async function migrateIntentions(userId) {
     if (!text) continue;
     const date = key.replace(KEYS.INTENTION_PREFIX, '');
     if (existingDates.has(date)) continue;
-    rows.push({ user_id: userId, date, text });
+    rows.push({ user_id: userId, date, text, platform: Platform.OS });
   }
   if (rows.length) await supabase.from('intentions').upsert(rows, { onConflict: 'user_id,date' });
 }

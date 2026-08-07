@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { card, accentShadowSm } from '../theme/index';
 import { tongueReadings, amaReadings, tongueMap, tongueSignList, computeReading } from '../data/content/tongueCheck';
 import BackButton, { smartBack } from '../components/BackButton';
 
@@ -19,7 +20,7 @@ function Bullet({ text, color }) {
 }
 
 export default function TongueResult() {
-  const { theme: { colors: c } } = useTheme();
+  const { theme: { colors: c, spacing } } = useTheme();
   const params = useLocalSearchParams();
   const { shape, size, color, coating, ama: amaParam, signs: signsParam } = params;
   // tongue-check.js always sends at least a shape param on a real
@@ -47,7 +48,7 @@ export default function TongueResult() {
 
   if (redirecting) {
     return (
-      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg, alignItems: 'center', justifyContent: 'center', padding: spacing.lg }}>
         <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted }}>First things first</Text>
         <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, color: c.text, marginTop: 8, textAlign: 'center' }}>Let's take a look at your tongue.</Text>
         <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 14, color: c.textMuted, marginTop: 8 }}>Taking you to the check…</Text>
@@ -67,7 +68,7 @@ export default function TongueResult() {
         <Text style={[s.summary, { color: c.textMedium }]}>{reading.summary}</Text>
 
         {/* Pattern clues */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.sectionLabel, { color: c.textMuted }]}>What this pattern often calls for</Text>
           {reading.clues.map((clue, i) => (
             <Bullet key={i} text={clue} color={reading.color} />
@@ -83,7 +84,7 @@ export default function TongueResult() {
 
         {/* Other signs */}
         {notedSigns.length > 0 && (
-          <View style={[s.card, { backgroundColor: c.surface }]}>
+          <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
             <Text style={[s.sectionLabel, { color: c.textMuted }]}>Other signs you noticed</Text>
             {notedSigns.map(sign => (
               <View key={sign.id} style={s.signItem}>
@@ -95,7 +96,7 @@ export default function TongueResult() {
         )}
 
         {/* Tongue map */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.sectionLabel, { color: c.textMuted }]}>Tongue map</Text>
           {tongueMap.map(({ zone, meaning }) => (
             <View key={zone} style={s.mapRow}>
@@ -117,7 +118,7 @@ export default function TongueResult() {
 
         {/* CTA */}
         <Pressable
-          style={[s.btn, { backgroundColor: c.accent }]}
+          style={[s.btn, { backgroundColor: c.accent, shadowColor: c.accent }]}
           onPress={() => router.replace('/')}
         >
           <Text style={s.btnText}>DONE  ›</Text>
@@ -139,14 +140,14 @@ const s = StyleSheet.create({
   readingName: { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 48, lineHeight: 54, marginBottom: 6 },
   summary:     { fontFamily: 'Inter_400Regular', fontSize: 15.5, lineHeight: 25, marginBottom: 20 },
 
-  card:         { borderRadius: 20, padding: 20, marginBottom: 12 },
+  card:         { borderRadius: 26, padding: 20, marginBottom: 12 },
   sectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 14 },
 
   bulletRow:  { flexDirection: 'row', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
   dot:        { width: 6, height: 6, borderRadius: 3, marginTop: 9, flexShrink: 0 },
   bulletText: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 23 },
 
-  amaCard:  { borderRadius: 20, padding: 20, marginBottom: 12, borderLeftWidth: 3 },
+  amaCard:  { borderRadius: 26, padding: 20, marginBottom: 12, borderLeftWidth: 3 },
   amaLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 15, marginBottom: 6 },
   amaDesc:  { fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 23 },
 
@@ -158,7 +159,7 @@ const s = StyleSheet.create({
   mapZone:   { fontFamily: 'Inter_600SemiBold', fontSize: 13, width: 90, flexShrink: 0 },
   mapMeaning:{ flex: 1, fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 21 },
 
-  closingCard:   { borderRadius: 20, padding: 20, marginBottom: 20 },
+  closingCard:   { borderRadius: 26, padding: 20, marginBottom: 20 },
   closingPhrase: { fontFamily: 'PlayfairDisplay_400Regular', fontStyle: 'italic', fontSize: 18, lineHeight: 26, marginBottom: 10 },
   closingBody:   { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 22 },
 
@@ -167,11 +168,7 @@ const s = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#9A5151',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-    elevation: 3,
+    ...accentShadowSm,
   },
   btnText:    { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: 1.4 },
   retakeBtn:  { alignSelf: 'center', paddingVertical: 10 },

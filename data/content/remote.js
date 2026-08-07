@@ -4,6 +4,7 @@ import { mythbusters as staticMythbusters } from './mythbusters';
 import { affirmations as staticAffirmations } from './affirmations';
 import { checkinDimensions as staticCheckinDimensions } from './checkinDimensions';
 import { gunaQuestions as staticGunaQuestions } from './gunaQuiz';
+import { quizQuestions as staticDoshaQuestions } from './quiz';
 import { intentions as staticIntentions } from './intentions';
 import { routineAnchors as staticRoutineAnchors, routines as staticRoutines } from './routines';
 import { playlists as staticPlaylists } from './music';
@@ -26,6 +27,7 @@ const CACHE_KEYS = {
   affirmations:       '@lglow/content_cache/affirmations',
   checkinDimensions:  '@lglow/content_cache/checkin_dimensions',
   gunaQuestions:      '@lglow/content_cache/guna_questions',
+  doshaQuestions:     '@lglow/content_cache/dosha_questions',
   intentions:         '@lglow/content_cache/intentions',
   routines:           '@lglow/content_cache/routines',
   playlists:          '@lglow/content_cache/playlists',
@@ -136,6 +138,42 @@ export async function refreshGunaQuestions() {
     await AsyncStorage.setItem(CACHE_KEYS.gunaQuestions, JSON.stringify(data.map(rowToGunaQuestion)));
   } catch (err) {
     console.warn('Refresh guna questions failed (using cached/static):', err.message);
+  }
+}
+
+// Standalone Dosha Quiz (`/quiz`, 14 questions) — same flattened-columns
+// shape as guna_questions (each question always has exactly one option per
+// dosha), plus `section` (for quiz.js's SECTION_LABELS grouping) and
+// `multi_select` (skin/hair allow checking more than one option).
+function rowToDoshaQuestion(row) {
+  return {
+    id: row.id,
+    section: row.section ?? undefined,
+    prompt: row.prompt,
+    multiSelect: row.multi_select,
+    options: [
+      { label: row.vata_label, dosha: 'vata' },
+      { label: row.pitta_label, dosha: 'pitta' },
+      { label: row.kapha_label, dosha: 'kapha' },
+    ],
+  };
+}
+
+export async function loadDoshaQuestions() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.doshaQuestions);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticDoshaQuestions;
+}
+
+export async function refreshDoshaQuestions() {
+  try {
+    const { data, error } = await supabase.from('dosha_questions').select('*').order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.doshaQuestions, JSON.stringify(data.map(rowToDoshaQuestion)));
+  } catch (err) {
+    console.warn('Refresh dosha questions failed (using cached/static):', err.message);
   }
 }
 

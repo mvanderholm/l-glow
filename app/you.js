@@ -1,19 +1,21 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Switch } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
-import { loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadUserName, loadRecentCheckins, loadPrakritiProgress, loadVikritiProgress } from '../data/user/storage';
+import {
+  loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadRecentCheckins, loadPrakritiProgress, loadVikritiProgress,
+  loadUserName, saveUserName, loadFirstName, saveFirstName, loadLastName, saveLastName, loadPhone, savePhone, loadAddress, saveAddress,
+  loadCity, saveCity, loadState, saveState, loadZip, saveZip,
+} from '../data/user/storage';
 import { tongueReadings } from '../data/content/tongueCheck';
 import { agniResults } from '../data/content/agniQuiz';
 import { gunaResults } from '../data/content/gunaQuiz';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
-import SearchButton from '../components/SearchButton';
+import Header from '../components/Header';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 function computeStats(checkins) {
@@ -52,6 +54,23 @@ function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+function Field({ label, value, onChangeText, colors: c, placeholder, keyboardType, autoCapitalize, containerStyle }) {
+  return (
+    <View style={[{ marginBottom: 12 }, containerStyle]}>
+      <Text style={[styles.fieldLabel, { color: c.textMuted }]}>{label}</Text>
+      <TextInput
+        style={[styles.fieldInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={c.textMuted}
+        keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
+      />
+    </View>
+  );
+}
+
 // Colored result pill — every result type already carries its own canonical
 // color in its content data (DOSHA_COLORS, gunaResults[x].color, etc.), so
 // this reuses that instead of inventing a separate badge palette.
@@ -72,8 +91,6 @@ const SETTINGS = [
 export default function You() {
   const { theme: { colors: c, spacing } } = useTheme();
   const router = useRouter();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
   const { user, signOut } = useAuth();
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
@@ -83,6 +100,16 @@ export default function You() {
   const [vikritiProgress, setVikritiProgress]   = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
+  const [firstName, setFirstName]   = useState('');
+  const [lastName, setLastName]     = useState('');
+  const [phone, setPhone]           = useState('');
+  const [address, setAddress]       = useState('');
+  const [city, setCity]             = useState('');
+  const [state, setState]           = useState('');
+  const [zip, setZip]               = useState('');
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileDraft, setProfileDraft] = useState(null);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [consented, setConsented]   = useState(false);
   const [consentBusy, setConsentBusy] = useState(false);
   const [manualAvailable, setManualAvailable] = useState(false);
@@ -95,10 +122,46 @@ export default function You() {
     loadPrakritiProgress().then(setPrakritiProgress);
     loadVikritiProgress().then(setVikritiProgress);
     loadUserName().then(n => { if (n) setUserName(n); });
+    loadFirstName().then(v => setFirstName(v || ''));
+    loadLastName().then(v => setLastName(v || ''));
+    loadPhone().then(v => setPhone(v || ''));
+    loadAddress().then(v => setAddress(v || ''));
+    loadCity().then(v => setCity(v || ''));
+    loadState().then(v => setState(v || ''));
+    loadZip().then(v => setZip(v || ''));
     loadRecentCheckins(365).then(list => {
       setStats(computeStats(list));
     });
   }, []);
+
+  function startEditProfile() {
+    setProfileDraft({ firstName, lastName, displayName: userName, phone, address, city, state, zip });
+    setEditingProfile(true);
+  }
+
+  async function saveProfile() {
+    setSavingProfile(true);
+    await Promise.all([
+      saveFirstName(profileDraft.firstName),
+      saveLastName(profileDraft.lastName),
+      saveUserName(profileDraft.displayName),
+      savePhone(profileDraft.phone),
+      saveAddress(profileDraft.address),
+      saveCity(profileDraft.city),
+      saveState(profileDraft.state),
+      saveZip(profileDraft.zip),
+    ]);
+    setFirstName(profileDraft.firstName.trim());
+    setLastName(profileDraft.lastName.trim());
+    setUserName(profileDraft.displayName.trim());
+    setPhone(profileDraft.phone.trim());
+    setAddress(profileDraft.address.trim());
+    setCity(profileDraft.city.trim());
+    setState(profileDraft.state.trim());
+    setZip(profileDraft.zip.trim());
+    setSavingProfile(false);
+    setEditingProfile(false);
+  }
 
   useEffect(() => {
     if (!user) { setConsented(false); return; }
@@ -125,12 +188,7 @@ export default function You() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
-        <Text style={[styles.hTitle, { color: c.text }]}>You</Text>
-        <SearchButton color={c.text} style={styles.hBtn} />
-      </View>
+      <Header title="You" left="menu" right="search" />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 
@@ -140,16 +198,42 @@ export default function You() {
             <View style={[styles.avatarInner, { backgroundColor: c.surfaceAlt }]}>
               <ImgPlaceholder color={c.textMuted} />
             </View>
-            <View style={[styles.editBadge, { backgroundColor: c.accent, borderColor: c.bg }]}>
+            <Pressable style={[styles.editBadge, { backgroundColor: c.accent, borderColor: c.bg }]} onPress={startEditProfile} hitSlop={6}>
               <PenIcon color="#FBF9F4" size={10} />
-            </View>
+            </Pressable>
           </View>
-          <Text style={[styles.name, { color: c.text }]}>{userName || 'You'}</Text>
-          <Text style={[styles.tagline, { color: c.textMedium }]}>Wellness is a return to you.</Text>
-          {user && (
-            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, color: c.textMuted, marginTop: 4 }} numberOfLines={1}>
-              {user.email}
-            </Text>
+
+          {editingProfile ? (
+            <View style={[styles.profileEditCard, { backgroundColor: c.surface, ...card }]}>
+              <Field colors={c} label="First name" value={profileDraft.firstName} onChangeText={t => setProfileDraft({ ...profileDraft, firstName: t })} />
+              <Field colors={c} label="Last name" value={profileDraft.lastName} onChangeText={t => setProfileDraft({ ...profileDraft, lastName: t })} />
+              <Field colors={c} label="Display name" value={profileDraft.displayName} onChangeText={t => setProfileDraft({ ...profileDraft, displayName: t })} placeholder="What should we call you?" />
+              <Field colors={c} label="Phone" value={profileDraft.phone} onChangeText={t => setProfileDraft({ ...profileDraft, phone: t })} keyboardType="phone-pad" />
+              <Field colors={c} label="Address" value={profileDraft.address} onChangeText={t => setProfileDraft({ ...profileDraft, address: t })} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <Field colors={c} label="City" value={profileDraft.city} onChangeText={t => setProfileDraft({ ...profileDraft, city: t })} containerStyle={{ flex: 2, marginBottom: 12 }} />
+                <Field colors={c} label="State" value={profileDraft.state} onChangeText={t => setProfileDraft({ ...profileDraft, state: t })} containerStyle={{ flex: 1, marginBottom: 12 }} />
+                <Field colors={c} label="Zip" value={profileDraft.zip} onChangeText={t => setProfileDraft({ ...profileDraft, zip: t })} keyboardType="number-pad" containerStyle={{ flex: 1, marginBottom: 12 }} />
+              </View>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+                <Pressable style={[styles.profileSaveBtn, { flex: 1, backgroundColor: c.accent }]} onPress={saveProfile} disabled={savingProfile}>
+                  <Text style={styles.profileSaveBtnText}>{savingProfile ? 'Saving…' : 'Save'}</Text>
+                </Pressable>
+                <Pressable style={[styles.profileSaveBtn, { flex: 1, backgroundColor: c.surfaceAlt }]} onPress={() => setEditingProfile(false)} disabled={savingProfile}>
+                  <Text style={[styles.profileSaveBtnText, { color: c.textMuted }]}>Cancel</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : (
+            <>
+              <Text style={[styles.name, { color: c.text }]}>{userName || 'You'}</Text>
+              <Text style={[styles.tagline, { color: c.textMedium }]}>Wellness is a return to you.</Text>
+              {user && (
+                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, color: c.textMuted, marginTop: 4 }} numberOfLines={1}>
+                  {user.email}
+                </Text>
+              )}
+            </>
           )}
         </View>
 
@@ -432,11 +516,6 @@ function ImgPlaceholder({ color }) {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
-function MenuIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-  </Svg>;
-}
 function SlidersIcon({ color }) {
   return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
     <Path d="M4 6h16M4 12h16M4 18h16" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
@@ -558,9 +637,6 @@ function SignOutIcon({ color, size }) {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
-  hBtn:   { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
 
   avatarSection: { alignItems: 'center', paddingVertical: 20 },
   avatarRing:    { width: 88, height: 88, borderRadius: 44, borderWidth: 1.5, position: 'relative', marginBottom: 12 },
@@ -568,6 +644,12 @@ const styles = StyleSheet.create({
   editBadge:     { position: 'absolute', bottom: 0, right: 0, width: 27, height: 27, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   name:          { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 28, lineHeight: 36 },
   tagline:       { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 15.5, fontStyle: 'italic', marginTop: 2 },
+
+  profileEditCard: { width: '100%', borderRadius: 22, padding: 18, marginTop: 4 },
+  fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 },
+  fieldInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: 'Inter_400Regular' },
+  profileSaveBtn: { borderRadius: 999, paddingVertical: 10, alignItems: 'center' },
+  profileSaveBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 
   wheelCard:     { borderRadius: 26, padding: 20, alignItems: 'center', marginBottom: 14 },
   wheelLabel:    { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.98, textTransform: 'uppercase', marginBottom: 20 },

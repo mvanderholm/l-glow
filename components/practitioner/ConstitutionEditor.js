@@ -1,8 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert, Switch } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Switch } from 'react-native';
 import { useState, useEffect } from 'react';
+import ReorderableList from './ReorderableList';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
+import { notify, confirmAsync } from './webSafeAlert';
 
 // Shared editor for prakriti_questions / vikriti_questions. Originally
 // split into this full-CRUD screen plus a separate fast-tagging screen
@@ -169,6 +171,45 @@ function EditorForm({ draft, setDraft, isNew, colors: c, onSave, onCancel, savin
   );
 }
 
+// Shared row rendering for both the static list (editing/filtered views,
+// where drag would be ambiguous — see ConstitutionEditor below) and the
+// draggable list (default browsing view). dragHandle is only passed in the
+// latter case.
+function QuestionCard({ item, colors: c, savingTagId, onEdit, onDelete, onToggleDosha, dragHandle }) {
+  return (
+    <View style={[s.itemCard, { backgroundColor: c.surface, ...card }]}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <View style={{ flex: 1, marginRight: 10 }}>
+          <Text style={[s.itemMeta, { color: c.textMuted }]}>
+            {item.section || 'no section'} · #{item.sort_order}
+            {item.input_type === 'free_text' ? ' · free text' : ''}
+            {item.allow_none ? ' · none-escape' : ''}
+            {item.photo_enabled ? ' · 📷' : ''}
+            {savingTagId === item.id ? ' · saving…' : ''}
+          </Text>
+          <Text style={[s.itemText, { color: c.text }]}>{item.prompt}</Text>
+        </View>
+        <View style={{ flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
+          {dragHandle}
+          <Pressable onPress={() => onEdit(item)}><Text style={[s.linkText, { color: c.accent }]}>Edit</Text></Pressable>
+          <Pressable onPress={() => onDelete(item)}><Text style={[s.linkText, { color: c.terracotta || '#C97855' }]}>Delete</Text></Pressable>
+        </View>
+      </View>
+
+      {item.input_type === 'free_text' ? (
+        <Text style={[s.optionPreview, { color: c.textMuted, fontStyle: 'italic', marginTop: 6 }]}>Free text — no options to tag.</Text>
+      ) : (
+        (item.options ?? []).map((opt, idx) => (
+          <View key={idx} style={[s.optionTagRow, { borderColor: c.border, backgroundColor: c.surfaceAlt }]}>
+            <Text style={[s.optionLabel, { color: c.text }]}>{opt.label}</Text>
+            <DoshaToggle colors={c} selected={opt.dosha ?? []} onChange={d => onToggleDosha(item, idx, d)} />
+          </View>
+        ))
+      )}
+    </View>
+  );
+}
+
 export default function ConstitutionEditor({ table, tierOptions, title, subtitle }) {
   const { theme: { colors: c } } = useTheme();
   const [tier, setTier] = useState(tierOptions[0].key);
@@ -179,6 +220,7 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
   const [saving, setSaving] = useState(false);
   const [savingTagId, setSavingTagId] = useState(null);
   const [untaggedOnly, setUntaggedOnly] = useState(false);
+  const [savingOrder, setSavingOrder] = useState(false);
 
   useEffect(() => { load(); }, [tier]);
 
@@ -215,11 +257,11 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
 
   async function save() {
     if (!draft.id.trim() || !draft.prompt.trim()) {
-      Alert.alert('Missing fields', 'ID and prompt are required.');
+      notify('Missing fields', 'ID and prompt are required.');
       return;
     }
     if (draft.input_type === 'multi_select' && draft.options.some(o => !o.label.trim())) {
-      Alert.alert('Empty option', 'Every option needs label text.');
+      notify('Empty option', 'Every option needs label text.');
       return;
     }
     const sortOrder = parseInt(draft.sort_order, 10);
@@ -237,22 +279,17 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
     };
     const { error } = await supabase.from(table).upsert(payload, { onConflict: 'id' });
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingId(null);
     await load();
   }
 
-  function deleteItem(item) {
-    Alert.alert('Delete this question?', `"${item.prompt}" — this can't be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from(table).delete().eq('id', item.id);
-          if (error) { Alert.alert('Couldn\'t delete', error.message); return; }
-          await load();
-        },
-      },
-    ]);
+  async function deleteItem(item) {
+    const ok = await confirmAsync('Delete this question?', `"${item.prompt}" — this can't be undone.`);
+    if (!ok) return;
+    const { error } = await supabase.from(table).delete().eq('id', item.id);
+    if (error) { notify('Couldn\'t delete', error.message); return; }
+    await load();
   }
 
   async function toggleDosha(item, optIdx, dosha) {
@@ -266,8 +303,30 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
     const { error } = await supabase.from(table).update({ options: newOptions }).eq('id', item.id);
     setSavingTagId(null);
     if (error) {
-      Alert.alert('Couldn\'t save tag', error.message);
+      notify('Couldn\'t save tag', error.message);
       load();
+    }
+  }
+
+  // Only reachable from the unfiltered, non-editing view (see render below)
+  // so `items` here is always the full, currently-displayed order — no
+  // reconciling against a filtered subset. Renumbers sequentially rather
+  // than trying to preserve original gaps/duplicates in sort_order, since
+  // those were never meaningful (freeform integer field, no gap convention
+  // documented anywhere).
+  async function handleDragEnd({ data }) {
+    const prevOrder = new Map(items.map(it => [it.id, it.sort_order]));
+    const reordered = data.map((item, idx) => ({ ...item, sort_order: idx + 1 }));
+    setItems(reordered);
+    const changed = reordered.filter(it => prevOrder.get(it.id) !== it.sort_order);
+    if (changed.length === 0) return;
+    setSavingOrder(true);
+    const results = await Promise.all(changed.map(it => supabase.from(table).update({ sort_order: it.sort_order }).eq('id', it.id)));
+    setSavingOrder(false);
+    const failed = results.find(r => r.error);
+    if (failed) {
+      notify('Couldn\'t save new order', failed.error.message);
+      await load();
     }
   }
 
@@ -278,6 +337,13 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
   const visibleItems = untaggedOnly
     ? multiSelect.filter(i => (i.options ?? []).some(o => (o.dosha ?? []).length === 0))
     : (items ?? []);
+
+  // Dragging is only offered from the plain, unfiltered browsing view — once
+  // an item's mid-edit its row becomes a form (different shape entirely),
+  // and the untagged-only filter shows a subset whose visual adjacency
+  // wouldn't match the real underlying order. Both cases fall back to the
+  // original static list below.
+  const draggable = editingId === null && !untaggedOnly;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
@@ -322,40 +388,45 @@ export default function ConstitutionEditor({ table, tierOptions, title, subtitle
             </Text>
           )}
 
-          {visibleItems.map(item => (
+          {draggable && (
+            <>
+              {savingOrder && <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 8 }]}>Saving new order…</Text>}
+              <ReorderableList
+                data={visibleItems}
+                keyExtractor={item => item.id}
+                onDragEnd={handleDragEnd}
+                renderItem={({ item, isActive, dragHandleProps }) => (
+                  <QuestionCard
+                    item={item}
+                    colors={c}
+                    savingTagId={savingTagId}
+                    onEdit={startEdit}
+                    onDelete={deleteItem}
+                    onToggleDosha={toggleDosha}
+                    dragHandle={dragHandleProps && (
+                      <View {...dragHandleProps.listeners} {...dragHandleProps.attributes} style={{ opacity: isActive ? 0.5 : 1, cursor: 'grab' }}>
+                        <Text style={{ color: c.textMuted, fontSize: 18, lineHeight: 18 }}>⠿</Text>
+                      </View>
+                    )}
+                  />
+                )}
+              />
+            </>
+          )}
+
+          {!draggable && visibleItems.map(item => (
             <View key={item.id}>
               {editingId === item.id ? (
                 <EditorForm draft={draft} setDraft={setDraft} isNew={false} colors={c} saving={saving} onSave={save} onCancel={() => setEditingId(null)} />
               ) : (
-                <View style={[s.itemCard, { backgroundColor: c.surface, ...card }]}>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <View style={{ flex: 1, marginRight: 10 }}>
-                      <Text style={[s.itemMeta, { color: c.textMuted }]}>
-                        {item.section || 'no section'} · #{item.sort_order}
-                        {item.input_type === 'free_text' ? ' · free text' : ''}
-                        {item.allow_none ? ' · none-escape' : ''}
-                        {item.photo_enabled ? ' · 📷' : ''}
-                        {savingTagId === item.id ? ' · saving…' : ''}
-                      </Text>
-                      <Text style={[s.itemText, { color: c.text }]}>{item.prompt}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'column', gap: 10, alignItems: 'flex-end' }}>
-                      <Pressable onPress={() => startEdit(item)}><Text style={[s.linkText, { color: c.accent }]}>Edit</Text></Pressable>
-                      <Pressable onPress={() => deleteItem(item)}><Text style={[s.linkText, { color: c.terracotta || '#C97855' }]}>Delete</Text></Pressable>
-                    </View>
-                  </View>
-
-                  {item.input_type === 'free_text' ? (
-                    <Text style={[s.optionPreview, { color: c.textMuted, fontStyle: 'italic', marginTop: 6 }]}>Free text — no options to tag.</Text>
-                  ) : (
-                    (item.options ?? []).map((opt, idx) => (
-                      <View key={idx} style={[s.optionTagRow, { borderColor: c.border, backgroundColor: c.surfaceAlt }]}>
-                        <Text style={[s.optionLabel, { color: c.text }]}>{opt.label}</Text>
-                        <DoshaToggle colors={c} selected={opt.dosha ?? []} onChange={d => toggleDosha(item, idx, d)} />
-                      </View>
-                    ))
-                  )}
-                </View>
+                <QuestionCard
+                  item={item}
+                  colors={c}
+                  savingTagId={savingTagId}
+                  onEdit={startEdit}
+                  onDelete={deleteItem}
+                  onToggleDosha={toggleDosha}
+                />
               )}
             </View>
           ))}

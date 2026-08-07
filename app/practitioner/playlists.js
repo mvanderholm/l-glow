@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Linking } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { refreshPlaylists } from '../../data/content/remote';
+import { notify } from '../../components/practitioner/webSafeAlert';
 
 // Seventh admin-editable content type — edit-only like checkin-questions.js:
 // dosha (vata/pitta/kapha) is the primary key, so there's no add/delete,
@@ -50,7 +51,7 @@ export default function PlaylistsAdmin() {
 
   async function save(dosha) {
     if (!draft.mood.trim()) {
-      Alert.alert('Missing field', 'Mood copy is required.');
+      notify('Missing field', 'Mood copy is required.');
       return;
     }
     setSaving(true);
@@ -58,7 +59,7 @@ export default function PlaylistsAdmin() {
       name: draft.name.trim() || null, url: draft.url.trim() || null, mood: draft.mood.trim(),
     }).eq('dosha', dosha);
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingDosha(null);
     await load();
     refreshPlaylists();

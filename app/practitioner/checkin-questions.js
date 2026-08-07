@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { refreshCheckinDimensions } from '../../data/content/remote';
+import { notify } from '../../components/practitioner/webSafeAlert';
 
 // Third admin-editable content type — different shape from the other two:
 // this is edit-only, not a free collection. The 5 keys
@@ -50,7 +51,7 @@ export default function CheckinQuestionsAdmin() {
 
   async function save(key) {
     if (!draft.label.trim() || !draft.description.trim()) {
-      Alert.alert('Missing fields', 'Label and description are required.');
+      notify('Missing fields', 'Label and description are required.');
       return;
     }
     setSaving(true);
@@ -59,7 +60,7 @@ export default function CheckinQuestionsAdmin() {
       hint_low: draft.hint_low.trim() || null, hint_high: draft.hint_high.trim() || null,
     }).eq('key', key);
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingKey(null);
     await load();
     refreshCheckinDimensions();

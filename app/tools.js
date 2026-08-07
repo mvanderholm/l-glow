@@ -2,10 +2,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
-import SearchButton from '../components/SearchButton';
+import Header from '../components/Header';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 const TOOLS = [
@@ -14,7 +12,7 @@ const TOOLS = [
   { href: '/breathwork', title: 'Breathwork',    desc: 'Pranayama practices',       Icon: BreathIcon,     dark: false },
   { href: '/meditation', title: 'Meditation',    desc: 'Guided & silent',           Icon: LotusIcon,      dark: false },
   { href: '/selfmassage',title: 'Self Massage',  desc: 'Abhyanga rituals',          Icon: PlusStarIcon,   dark: false },
-  { href: '/journal',    title: 'Journaling',    desc: 'Reflect & release',         Icon: PenIcon,        dark: false },
+  { href: '/journal',    title: 'Journal',       desc: 'Reflect & release',         Icon: PenIcon,        dark: false },
 ];
 
 const ASSESSMENTS = [
@@ -31,17 +29,10 @@ const HERBS_BG = '#566357'; // rgb(86,99,87) — exact from prototype
 export default function Tools() {
   const { theme: { colors: c } } = useTheme();
   const router = useRouter();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {/* Header */}
-      <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
-        <Text style={[styles.hTitle, { color: c.text }]}>Tools</Text>
-        <SearchButton color={c.text} style={styles.hBtn} />
-      </View>
+      <Header title="Tools" left="menu" right="search" />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
         <Text style={[styles.subtitle, { color: c.textMedium }]}>Gentle practices for body, mind & spirit.</Text>
@@ -118,12 +109,6 @@ export default function Tools() {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
-function MenuIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-  </Svg>;
-}
-
 function ChevronIcon({ color }) {
   return <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
     <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
@@ -197,9 +182,6 @@ function PersonIcon({ color, size }) {
 }
 
 const styles = StyleSheet.create({
-  header:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
-  hBtn:    { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
 
   subtitle: { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 16, fontStyle: 'italic', lineHeight: 22, marginBottom: 20 },
 

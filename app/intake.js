@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch, Linking } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, Switch, Linking, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
@@ -9,6 +9,7 @@ import { BOOKING_URL } from '../data/booking';
 import { supabase } from '../config/supabase';
 import { syncToSupabase, loadReproductiveHealthPref, saveReproductiveHealthPref } from '../data/user/storage';
 import BackButton from '../components/BackButton';
+import Header from '../components/Header';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const INTAKE_KEY = '@lglow/intake';
@@ -415,6 +416,7 @@ async function saveIntake(intake) {
   await syncToSupabase(userId => supabase.from('intake_forms').upsert({
     user_id: userId,
     data: intake,
+    platform: Platform.OS,
   }, { onConflict: 'user_id' }));
 }
 
@@ -438,7 +440,7 @@ export async function migrateIntake(userId) {
   if (!raw) return;
   const { data } = await supabase.from('intake_forms').select('user_id').eq('user_id', userId).maybeSingle();
   if (data) return; // Supabase already has one — don't overwrite
-  await supabase.from('intake_forms').upsert({ user_id: userId, data: JSON.parse(raw) }, { onConflict: 'user_id' });
+  await supabase.from('intake_forms').upsert({ user_id: userId, data: JSON.parse(raw), platform: Platform.OS }, { onConflict: 'user_id' });
 }
 
 // ── Field-level progress ───────────────────────────────────────────────────
@@ -968,12 +970,7 @@ export default function Intake() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      {/* Header */}
-      <View style={[fs.header, { borderBottomColor: c.border }]}>
-        <BackButton onPress={() => router.back()} color={c.text} />
-        <Text style={[fs.headerTitle, { color: c.text }]}>Intake</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <Header title="Intake" left="back" onBack={() => router.back()} bordered />
 
       {showGate ? (
         <AgeGate onAcknowledge={handleGateAcknowledge} onSkip={handleGateSkip} colors={c} />
@@ -1018,8 +1015,6 @@ function CheckIcon({ color }) {
 // ── Styles ─────────────────────────────────────────────────────────────────
 
 const fs = StyleSheet.create({
-  header:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
 
   listOverline: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.98, textTransform: 'uppercase', marginBottom: 6 },
   listTitle:    { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 30, lineHeight: 36, marginBottom: 8 },

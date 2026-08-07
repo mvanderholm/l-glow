@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
+import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { SECTIONS, sectionProgress } from '../intake';
@@ -117,7 +118,7 @@ function ClientList({ colors: c, onSelect, selectedId }) {
   useEffect(() => {
     supabase
       .from('users')
-      .select('id, email, display_name, checkins(date, physical, mental, emotional), intake_forms(data), dosha_results(taken_at)')
+      .select('id, email, display_name, deleted_at, checkins(date, physical, mental, emotional), intake_forms(data), dosha_results(taken_at)')
       .eq('consented_to_practitioner_view', true)
       .eq('role', 'user')
       .order('date', { foreignTable: 'checkins', ascending: false })
@@ -225,6 +226,13 @@ function ClientList({ colors: c, onSelect, selectedId }) {
           {client.display_name && client.email && (
             <Text style={[s.clientEmail, { color: c.textMuted }]}>{client.email}</Text>
           )}
+          {client.deleted_at && (
+            <View style={[s.attentionRow, { marginTop: 8 }]}>
+              <View style={[s.attentionChip, { backgroundColor: c.textMuted + '22', borderColor: c.textMuted }]}>
+                <Text style={[s.attentionChipText, { color: c.textMuted }]}>Deactivated</Text>
+              </View>
+            </View>
+          )}
           {client.attentionReasons.length > 0 && (
             <View style={s.attentionRow}>
               {client.attentionReasons.map(reason => (
@@ -255,6 +263,174 @@ function AnswerRow({ label, value, colors: c }) {
       <Text style={[s.answerLabel, { color: c.textMuted }]}>{label}</Text>
       <Text style={[s.answerValue, { color: c.text }]}>{value}</Text>
     </View>
+  );
+}
+
+function ProfileField({ label, value, onChangeText, colors: c, keyboardType, containerStyle }) {
+  return (
+    <View style={[{ marginBottom: 10 }, containerStyle]}>
+      <Text style={[s.answerLabel, { color: c.textMuted }]}>{label}</Text>
+      <TextInput
+        style={[s.profileFieldInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+      />
+    </View>
+  );
+}
+
+// Basic account-profile fields (first/last name, display name, phone,
+// address) — separate from the Intake tab's own contact fields (a one-time
+// clinical questionnaire, not the same concept; see
+// 20260730010000_user_profile_fields.sql for the known overlap and why it's
+// not reconciled). Self-contained fetch/edit, same pattern as ManualSection
+// below — the parent's `client` prop is a ClientList snapshot that doesn't
+// refresh after an edit here, so this owns its own copy.
+function ProfileSection({ clientId, clientName, colors: c }) {
+  const [profile, setProfile] = useState(null); // null = loading
+  const [draft, setDraft] = useState(null);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const [dangerBusy, setDangerBusy] = useState(false);
+
+  useEffect(() => { load(); }, [clientId]);
+
+  async function load() {
+    setProfile(null);
+    const { data, error } = await supabase.from('users').select('first_name, last_name, display_name, phone, address, city, state, zip, deleted_at').eq('id', clientId).maybeSingle();
+    if (error) { setError(error.message); return; }
+    setError(null);
+    setProfile(data ?? {});
+  }
+
+  // Soft delete only — flips deleted_at, which the client's own RLS policies
+  // (20260730040000_soft_delete_users.sql) then use to lock them out of
+  // sign-in and their own data entirely. Reversible via restore() below;
+  // real, permanent removal is a separate, deliberately more manual process
+  // (deleting the account from Supabase Auth directly — see the "can I
+  // remove user records" conversation this danger zone came out of).
+  async function confirmDeactivate() {
+    const ok = await confirmAsync(
+      'Deactivate this client?',
+      `${clientName || 'This client'} will be signed out, won't be able to sign in again, and won't be able to see any of their own data — check-ins, journal, quiz results, everything — until restored. This can be undone from this same screen.`,
+      'Deactivate',
+    );
+    if (ok) deactivate();
+  }
+
+  async function deactivate() {
+    setDangerBusy(true);
+    const { error } = await supabase.from('users').update({ deleted_at: new Date().toISOString() }).eq('id', clientId);
+    setDangerBusy(false);
+    if (error) { notify('Couldn\'t deactivate', error.message); return; }
+    await load();
+  }
+
+  async function restore() {
+    setDangerBusy(true);
+    const { error } = await supabase.from('users').update({ deleted_at: null }).eq('id', clientId);
+    setDangerBusy(false);
+    if (error) { notify('Couldn\'t restore', error.message); return; }
+    await load();
+  }
+
+  function startEdit() {
+    setDraft({
+      first_name: profile.first_name || '', last_name: profile.last_name || '',
+      display_name: profile.display_name || '', phone: profile.phone || '', address: profile.address || '',
+      city: profile.city || '', state: profile.state || '', zip: profile.zip || '',
+    });
+    setEditing(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    const payload = {
+      first_name: draft.first_name.trim() || null,
+      last_name: draft.last_name.trim() || null,
+      display_name: draft.display_name.trim() || null,
+      phone: draft.phone.trim() || null,
+      address: draft.address.trim() || null,
+      city: draft.city.trim() || null,
+      state: draft.state.trim() || null,
+      zip: draft.zip.trim() || null,
+    };
+    const { error } = await supabase.from('users').update(payload).eq('id', clientId);
+    setSaving(false);
+    if (error) { notify('Couldn\'t save', error.message); return; }
+    setProfile(payload);
+    setEditing(false);
+  }
+
+  if (error) return <SectionCard title="Profile" colors={c}><Text style={[s.mutedNote, { color: c.textMuted }]}>Couldn't load profile — {error}</Text></SectionCard>;
+  if (profile === null) return <View style={s.centerPad}><ActivityIndicator color={c.accent} /></View>;
+
+  return (
+    <>
+    <SectionCard title="Profile" colors={c}>
+      {editing ? (
+        <>
+          <ProfileField colors={c} label="First name" value={draft.first_name} onChangeText={t => setDraft({ ...draft, first_name: t })} />
+          <ProfileField colors={c} label="Last name" value={draft.last_name} onChangeText={t => setDraft({ ...draft, last_name: t })} />
+          <ProfileField colors={c} label="Display name" value={draft.display_name} onChangeText={t => setDraft({ ...draft, display_name: t })} />
+          <ProfileField colors={c} label="Phone" value={draft.phone} onChangeText={t => setDraft({ ...draft, phone: t })} keyboardType="phone-pad" />
+          <ProfileField colors={c} label="Address" value={draft.address} onChangeText={t => setDraft({ ...draft, address: t })} />
+          <View style={{ flexDirection: 'row', gap: 10 }}>
+            <ProfileField colors={c} label="City" value={draft.city} onChangeText={t => setDraft({ ...draft, city: t })} containerStyle={{ flex: 2, marginBottom: 10 }} />
+            <ProfileField colors={c} label="State" value={draft.state} onChangeText={t => setDraft({ ...draft, state: t })} containerStyle={{ flex: 1, marginBottom: 10 }} />
+            <ProfileField colors={c} label="Zip" value={draft.zip} onChangeText={t => setDraft({ ...draft, zip: t })} keyboardType="number-pad" containerStyle={{ flex: 1, marginBottom: 10 }} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+            <Pressable style={[s.addNoteBtn, { flex: 1, backgroundColor: c.accent, marginBottom: 0 }]} onPress={save} disabled={saving}>
+              <Text style={s.addNoteBtnText}>{saving ? 'Saving…' : 'Save'}</Text>
+            </Pressable>
+            <Pressable style={[s.addNoteBtn, { flex: 1, backgroundColor: c.surfaceAlt, marginBottom: 0 }]} onPress={() => setEditing(false)} disabled={saving}>
+              <Text style={[s.addNoteBtnText, { color: c.textMuted }]}>Cancel</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : (
+        <>
+          <AnswerRow colors={c} label="First name" value={profile.first_name || '—'} />
+          <AnswerRow colors={c} label="Last name" value={profile.last_name || '—'} />
+          <AnswerRow colors={c} label="Display name" value={profile.display_name || '—'} />
+          <AnswerRow colors={c} label="Phone" value={profile.phone || '—'} />
+          <AnswerRow colors={c} label="Address" value={profile.address || '—'} />
+          <AnswerRow colors={c} label="City" value={profile.city || '—'} />
+          <AnswerRow colors={c} label="State" value={profile.state || '—'} />
+          <AnswerRow colors={c} label="Zip" value={profile.zip || '—'} />
+          <Pressable onPress={startEdit} style={{ marginTop: 6 }}>
+            <Text style={{ color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 13 }}>Edit</Text>
+          </Pressable>
+        </>
+      )}
+    </SectionCard>
+
+    <View style={[s.sectionCard, { backgroundColor: c.surface, borderWidth: 1, borderColor: c.terracotta || '#C97855' }]}>
+      <Text style={[s.sectionTitle, { color: c.terracotta || '#C97855' }]}>Danger zone</Text>
+      {profile.deleted_at ? (
+        <>
+          <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 12 }]}>
+            Deactivated {new Date(profile.deleted_at).toLocaleDateString(undefined, { dateStyle: 'medium' })} — this client can't sign in or see any of their data until restored.
+          </Text>
+          <Pressable style={[s.addNoteBtn, { backgroundColor: c.accent, alignSelf: 'flex-start', paddingHorizontal: 18, marginBottom: 0 }]} onPress={restore} disabled={dangerBusy}>
+            <Text style={s.addNoteBtnText}>{dangerBusy ? 'Restoring…' : 'Restore this client'}</Text>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 12 }]}>
+            Deactivating signs this client out and blocks their sign-in and access to their own data — check-ins, journal, quiz history, everything. Reversible from this same screen.
+          </Text>
+          <Pressable style={[s.addNoteBtn, { backgroundColor: c.terracotta || '#C97855', alignSelf: 'flex-start', paddingHorizontal: 18, marginBottom: 0 }]} onPress={confirmDeactivate} disabled={dangerBusy}>
+            <Text style={s.addNoteBtnText}>{dangerBusy ? 'Deactivating…' : 'Deactivate this client'}</Text>
+          </Pressable>
+        </>
+      )}
+    </View>
+    </>
   );
 }
 
@@ -364,13 +540,23 @@ function AIGuidanceSection({ clientId, assessmentType, tier, colors: c }) {
 // guna/agni rows taken before the `answers` column existed, and any Tongue
 // row that somehow has nothing to map, pass `answers={null}` and fall back
 // to a plain "no detail saved" line rather than an empty/broken expansion.
-function ResponseEntry({ dateValue, summaryLine, answers, expanded, onToggle, exportText, colors: c }) {
+// Raw Platform.OS ('ios'/'android'/'web') collapsed to the two-way distinction
+// the practitioner actually cares about — see 20260730060000's own comment
+// for why the underlying column stores the granular value anyway. null means
+// the row predates platform tracking, not "unknown platform" as a real value.
+function platformLabel(platform) {
+  if (!platform) return null;
+  return platform === 'web' ? 'Web' : 'App';
+}
+
+function ResponseEntry({ dateValue, summaryLine, answers, expanded, onToggle, exportText, platform, colors: c }) {
   const hasAnswers = Array.isArray(answers) && answers.length > 0;
+  const platLabel = platformLabel(platform);
   return (
     <Pressable onPress={onToggle} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
       <Text style={[s.logDate, { color: c.text }]}>{new Date(dateValue).toLocaleDateString(undefined, { dateStyle: 'medium' })}</Text>
       <Text style={[s.logDetail, { color: c.textMuted }]}>
-        {summaryLine} · {expanded ? 'Hide' : 'View'}
+        {summaryLine}{platLabel ? ` · ${platLabel}` : ''} · {expanded ? 'Hide' : 'View'}
       </Text>
 
       {expanded && (
@@ -404,6 +590,7 @@ function ResponseEntry({ dateValue, summaryLine, answers, expanded, onToggle, ex
 
 const CLIENT_TABS = [
   { key: 'summary',     label: 'Summary' },
+  { key: 'profile',     label: 'Profile' },
   { key: 'assessments', label: 'Assessments' },
   { key: 'checkins',    label: 'Check-ins' },
   { key: 'journal',     label: 'Journal' },
@@ -440,16 +627,11 @@ function ManualSection({ clientId, practitionerId, colors: c }) {
 
   async function confirmDiscard() {
     if (!manual || manual.content === manual.ai_draft) return true;
-    return new Promise(resolve => {
-      Alert.alert(
-        'Discard your edits?',
-        'Regenerating replaces the current draft with a new AI-generated version — the edits you made won\'t carry over.',
-        [
-          { text: 'Cancel', style: 'cancel', onPress: () => resolve(false) },
-          { text: 'Regenerate', style: 'destructive', onPress: () => resolve(true) },
-        ],
-      );
-    });
+    return confirmAsync(
+      'Discard your edits?',
+      'Regenerating replaces the current draft with a new AI-generated version — the edits you made won\'t carry over.',
+      'Regenerate',
+    );
   }
 
   async function generate() {
@@ -581,15 +763,15 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
 
   async function load() {
     const [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
-      supabase.from('dosha_results').select('id, dosha, vata_score, pitta_score, kapha_score, answers, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('guna_results').select('id, dominant, sattva_score, rajas_score, tamas_score, answers, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('agni_results').select('id, agni_type, answers, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('tongue_checks').select('id, reading, shape, size, color, coating, ama_level, signs, taken_at').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
-      supabase.from('prakriti_responses').select('id, tier, answers, completed_at').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
-      supabase.from('vikriti_responses').select('id, tier, answers, completed_at').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
-      supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
-      supabase.from('journal_entries').select('date, grateful, showed, tomorrow').eq('user_id', client.id).order('date', { ascending: false }).limit(10),
-      supabase.from('intake_forms').select('data, updated_at').eq('user_id', client.id).maybeSingle(),
+      supabase.from('dosha_results').select('id, dosha, vata_score, pitta_score, kapha_score, answers, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('guna_results').select('id, dominant, sattva_score, rajas_score, tamas_score, answers, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('agni_results').select('id, agni_type, answers, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('tongue_checks').select('id, reading, shape, size, color, coating, ama_level, signs, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
+      supabase.from('prakriti_responses').select('id, tier, answers, completed_at, platform').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
+      supabase.from('vikriti_responses').select('id, tier, answers, completed_at, platform').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
+      supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
+      supabase.from('journal_entries').select('date, grateful, showed, tomorrow, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(10),
+      supabase.from('intake_forms').select('data, updated_at, platform').eq('user_id', client.id).maybeSingle(),
       supabase.from('practitioner_notes').select('id, note, created_at').eq('client_id', client.id).order('created_at', { ascending: false }),
     ]);
 
@@ -634,16 +816,11 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
     }
   }
 
-  function deleteNote(id) {
-    Alert.alert('Delete this note?', 'This can\'t be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('practitioner_notes').delete().eq('id', id);
-          if (!error) setClientData(prev => ({ ...prev, notes: prev.notes.filter(n => n.id !== id) }));
-        },
-      },
-    ]);
+  async function deleteNote(id) {
+    const ok = await confirmAsync('Delete this note?', 'This can\'t be undone.');
+    if (!ok) return;
+    const { error } = await supabase.from('practitioner_notes').delete().eq('id', id);
+    if (!error) setClientData(prev => ({ ...prev, notes: prev.notes.filter(n => n.id !== id) }));
   }
 
   const attentionReasons = clientData ? computeAttention(clientData.checkins, clientData.intakeRow?.data) : [];
@@ -747,6 +924,10 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
               </>
             )}
 
+            {activeTab === 'profile' && (
+              <ProfileSection clientId={client.id} clientName={client.display_name || client.email} colors={c} />
+            )}
+
             {activeTab === 'assessments' && (
               <>
                 <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>Dosha history</Text>
@@ -758,6 +939,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     dateValue={r.taken_at}
                     summaryLine={`${cap(r.dosha)} · V${r.vata_score} P${r.pitta_score} K${r.kapha_score}`}
                     answers={r.answers}
+                    platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                     exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Dosha Quiz', null, r.taken_at, r.answers) : null}
@@ -774,6 +956,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     dateValue={r.taken_at}
                     summaryLine={`${cap(r.dominant)} · S${r.sattva_score} R${r.rajas_score} T${r.tamas_score}`}
                     answers={r.answers}
+                    platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                     exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Guna Assessment', null, r.taken_at, r.answers) : null}
@@ -790,6 +973,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     dateValue={r.taken_at}
                     summaryLine={cap(r.agni_type)}
                     answers={r.answers}
+                    platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                     exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Agni Assessment', null, r.taken_at, r.answers) : null}
@@ -808,6 +992,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                       dateValue={r.taken_at}
                       summaryLine={cap(r.reading)}
                       answers={tongueAnswers}
+                      platform={r.platform}
                       expanded={expandedResponseId === r.id}
                       onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                       exportText={formatResponseExport(client.display_name || client.email, 'Tongue Check', null, r.taken_at, tongueAnswers)}
@@ -825,6 +1010,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     dateValue={r.completed_at}
                     summaryLine={`${PRAKRITI_TIER_LABELS[r.tier] || r.tier} · ${(r.answers ?? []).length} answer${(r.answers ?? []).length === 1 ? '' : 's'}`}
                     answers={r.answers}
+                    platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                     exportText={formatResponseExport(client.display_name || client.email, 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
@@ -843,6 +1029,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     dateValue={r.completed_at}
                     summaryLine={`${VIKRITI_TIER_LABELS[r.tier] || r.tier} · ${(r.answers ?? []).length} answer${(r.answers ?? []).length === 1 ? '' : 's'}`}
                     answers={r.answers}
+                    platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
                     exportText={formatResponseExport(client.display_name || client.email, 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
@@ -865,6 +1052,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     </Text>
                     <Text style={[s.logDetail, { color: c.textMuted }]}>
                       P{ci.physical} M{ci.mental} E{ci.emotional}{ci.hunger != null ? ` H${ci.hunger}` : ''}{ci.tongue != null ? ` T${ci.tongue}` : ''}
+                      {platformLabel(ci.platform) ? ` · ${platformLabel(ci.platform)}` : ''}
                     </Text>
                     {ci.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{ci.note}"</Text> : null}
                   </View>
@@ -884,6 +1072,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
                     {j.grateful ? <Text style={[s.logDetail, { color: c.textMuted }]}>Grateful: {j.grateful}</Text> : null}
                     {j.showed ? <Text style={[s.logDetail, { color: c.textMuted }]}>Showed up: {j.showed}</Text> : null}
                     {j.tomorrow ? <Text style={[s.logDetail, { color: c.textMuted }]}>Tomorrow: {j.tomorrow}</Text> : null}
+                    {platformLabel(j.platform) ? <Text style={[s.logNote, { color: c.textMuted }]}>{platformLabel(j.platform)}</Text> : null}
                   </View>
                 ))}
               </>
@@ -892,7 +1081,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
             {activeTab === 'intake' && (
               <>
                 <Text style={[s.updatedText, { color: c.textMuted }]}>
-                  Intake form {clientData.intakeRow ? `— last updated ${new Date(clientData.intakeRow.updated_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}` : ''}
+                  Intake form {clientData.intakeRow ? `— last updated ${new Date(clientData.intakeRow.updated_at).toLocaleDateString(undefined, { dateStyle: 'medium' })}${platformLabel(clientData.intakeRow.platform) ? ` · ${platformLabel(clientData.intakeRow.platform)}` : ''}` : ''}
                 </Text>
                 {!clientData.intakeRow && (
                   <Text style={[s.mutedNote, { color: c.textMuted, marginBottom: 12 }]}>This client hasn't started their intake form yet.</Text>
@@ -1081,6 +1270,7 @@ const s = StyleSheet.create({
   sectionTitle: { fontFamily: 'Inter_600SemiBold', fontSize: 14, letterSpacing: 0.3, marginBottom: 10 },
   answerRow:   { marginBottom: 10 },
   answerLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 2 },
+  profileFieldInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 9, fontSize: 14, fontFamily: 'Inter_400Regular' },
   answerValue: { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 20 },
 
   entryCard: { borderRadius: 14, padding: 14, marginBottom: 8 },

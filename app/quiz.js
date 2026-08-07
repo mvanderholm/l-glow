@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { quizQuestions } from '../data/content/quiz';
+import { quizQuestions as staticQuizQuestions } from '../data/content/quiz';
+import { loadDoshaQuestions, refreshDoshaQuestions } from '../data/content/remote';
 import { saveDoshaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
 import BackButton, { smartBack } from '../components/BackButton';
@@ -21,10 +22,17 @@ export default function Quiz() {
   const [index, setIndex] = useState(0);
   const [answers, setAnswers] = useState([]); // array of {section, prompt, doshas, selectedLabels} per question
   const [picked, setPicked] = useState([]);   // in-progress option indices for the current multi-select question
+  const [quizQuestions, setQuizQuestions] = useState(staticQuizQuestions);
   const styles = makeStyles(colors, spacing, radius);
+
+  useEffect(() => {
+    loadDoshaQuestions().then(setQuizQuestions);
+    refreshDoshaQuestions().then(loadDoshaQuestions).then(setQuizQuestions);
+  }, []);
+
   const q = quizQuestions[index];
   const progress = (index / quizQuestions.length) * 100;
-  const sectionLabel = q.section && SECTION_LABELS[q.section];
+  const sectionLabel = q?.section && SECTION_LABELS[q.section];
 
   async function finish(allAnswers) {
     const tally = allAnswers.flatMap(a => a.doshas).reduce((acc, d) => ({ ...acc, [d]: (acc[d] || 0) + 1 }), {});
@@ -87,6 +95,8 @@ export default function Quiz() {
       setIndex(index - 1);
     }
   }
+
+  if (!q) return <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={colors.accent} /></SafeAreaView>;
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>

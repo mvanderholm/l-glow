@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
-import { NAV_SECTIONS } from '../data/nav';
+import { useAuth } from '../context/AuthContext';
+import { NAV_SECTIONS, PRACTITIONER_NAV_SECTION } from '../data/nav';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 // Icons keyed by data/nav.js's item `key` — kept here (not in the shared
@@ -21,6 +22,7 @@ const ICONS = {
   quizzes: QuizIcon,
   tools: ToolsIcon,
   playlist: MusicIcon,
+  practitioner: HubIcon,
 };
 
 const W = Math.min(Dimensions.get('window').width * 0.78, 300);
@@ -28,7 +30,9 @@ const W = Math.min(Dimensions.get('window').width * 0.78, 300);
 export default function HamburgerDrawer() {
   const { isOpen, close } = useDrawer();
   const { theme: { colors: c } } = useTheme();
+  const { isPractitioner } = useAuth();
   const router = useRouter();
+  const sections = isPractitioner ? [...NAV_SECTIONS, PRACTITIONER_NAV_SECTION] : NAV_SECTIONS;
   const [modalVisible, setModalVisible] = useState(false);
   const slideX   = useRef(new Animated.Value(-W)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -88,7 +92,7 @@ export default function HamburgerDrawer() {
               {/* Nav items — data/nav.js is the single source of truth,
                   shared with WebLayout's fixed sidebar so the two can't drift
                   out of sync the way they used to (see docs/roadmap.md #52). */}
-              {NAV_SECTIONS.map((section, i) => (
+              {sections.map((section, i) => (
                 <View key={i}>
                   {i > 0 && <View style={[styles.sep, { backgroundColor: c.border }]} />}
                   <View style={styles.section}>
@@ -219,6 +223,15 @@ function ToolsIcon({ color, size }) {
       <Rect x="12.5" y="4"    width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
       <Rect x="4"    y="12.5" width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
       <Rect x="12.5" y="12.5" width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
+    </Svg>
+  );
+}
+function HubIcon({ color, size }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path d="M4 7.5A2.5 2.5 0 0 1 6.5 5h11A2.5 2.5 0 0 1 20 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5v-9Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M9 5V3.8A1.8 1.8 0 0 1 10.8 2h2.4A1.8 1.8 0 0 1 15 3.8V5" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+      <Path d="M4 12h5l1 2h4l1-2h5" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     </Svg>
   );
 }

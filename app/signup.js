@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { accentShadowSm } from '../theme/index';
 import { useAuth } from '../context/AuthContext';
 import BackButton from '../components/BackButton';
 import Svg, { Path, Circle } from 'react-native-svg';
@@ -162,7 +163,7 @@ export default function Signup() {
             ) : null}
 
             <Pressable
-              style={[s.btn, { backgroundColor: canSubmit ? c.accent : c.border }]}
+              style={[s.btn, { backgroundColor: canSubmit ? c.accent : c.border, shadowColor: c.accent }]}
               onPress={handleSignUp}
               disabled={loading}
             >
@@ -200,7 +201,7 @@ export default function Signup() {
 }
 
 const s = StyleSheet.create({
-  scroll:    { flexGrow: 1, padding: 28, paddingTop: 12 },
+  scroll:    { flexGrow: 1, padding: 20, paddingTop: 12 },
   back:      { marginBottom: 12 },
   overline:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
   title:     { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 34, lineHeight: 40, marginBottom: 8 },
@@ -213,8 +214,7 @@ const s = StyleSheet.create({
   inputWithIcon: { paddingRight: 48 },
   eyeBtn:    { position: 'absolute', right: 14, height: '100%', justifyContent: 'center', alignItems: 'center' },
   error:     { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20, marginTop: 4, marginBottom: 8 },
-  btn:       { borderRadius: 999, paddingVertical: 16, alignItems: 'center', marginTop: 8,
-               shadowColor: '#9A5151', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.22, shadowRadius: 14, elevation: 3 },
+  btn:       { borderRadius: 999, paddingVertical: 16, alignItems: 'center', marginTop: 8, ...accentShadowSm },
   btnText:   { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: 1.4 },
   divider:   { height: StyleSheet.hairlineWidth, marginVertical: 28 },
   footerRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },

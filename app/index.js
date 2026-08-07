@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
-import { card } from '../theme/index';
+import { card, accentShadow } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
 import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadRecentCheckins } from '../data/user/storage';
@@ -92,10 +92,10 @@ export default function Home() {
 
         {/* Greeting */}
         <View style={{ marginBottom: spacing.lg }}>
-          <Text style={[styles.overline, { color: c.textMuted }]}>{todayLabel()}</Text>
+          <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>{todayLabel()}</Text>
           <Text style={[styles.greetLine, { color: c.textMedium }]}>Good morning,</Text>
-          <Text style={[styles.greetName, { color: c.text }]}>{userName ?? ''}</Text>
-          <Text style={[styles.greetSub, { color: c.textMedium }]}>Let's see where you are today.</Text>
+          <Text style={[type.display, { color: c.text, marginBottom: 6 }]}>{userName ?? ''}</Text>
+          <Text style={[type.bodyItalic, { color: c.textMedium }]}>Let's see where you are today.</Text>
         </View>
 
         {/* Hero remedy card */}
@@ -112,7 +112,7 @@ export default function Home() {
             emphasized treatment. Disappears entirely once both are done,
             not a permanent nag. */}
         {savedDosha !== null && hasCheckedIn !== null && (!savedDosha || !hasCheckedIn) && (
-          <GettingStartedCard hasDosha={!!savedDosha} hasCheckedIn={hasCheckedIn} colors={c} />
+          <GettingStartedCard hasDosha={!!savedDosha} hasCheckedIn={hasCheckedIn} colors={c} type={type} />
         )}
 
         {/* Affirmation card */}
@@ -121,7 +121,7 @@ export default function Home() {
             <Image source={require('../assets/about-archway.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           </View>
           <View style={styles.affirmContent}>
-            <Text style={[styles.overline, { color: c.textMuted, marginBottom: 6 }]}>Daily Affirmation</Text>
+            <Text style={[type.label, { color: c.textMuted, marginBottom: 6 }]}>Daily Affirmation</Text>
             <Text style={[styles.affirmText, { color: c.text }]}>I am rooted, but I flow.</Text>
             <Pressable style={{ marginTop: 12 }}>
               <LeafIcon color={c.accentSoft} size={16} />
@@ -130,13 +130,13 @@ export default function Home() {
         </View>
 
         {/* Daily music suggestion */}
-        {savedDosha && <MusicCard dosha={savedDosha} colors={c} />}
+        {savedDosha && <MusicCard dosha={savedDosha} colors={c} type={type} />}
 
         {/* Mythbusters */}
-        <MythbusterCard colors={c} spacing={spacing} />
+        <MythbusterCard colors={c} type={type} />
 
         {/* Begin here */}
-        <Text style={[styles.sectionTitle, { color: c.text, marginBottom: spacing.md }]}>Begin here</Text>
+        <Text style={[type.h2, { color: c.text, marginBottom: spacing.md }]}>Begin here</Text>
         <BeginGrid colors={c} />
 
         {/* Footer */}
@@ -154,7 +154,7 @@ export default function Home() {
   );
 }
 
-function MusicCard({ dosha, colors: c }) {
+function MusicCard({ dosha, colors: c, type }) {
   const [playlists, setPlaylists] = useState(null);
 
   useEffect(() => {
@@ -168,7 +168,7 @@ function MusicCard({ dosha, colors: c }) {
 
   return (
     <View style={[styles.musicCard, { backgroundColor: c.surface }]}>
-      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 8 }]}>Today's sound</Text>
+      <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>Today's sound</Text>
       {playlist.name && (
         <Text style={[styles.musicName, { color: c.text }]}>{playlist.name}</Text>
       )}
@@ -189,7 +189,7 @@ function MusicCard({ dosha, colors: c }) {
   );
 }
 
-function MythbusterCard({ colors: c, spacing }) {
+function MythbusterCard({ colors: c, type }) {
   const [list, setList] = useState(null);
   const router = useRouter();
 
@@ -204,14 +204,14 @@ function MythbusterCard({ colors: c, spacing }) {
   if (myth) {
     return (
       <View style={[styles.mythCard, { backgroundColor: c.surface }]}>
-        <Text style={[styles.overline, { color: c.textMuted, marginBottom: 10 }]}>This week · Myth</Text>
+        <Text style={[type.label, { color: c.textMuted, marginBottom: 10 }]}>This week · Myth</Text>
         <Text style={[styles.mythMyth, { color: c.text }]}>"{myth.myth}"</Text>
         {myth.take && (
           <Text style={[styles.mythBody, { color: c.textMedium, marginTop: 10 }]}>{myth.take}</Text>
         )}
         {myth.reframe && (
           <View style={[styles.mythReframe, { backgroundColor: c.surfaceAlt, borderLeftColor: c.accentAlt }]}>
-            <Text style={[styles.overline, { color: c.textMuted, marginBottom: 4 }]}>The reframe</Text>
+            <Text style={[type.label, { color: c.textMuted, marginBottom: 4 }]}>The reframe</Text>
             <Text style={[styles.mythBody, { color: c.text }]}>{myth.reframe}</Text>
           </View>
         )}
@@ -222,14 +222,14 @@ function MythbusterCard({ colors: c, spacing }) {
           // interaction routes into the existing Journal screen rather than
           // building new tracking storage. See roadmap #51 / the approved sketch.
           <View style={[styles.mythChallenge, { backgroundColor: c.honeyAmber + '14', borderColor: c.honeyAmber + '33' }]}>
-            <Text style={[styles.overline, { color: c.honeyAmber, marginBottom: 4 }]}>Something to try</Text>
+            <Text style={[type.label, { color: c.honeyAmber, marginBottom: 4 }]}>Something to try</Text>
             <Text style={[styles.mythChallengeTitle, { color: c.text }]}>{myth.challenge.title}</Text>
             {myth.challenge.instructions && (
               <Text style={[styles.mythBody, { color: c.textMedium, marginTop: 6 }]}>{myth.challenge.instructions}</Text>
             )}
             {myth.challenge.track?.length > 0 && (
               <View style={{ marginTop: 12 }}>
-                <Text style={[styles.overline, { color: c.textMuted, fontSize: 10, marginBottom: 6 }]}>Notice this week</Text>
+                <Text style={[type.label, { color: c.textMuted, fontSize: 10, marginBottom: 6 }]}>Notice this week</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {myth.challenge.track.map(item => (
                     <View key={item} style={[styles.trackTag, { backgroundColor: c.honeyAmber + '1A' }]}>
@@ -253,7 +253,7 @@ function MythbusterCard({ colors: c, spacing }) {
 
   return (
     <View style={[styles.mythCard, { backgroundColor: c.surface }]}>
-      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 8 }]}>Mythbusters</Text>
+      <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>Mythbusters</Text>
       <Text style={[styles.mythBody, { color: c.textMedium, fontStyle: 'italic' }]}>
         Every week, Thea takes apart one wellness belief that deserves a closer look. Check back soon.
       </Text>
@@ -261,7 +261,7 @@ function MythbusterCard({ colors: c, spacing }) {
   );
 }
 
-function GettingStartedCard({ hasDosha, hasCheckedIn, colors: c }) {
+function GettingStartedCard({ hasDosha, hasCheckedIn, colors: c, type }) {
   const router = useRouter();
   const steps = [
     { key: 'dosha', label: 'Find your type', sub: 'A short quiz to learn your constitution.', done: hasDosha, href: '/quiz' },
@@ -271,7 +271,7 @@ function GettingStartedCard({ hasDosha, hasCheckedIn, colors: c }) {
 
   return (
     <View style={[styles.gsCard, { backgroundColor: c.surface, ...card }]}>
-      <Text style={[styles.overline, { color: c.textMuted, marginBottom: 10 }]}>A few places to begin</Text>
+      <Text style={[type.label, { color: c.textMuted, marginBottom: 10 }]}>A few places to begin</Text>
       {steps.map((s, i) => {
         const isNext = i === nextIndex;
         return (
@@ -299,7 +299,7 @@ function CtaButton({ colors: c }) {
   const router = useRouter();
   return (
     <Pressable
-      style={({ pressed }) => [styles.ctaBtn, { backgroundColor: c.accent, opacity: pressed ? 0.9 : 1 }]}
+      style={({ pressed }) => [styles.ctaBtn, { backgroundColor: c.accent, shadowColor: c.accent, opacity: pressed ? 0.9 : 1 }]}
       onPress={() => router.push('/checkin')}
     >
       <Text style={styles.ctaBtnText}>START MY DAY  ›</Text>
@@ -400,7 +400,7 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
       </View>
 
       <Pressable style={[{ backgroundColor: c.accent, borderRadius: 999, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg,
-        shadowColor: c.accent, shadowOffset: {width:0,height:6}, shadowOpacity:0.28, shadowRadius:18, elevation:4 }]}
+        shadowColor: c.accent, ...accentShadow }]}
         onPress={() => router.push({ pathname: '/recommendations', params: { dosha } })}>
         <Text style={{ color: '#FFF', fontFamily: 'Inter_600SemiBold', fontSize: 14, letterSpacing: 1 }}>TODAY'S GUIDANCE</Text>
       </Pressable>
@@ -524,30 +524,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  overline: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 11,
-    letterSpacing: 1.98,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
   greetLine: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     lineHeight: 20,
-  },
-  greetName: {
-    fontFamily: 'PlayfairDisplay_600SemiBold',
-    fontSize: 40,
-    lineHeight: 41,
-    letterSpacing: 0.2,
-    marginBottom: 6,
-  },
-  greetSub: {
-    fontFamily: 'PlayfairDisplay_400Regular',
-    fontSize: 20,
-    fontStyle: 'italic',
-    lineHeight: 26,
   },
 
   heroCard: {
@@ -563,11 +543,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     alignItems: 'center',
     marginBottom: 16,
-    shadowColor: '#9A5151',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 4,
+    ...accentShadow,
   },
   ctaBtnText: {
     color: '#FBF9F4',
@@ -630,11 +606,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 
-  sectionTitle: {
-    fontFamily: 'PlayfairDisplay_600SemiBold',
-    fontSize: 19,
-    lineHeight: 24,
-  },
   beginGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

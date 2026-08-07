@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { refreshIntentions } from '../../data/content/remote';
+import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
 
 // Fifth admin-editable content type — same CRUD pattern as affirmations.js.
 // Unlike affirmations, order matters here (intentionSuggestions() takes the
@@ -101,7 +102,7 @@ export default function IntentionsAdmin() {
 
   async function save() {
     if (!draft.id.trim() || !draft.text.trim()) {
-      Alert.alert('Missing fields', 'ID and text are required.');
+      notify('Missing fields', 'ID and text are required.');
       return;
     }
     const sortOrder = parseInt(draft.sort_order, 10);
@@ -112,24 +113,19 @@ export default function IntentionsAdmin() {
     };
     const { error } = await supabase.from('intention_suggestions').upsert(payload, { onConflict: 'id' });
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingId(null);
     await load();
     refreshIntentions();
   }
 
-  function deleteItem(item) {
-    Alert.alert('Delete this intention?', `"${item.text}" — this can't be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('intention_suggestions').delete().eq('id', item.id);
-          if (error) { Alert.alert('Couldn\'t delete', error.message); return; }
-          await load();
-          refreshIntentions();
-        },
-      },
-    ]);
+  async function deleteItem(item) {
+    const ok = await confirmAsync('Delete this intention?', `"${item.text}" — this can't be undone.`);
+    if (!ok) return;
+    const { error } = await supabase.from('intention_suggestions').delete().eq('id', item.id);
+    if (error) { notify('Couldn\'t delete', error.message); return; }
+    await load();
+    refreshIntentions();
   }
 
   if (error) {

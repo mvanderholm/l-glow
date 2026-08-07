@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { refreshRoutines } from '../../data/content/remote';
+import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
 
 // Sixth admin-editable content type — same CRUD pattern as affirmations.js.
 // The 3 "universal" rows are what used to be the fixed routineAnchors list
@@ -102,7 +103,7 @@ export default function RoutinesAdmin() {
 
   async function save() {
     if (!draft.id.trim() || !draft.label.trim()) {
-      Alert.alert('Missing fields', 'ID and label are required.');
+      notify('Missing fields', 'ID and label are required.');
       return;
     }
     const sortOrder = parseInt(draft.sort_order, 10);
@@ -113,24 +114,19 @@ export default function RoutinesAdmin() {
     };
     const { error } = await supabase.from('routine_items').upsert(payload, { onConflict: 'id' });
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingId(null);
     await load();
     refreshRoutines();
   }
 
-  function deleteItem(item) {
-    Alert.alert('Delete this routine item?', `"${item.label}" — this can't be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('routine_items').delete().eq('id', item.id);
-          if (error) { Alert.alert('Couldn\'t delete', error.message); return; }
-          await load();
-          refreshRoutines();
-        },
-      },
-    ]);
+  async function deleteItem(item) {
+    const ok = await confirmAsync('Delete this routine item?', `"${item.label}" — this can't be undone.`);
+    if (!ok) return;
+    const { error } = await supabase.from('routine_items').delete().eq('id', item.id);
+    if (error) { notify('Couldn\'t delete', error.message); return; }
+    await load();
+    refreshRoutines();
   }
 
   if (error) {

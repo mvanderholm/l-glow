@@ -2,6 +2,12 @@
 // approved by her and confirmed to fully replace (not coexist with) the prior 8-question
 // set. Formerly `data/content/quiz-draft.js` (now deleted). Sequencing principle: easy,
 // obvious questions first, subjective questions last (see Thea's framing below).
+//
+// Moved to Supabase (`dosha_questions` table) July 30 2026, admin-editable from
+// the Practitioner Hub — same as mythbusters/guna/etc. This array is now the
+// offline-first fallback (see data/content/remote.js's loadDoshaQuestions),
+// not the live source. Keep it in sync manually if Thea edits questions in
+// the admin screen and you want the bundled fallback to match.
 export const quizQuestions = [
 
   // ---- PHYSICAL / OBVIOUS ---- (easy to answer, obvious to the person)
@@ -9,6 +15,7 @@ export const quizQuestions = [
   {
     section: 'physical',
     prompt: 'Think back as far as you can — before the gym, before stress changed things. What\'s your natural body frame?',
+    multiSelect: true,
     options: [
       { label: 'Thin and narrow — light bones, joints that show, hard to build muscle', dosha: 'vata' },
       { label: 'Medium and proportional — moderate build, decent muscle without much effort', dosha: 'pitta' },
@@ -19,6 +26,7 @@ export const quizQuestions = [
   {
     section: 'physical',
     prompt: 'Your natural relationship with weight — the default your body wants to return to:',
+    multiSelect: true,
     options: [
       { label: 'I stay light without trying — sometimes I actually struggle to gain weight', dosha: 'vata' },
       { label: 'Pretty steady — I gain and lose at a moderate, predictable pace', dosha: 'pitta' },
@@ -51,6 +59,7 @@ export const quizQuestions = [
   {
     section: 'physical',
     prompt: 'Think about your teeth before braces, orthodontics — what you were born with:',
+    multiSelect: true,
     options: [
       { label: 'Crooked, crowded, or with gaps — sometimes stuck out a little', dosha: 'vata' },
       { label: 'Medium-sized and even — on the softer side, gums that bled easily', dosha: 'pitta' },
@@ -61,6 +70,7 @@ export const quizQuestions = [
   {
     section: 'physical',
     prompt: 'Your eyes:',
+    multiSelect: true,
     options: [
       { label: 'Small and active — dark brown or black, sometimes dry or sunken', dosha: 'vata' },
       { label: 'Sharp and penetrating — green, gray, hazel, or copper; sensitive to bright light', dosha: 'pitta' },
@@ -73,6 +83,7 @@ export const quizQuestions = [
   {
     section: 'physiological',
     prompt: 'Your appetite, day to day:',
+    multiSelect: true,
     options: [
       { label: 'All over the place — sometimes ravenous, sometimes I forget to eat entirely', dosha: 'vata' },
       { label: 'Strong and on schedule — I notice when a meal is late. I get irritable.', dosha: 'pitta' },
@@ -83,6 +94,7 @@ export const quizQuestions = [
   {
     section: 'physiological',
     prompt: 'Your digestion and elimination, honestly:',
+    multiSelect: true,
     options: [
       { label: 'Irregular — constipation, dryness, gas. Things don\'t move on any real schedule.', dosha: 'vata' },
       { label: 'Fast and loose — soft and frequent, sometimes a little too fast', dosha: 'pitta' },
@@ -93,6 +105,7 @@ export const quizQuestions = [
   {
     section: 'physiological',
     prompt: 'Your natural sleep:',
+    multiSelect: true,
     options: [
       { label: 'Light and interrupted — I wake easily, vivid or anxious dreams, don\'t need a lot', dosha: 'vata' },
       { label: 'Moderate and sound — I sleep less than most but wake feeling clear', dosha: 'pitta' },
@@ -103,6 +116,7 @@ export const quizQuestions = [
   {
     section: 'physiological',
     prompt: 'Your hands and feet tend to be:',
+    multiSelect: true,
     options: [
       { label: 'Cold — I\'m the one looking for a sweater when everyone else is fine', dosha: 'vata' },
       { label: 'Warm — I run hot and don\'t love direct sun or humid heat', dosha: 'pitta' },
@@ -115,6 +129,7 @@ export const quizQuestions = [
   {
     section: 'psychological',
     prompt: 'Your energy style:',
+    multiSelect: true,
     options: [
       { label: 'Quick bursts — I move fast and get a lot done, but I crash. Easily fatigued.', dosha: 'vata' },
       { label: 'Purposeful and driven — strong endurance when I\'m motivated', dosha: 'pitta' },
@@ -125,6 +140,7 @@ export const quizQuestions = [
   {
     section: 'psychological',
     prompt: 'How your mind naturally works:',
+    multiSelect: true,
     options: [
       { label: 'Fast and restless — I jump between ideas, pick things up quickly, get distracted', dosha: 'vata' },
       { label: 'Sharp and focused — analytical, decisive, I like to understand things fully', dosha: 'pitta' },
@@ -135,6 +151,7 @@ export const quizQuestions = [
   {
     section: 'psychological',
     prompt: 'Your memory:',
+    multiSelect: true,
     options: [
       { label: 'Quick to pick up, quick to forget — great in the moment, not so much long-term', dosha: 'vata' },
       { label: 'Sharp — I remember what I need to, especially what matters to me', dosha: 'pitta' },
@@ -145,6 +162,7 @@ export const quizQuestions = [
   {
     section: 'psychological',
     prompt: 'When things get hard, what shows up first?',
+    multiSelect: true,
     options: [
       { label: 'Anxiety and overwhelm — fear, indecision, scattered energy, can\'t sit still', dosha: 'vata' },
       { label: 'Anger and frustration — impatience, sharp words, the need to get control back', dosha: 'pitta' },

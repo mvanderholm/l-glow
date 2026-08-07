@@ -6,6 +6,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { accentShadowSm } from '../theme/index';
 import { useAuth } from '../context/AuthContext';
 import BackButton from '../components/BackButton';
 
@@ -90,11 +91,11 @@ function PasswordTab({ colors: c, returnTo }) {
         />
       </View>
 
-      {error     ? <Text style={[s.msg, { color: '#C97855' }]}>{error}</Text>     : null}
-      {resetSent ? <Text style={[s.msg, { color: '#7AB878' }]}>Reset link sent — check your inbox.</Text> : null}
+      {error     ? <Text style={[s.msg, { color: c.terracotta }]}>{error}</Text>     : null}
+      {resetSent ? <Text style={[s.msg, { color: c.sage }]}>Reset link sent — check your inbox.</Text> : null}
 
       <Pressable
-        style={[s.btn, { backgroundColor: (email.trim() && password) ? c.accent : c.border }]}
+        style={[s.btn, { backgroundColor: (email.trim() && password) ? c.accent : c.border, shadowColor: c.accent }]}
         onPress={handleSignIn}
         disabled={loading || !email.trim() || !password}
       >
@@ -189,9 +190,9 @@ function MagicLinkTab({ colors: c }) {
           returnKeyType="send"
         />
       </View>
-      {error ? <Text style={[s.msg, { color: '#C97855' }]}>{error}</Text> : null}
+      {error ? <Text style={[s.msg, { color: c.terracotta }]}>{error}</Text> : null}
       <Pressable
-        style={[s.btn, { backgroundColor: email.trim() ? c.accent : c.border }]}
+        style={[s.btn, { backgroundColor: email.trim() ? c.accent : c.border, shadowColor: c.accent }]}
         onPress={handleSend}
         disabled={loading || !email.trim()}
       >
@@ -263,9 +264,9 @@ function RecoveryForm({ colors: c }) {
           returnKeyType="go"
         />
       </View>
-      {error ? <Text style={[s.msg, { color: '#C97855' }]}>{error}</Text> : null}
+      {error ? <Text style={[s.msg, { color: c.terracotta }]}>{error}</Text> : null}
       <Pressable
-        style={[s.btn, { backgroundColor: canSubmit ? c.accent : c.border }]}
+        style={[s.btn, { backgroundColor: canSubmit ? c.accent : c.border, shadowColor: c.accent }]}
         onPress={handleSubmit}
         disabled={loading}
       >
@@ -279,7 +280,7 @@ function RecoveryForm({ colors: c }) {
 
 export default function Login() {
   const { theme: { colors: c } } = useTheme();
-  const { pendingRecovery } = useAuth();
+  const { pendingRecovery, accountDeactivated, clearAccountDeactivated } = useAuth();
   const router = useRouter();
   const { returnTo } = useLocalSearchParams();
   // Password first/default, not Magic link — also fixes a real constraint,
@@ -304,6 +305,16 @@ export default function Login() {
           {/* Header */}
           <Text style={[s.overline, { color: c.textMuted }]}>L. Glow</Text>
           <Text style={[s.title, { color: c.text }]}>{pendingRecovery ? 'Almost there.' : 'Welcome back.'}</Text>
+
+          {accountDeactivated && (
+            <View style={{ padding: 14, borderRadius: 14, backgroundColor: c.surfaceAlt, borderWidth: 1, borderColor: c.terracotta, marginBottom: 20 }}>
+              <Text style={[s.magicHeading, { color: c.text, fontSize: 16, marginBottom: 4 }]}>This account has been deactivated</Text>
+              <Text style={[s.magicSub, { color: c.textMedium }]}>Reach out to Thea if you think this is a mistake.</Text>
+              <Pressable onPress={clearAccountDeactivated} style={{ marginTop: 8 }}>
+                <Text style={{ color: c.textMuted, fontFamily: 'Inter_500Medium', fontSize: 13 }}>Dismiss</Text>
+              </Pressable>
+            </View>
+          )}
 
           {pendingRecovery ? (
             <RecoveryForm colors={c} />
@@ -362,7 +373,7 @@ const tabShadow = {
 };
 
 const s = StyleSheet.create({
-  scroll:    { flexGrow: 1, padding: 28, paddingTop: 12 },
+  scroll:    { flexGrow: 1, padding: 20, paddingTop: 12 },
   back:      { marginBottom: 12 },
   overline:  { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 2, textTransform: 'uppercase', marginBottom: 8 },
   title:     { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 34, lineHeight: 40, marginBottom: 20 },
@@ -376,8 +387,7 @@ const s = StyleSheet.create({
   label:     { fontFamily: 'Inter_600SemiBold', fontSize: 11.5, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 8 },
   input:     { borderWidth: 1, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, fontFamily: 'Inter_400Regular' },
   msg:       { fontFamily: 'Inter_400Regular', fontSize: 14, lineHeight: 20, marginTop: 2, marginBottom: 8 },
-  btn:       { borderRadius: 999, paddingVertical: 16, alignItems: 'center', marginTop: 8,
-               shadowColor: '#9A5151', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.22, shadowRadius: 14, elevation: 3 },
+  btn:       { borderRadius: 999, paddingVertical: 16, alignItems: 'center', marginTop: 8, ...accentShadowSm },
   btnText:   { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: 1.4 },
   forgotBtn: { alignSelf: 'center', paddingVertical: 12, marginTop: 4 },
   forgotText:{ fontFamily: 'Inter_400Regular', fontSize: 13.5 },

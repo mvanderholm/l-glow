@@ -2,10 +2,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
-import SearchButton from '../components/SearchButton';
+import Header from '../components/Header';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const DAILY = [
@@ -25,16 +23,10 @@ const COMING_SOON = [
 export default function Lifestyle() {
   const { theme: { colors: c } } = useTheme();
   const router = useRouter();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={[styles.header, { paddingHorizontal: 20 }]}>
-        {isWebMode ? <View style={styles.hBtn} /> : <Pressable style={styles.hBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
-        <Text style={[styles.hTitle, { color: c.text }]}>Lifestyle</Text>
-        <SearchButton color={c.text} style={styles.hBtn} />
-      </View>
+      <Header title="Lifestyle" left="menu" right="search" />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Text style={[styles.subtitle, { color: c.textMedium }]}>How you live — daily rhythms, rituals, and awareness.</Text>
@@ -83,12 +75,6 @@ export default function Lifestyle() {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
-function MenuIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-  </Svg>;
-}
-
 function CheckCircleIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.5} />
@@ -117,9 +103,6 @@ function StarIcon({ color, size }) {
 }
 
 const styles = StyleSheet.create({
-  header:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52 },
-  hBtn:    { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
-  hTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 22, letterSpacing: 0.22 },
 
   subtitle: { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 16, fontStyle: 'italic', lineHeight: 22, marginBottom: 16 },
 

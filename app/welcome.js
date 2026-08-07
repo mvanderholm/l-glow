@@ -7,7 +7,7 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { card } from '../theme/index';
+import { card, accentShadow } from '../theme/index';
 import { saveOnboarded } from '../data/user/storage';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 
@@ -136,7 +136,7 @@ export default function Welcome() {
                 Fourteen questions, about five minutes. Not a personality test — it finds your baseline blend, the color that's yours. Everything else in here reads off of it.
               </Text>
               <Pressable
-                style={[styles.quizBtn, { backgroundColor: c.accent }]}
+                style={[styles.quizBtn, { backgroundColor: c.accent, shadowColor: c.accent }]}
                 onPress={() => { saveOnboarded(); router.push('/quiz'); }}
               >
                 <Text style={styles.quizBtnText}>TAKE THE QUIZ  ›</Text>
@@ -199,7 +199,7 @@ export default function Welcome() {
               Start with the quiz. The rest follows.
             </Text>
             <Pressable
-              style={[styles.quizBtn, { backgroundColor: c.accent, width: '100%' }]}
+              style={[styles.quizBtn, { backgroundColor: c.accent, width: '100%', shadowColor: c.accent }]}
               onPress={() => { saveOnboarded(); router.push('/quiz'); }}
             >
               <Text style={styles.quizBtnText}>TAKE THE DOSHA QUIZ  ›</Text>
@@ -306,11 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 14,
     alignItems: 'center',
-    shadowColor: '#9A5151',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.28,
-    shadowRadius: 18,
-    elevation: 4,
+    ...accentShadow,
   },
   quizBtnText: {
     color: '#FBF9F4',

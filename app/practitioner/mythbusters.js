@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
 import { refreshMythbusters } from '../../data/content/remote';
+import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
 
 // First admin-editable content type — see data/content/remote.js for the
 // caching pattern every future content type (affirmations, check-in
@@ -84,7 +85,7 @@ export default function MythbustersAdmin() {
 
   async function save() {
     if (!draft.id.trim() || !draft.myth.trim() || !draft.week_start.trim()) {
-      Alert.alert('Missing fields', 'ID, week start, and myth are required.');
+      notify('Missing fields', 'ID, week start, and myth are required.');
       return;
     }
     setSaving(true);
@@ -95,24 +96,19 @@ export default function MythbustersAdmin() {
     };
     const { error } = await supabase.from('mythbusters').upsert(payload, { onConflict: 'id' });
     setSaving(false);
-    if (error) { Alert.alert('Couldn\'t save', error.message); return; }
+    if (error) { notify('Couldn\'t save', error.message); return; }
     setEditingId(null);
     await load();
     refreshMythbusters(); // fire-and-forget — keeps the app's local cache in sync
   }
 
-  function deleteItem(item) {
-    Alert.alert('Delete this myth?', `"${item.myth}" — this can't be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete', style: 'destructive', onPress: async () => {
-          const { error } = await supabase.from('mythbusters').delete().eq('id', item.id);
-          if (error) { Alert.alert('Couldn\'t delete', error.message); return; }
-          await load();
-          refreshMythbusters();
-        },
-      },
-    ]);
+  async function deleteItem(item) {
+    const ok = await confirmAsync('Delete this myth?', `"${item.myth}" — this can't be undone.`);
+    if (!ok) return;
+    const { error } = await supabase.from('mythbusters').delete().eq('id', item.id);
+    if (error) { notify('Couldn\'t delete', error.message); return; }
+    await load();
+    refreshMythbusters();
   }
 
   if (error) {

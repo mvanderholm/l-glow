@@ -29,3 +29,13 @@ export const NAV_SECTIONS = [
     { key: 'playlist', label: 'Playlist', external: SPOTIFY_PROFILE_URL },
   ],
 ];
+
+// Kept out of NAV_SECTIONS itself (rather than baked in and hidden by a
+// per-item flag) so both render sites — HamburgerDrawer and WebLayout —
+// append it the same conditional way instead of one of them quietly
+// drifting out of sync, the exact failure mode this file's own header
+// comment exists to prevent. Only ever shown for role === 'practitioner'
+// accounts (see context/AuthContext.js's isPractitioner).
+export const PRACTITIONER_NAV_SECTION = [
+  { key: 'practitioner', label: 'Practitioner Hub', href: '/practitioner' },
+];

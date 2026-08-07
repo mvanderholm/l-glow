@@ -7,8 +7,8 @@ import { card } from '../theme/index';
 import { loadVikritiProgress } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
-import BackButton, { smartBack } from '../components/BackButton';
-import SearchButton from '../components/SearchButton';
+import { smartBack } from '../components/BackButton';
+import Header from '../components/Header';
 
 // Vikriti hub — same shape as prakriti.js (three-tier progressive
 // assessment, kept separate from /quiz). Vikriti is the current state,
@@ -41,11 +41,7 @@ export default function Vikriti() {
 
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <View style={[s.topHeader, { borderBottomColor: c.border }]}>
-        <BackButton onPress={() => smartBack('/')} color={c.text} />
-        <Text style={[s.topHeaderTitle, { color: c.text }]}>Vikriti</Text>
-        <SearchButton color={c.text} />
-      </View>
+      <Header title="Vikriti" left="back" onBack={() => smartBack('/')} right="search" bordered />
 
       <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
         <Text style={[s.intro, { color: c.textMuted }]}>
@@ -104,8 +100,6 @@ export default function Vikriti() {
 }
 
 const s = StyleSheet.create({
-  topHeader:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth },
-  topHeaderTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 20 },
   intro: { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 21, marginBottom: 20 },
   centerPad: { alignItems: 'center', justifyContent: 'center', padding: 32 },
 

@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
+import { card, accentShadowSm } from '../theme/index';
 import { agniResults } from '../data/content/agniQuiz';
 import BackButton, { smartBack } from '../components/BackButton';
 
@@ -87,7 +88,7 @@ export default function AgniResult() {
         <Text style={[s.subtitle, { color: c.textMuted }]}>{res.subtitle}</Text>
 
         {/* Score bars */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           {BARS.map(({ key, label, color }) => {
             const pct = total > 0 ? Math.round((counts[key] / total) * 100) : 0;
             return (
@@ -103,18 +104,18 @@ export default function AgniResult() {
         </View>
 
         {/* Summary */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.body, { color: c.text }]}>{res.summary}</Text>
         </View>
 
         {/* Gifts */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.sectionLabel, { color: c.textMuted }]}>Signs of {res.name}</Text>
           {res.gifts.map((g, i) => <Bullet key={i} text={g} color={res.color} />)}
         </View>
 
         {/* Watch for */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.sectionLabel, { color: c.textMuted }]}>Things to watch for</Text>
           {res.watchFor.map((w, i) => <Bullet key={i} text={w} color={c.textMuted} />)}
         </View>
@@ -126,13 +127,13 @@ export default function AgniResult() {
         </View>
 
         {/* Path forward */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.sectionLabel, { color: c.textMuted }]}>Path forward</Text>
           <Text style={[s.body, { color: c.text }]}>{res.pathForward}</Text>
         </View>
 
         {/* Practices */}
-        <View style={[s.card, { backgroundColor: c.surface }]}>
+        <View style={[s.card, { backgroundColor: c.surface, ...card }]}>
           <Text style={[s.sectionLabel, { color: c.textMuted }]}>What supports {res.name}</Text>
           <PracticeSection label="Diet"                  items={res.practices.diet}      color={res.color} />
           <PracticeSection label="Lifestyle"             items={res.practices.lifestyle}  color={res.color} />
@@ -148,7 +149,7 @@ export default function AgniResult() {
 
         {/* CTA */}
         <Pressable
-          style={[s.btn, { backgroundColor: c.accent }]}
+          style={[s.btn, { backgroundColor: c.accent, shadowColor: c.accent }]}
           onPress={() => router.replace('/')}
         >
           <Text style={s.btnText}>RETURN HOME  ›</Text>
@@ -171,7 +172,7 @@ const s = StyleSheet.create({
   typeName:  { fontFamily: 'PlayfairDisplay_700Bold', fontSize: 48, lineHeight: 54, marginBottom: 4 },
   subtitle:  { fontFamily: 'Inter_400Regular', fontSize: 15, marginBottom: 24 },
 
-  card: { borderRadius: 20, padding: 20, marginBottom: 12 },
+  card: { borderRadius: 26, padding: 20, marginBottom: 12 },
 
   barRow:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
   barLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 12, letterSpacing: 0.4, width: 60 },
@@ -186,7 +187,7 @@ const s = StyleSheet.create({
   dot:        { width: 6, height: 6, borderRadius: 3, marginTop: 9, flexShrink: 0 },
   bulletText: { flex: 1, fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 23 },
 
-  reflectionCard:  { borderRadius: 20, padding: 20, marginBottom: 12, borderLeftWidth: 3 },
+  reflectionCard:  { borderRadius: 26, padding: 20, marginBottom: 12, borderLeftWidth: 3 },
   reflectionLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 },
   reflectionText:  { fontFamily: 'PlayfairDisplay_400Regular', fontStyle: 'italic', fontSize: 18, lineHeight: 28 },
 
@@ -194,7 +195,7 @@ const s = StyleSheet.create({
   practiceLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 13, marginBottom: 6 },
   practiceItem:  { fontFamily: 'Inter_400Regular', fontSize: 14.5, lineHeight: 22, marginBottom: 3 },
 
-  lGlowCard: { borderRadius: 20, padding: 20, marginBottom: 20, borderWidth: 1 },
+  lGlowCard: { borderRadius: 26, padding: 20, marginBottom: 20, borderWidth: 1 },
   lGlowText: { fontFamily: 'PlayfairDisplay_400Regular', fontStyle: 'italic', fontSize: 16, lineHeight: 27 },
 
   btn: {
@@ -202,11 +203,7 @@ const s = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginBottom: 12,
-    shadowColor: '#9A5151',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.22,
-    shadowRadius: 14,
-    elevation: 3,
+    ...accentShadowSm,
   },
   btnText:    { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13.5, letterSpacing: 1.4 },
   retakeBtn:  { alignSelf: 'center', paddingVertical: 10 },
