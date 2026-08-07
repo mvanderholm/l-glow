@@ -1,7 +1,7 @@
 // CONTENT NOTE: All copy below is [DRAFT] — rewritten against voice guide v1.0 (approved by
 // Thea, July 2026). Still her final line-edit pass before this page ships publicly — being
 // grounded in the approved guide isn't the same as being her own words verbatim.
-// Photo placeholder (photoFrame) = swap in assets/thea.jpg when ready.
+// photoFrame's image is assets/thea.jpg (added Aug 7 2026).
 
 import { View, Text, StyleSheet, Pressable, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -148,9 +148,8 @@ export default function Welcome() {
           <View style={{ paddingTop: spacing.xl, paddingBottom: spacing.xl, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }}>
             <Text style={[type.label, { color: c.textMuted, marginBottom: spacing.lg }]}>The practitioner</Text>
             <View style={{ flexDirection: 'row', gap: 20, alignItems: 'flex-start' }}>
-              {/* Photo placeholder — swap in assets/thea.jpg */}
               <View style={[styles.photoFrame, { backgroundColor: c.surface, borderColor: c.honeyAmber }]}>
-                <Text style={{ color: c.border, fontSize: 10, letterSpacing: 0.8, textTransform: 'uppercase', fontFamily: 'Inter_400Regular' }}>Photo</Text>
+                <Image source={require('../assets/thea.jpg')} style={{ width: '100%', height: '100%', transform: [{ scale: 1.4 }, { translateY: 4 }] }} resizeMode="cover" />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[type.h2, { color: c.text, marginBottom: 4 }]}>Thea</Text>
@@ -315,8 +314,8 @@ const styles = StyleSheet.create({
     letterSpacing: 1.4,
   },
   photoFrame: {
-    width: 90,
-    height: 110,
+    width: 115,
+    height: 140,
     borderRadius: 14,
     borderWidth: 1,
     justifyContent: 'center',

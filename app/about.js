@@ -1,4 +1,4 @@
-// Photo placeholder is intentionally blank — swap in assets/thea.jpg when ready.
+// Lead photo is assets/thea.jpg (added Aug 7 2026).
 // assets/about-archway.jpg (formerly the top banner here) is no longer used on this
 // screen — kept in assets/ for reuse elsewhere, placement TBD. See roadmap #47.
 
@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../context/ThemeContext';
 import { themes } from '../theme';
 import InstagramFeed from '../components/InstagramFeed';
-import { CornerSprig, LeafSprig, BotanicalDivider } from '../components/BotanicalAccent';
+import { CornerSprig, BotanicalDivider } from '../components/BotanicalAccent';
 import { INSTAGRAM_HANDLE } from '../data/instagram';
 import { SPOTIFY_PROFILE_URL } from '../data/content/music';
 import { BOOKING_URL } from '../data/booking';
@@ -37,14 +37,13 @@ export default function About() {
           <SearchButton color={c.text} style={{ marginBottom: 8 }} />
         </View>
 
-        {/* Photo — lead image, top of page. Swap in assets/thea.jpg when ready */}
+        {/* Photo — lead image, top of page. */}
         <View style={[styles.photoFrame, { marginTop: spacing.lg }]}>
+          <Image source={require('../assets/thea.jpg')} style={{ width: '100%', height: '100%', transform: [{ scale: 1.4 }, { translateY: 5 }] }} resizeMode="cover" />
           <CornerSprig color={c.olive} size={40} style={{ position: 'absolute', top: 6, right: 6 }} />
           <View style={{ position: 'absolute', bottom: 6, left: 6, transform: [{ rotate: '180deg' }] }}>
             <CornerSprig color={c.olive} size={40} />
           </View>
-          <LeafSprig color={c.honeyAmber} size={44} />
-          <Text style={styles.photoLabel}>Photo</Text>
         </View>
 
         {/* Name + credentials */}
@@ -263,8 +262,8 @@ function makeStyles(c, spacing, radius) {
       overflow: 'hidden',
     },
     photoFrame: {
-      width: 140,
-      height: 180,
+      width: 190,
+      height: 240,
       borderRadius: radius.lg,
       backgroundColor: c.surface,
       borderWidth: 1,
@@ -272,12 +271,6 @@ function makeStyles(c, spacing, radius) {
       justifyContent: 'center',
       alignItems: 'center',
       overflow: 'hidden',
-    },
-    photoLabel: {
-      color: c.border,
-      fontSize: 12,
-      letterSpacing: 1,
-      textTransform: 'uppercase',
     },
     bioBlock: {
       marginTop: spacing.xl,
