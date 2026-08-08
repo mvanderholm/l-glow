@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -6,6 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { card, accentShadowSm } from '../theme/index';
 import { gunaResults } from '../data/content/gunaQuiz';
 import BackButton, { smartBack } from '../components/BackButton';
+import { BOOKING_URL } from '../data/booking';
 
 // Source: transcript 18 (061926_02). Result copy is DRAFT — Thea to review before launch.
 
@@ -155,6 +156,10 @@ export default function GunaResult() {
         {/* Retake */}
         <Pressable style={s.retakeBtn} onPress={() => router.replace('/guna-quiz')}>
           <Text style={[s.retakeText, { color: c.textMuted }]}>Retake assessment</Text>
+        </Pressable>
+
+        <Pressable style={s.retakeBtn} onPress={() => Linking.openURL(BOOKING_URL)}>
+          <Text style={[s.retakeText, { color: c.accent }]}>Want to talk to Thea? Book a session</Text>
         </Pressable>
 
       </ScrollView>

@@ -7,6 +7,7 @@ import { supabase } from '../../config/supabase';
 import { SECTIONS, sectionProgress } from '../intake';
 import { DOSHA_COLORS } from '../../components/DoshaWheel';
 import { tongueSteps, tongueSignList } from '../../data/content/tongueCheck';
+import { loadMessages, sendMessageAsPractitioner } from '../../data/user/messages';
 
 // Practitioner "Clients" screen — v2, still built ahead of the real
 // conversation with Thea about what she wants to see (see roadmap #30 Phase
@@ -597,6 +598,7 @@ const CLIENT_TABS = [
   { key: 'intake',      label: 'Intake' },
   { key: 'manual',      label: 'Manual' },
   { key: 'notes',       label: 'Notes' },
+  { key: 'messages',    label: 'Messages' },
 ];
 
 // The first AI-drafted content in this app that's ever meant to reach the
@@ -736,6 +738,85 @@ function ManualSection({ clientId, practitionerId, colors: c }) {
         </>
       )}
       {error && <Text style={{ color: c.terracotta || '#C97855', fontSize: 12, marginTop: 8 }}>Couldn't generate — {error}</Text>}
+    </SectionCard>
+  );
+}
+
+// One flat thread per client (roadmap #59) — see
+// supabase/migrations/20260807030000_messages.sql for the RLS shape.
+// clientId is always a consented client by the time this renders (ClientList
+// only ever queries consented_to_practitioner_view = true rows), so no
+// separate consent check is needed here the way the client-side screen
+// (app/messages.js) needs one — the DB-level check is still the real
+// enforcement either way, this is just why the UI doesn't need to branch on
+// it too. Load-on-open, not live-updating — same v1 simplicity call as the
+// client side.
+function MessagesSection({ clientId, practitionerId, colors: c }) {
+  const [messages, setMessages] = useState(null);
+  const [draft, setDraft] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => { load(); }, [clientId]);
+
+  async function load() {
+    setMessages(null);
+    try {
+      const rows = await loadMessages(clientId);
+      setMessages(rows);
+    } catch (err) {
+      setError(err.message);
+      setMessages([]);
+    }
+  }
+
+  async function send() {
+    const body = draft.trim();
+    if (!body || sending) return;
+    setSending(true);
+    setDraft('');
+    try {
+      await sendMessageAsPractitioner(clientId, practitionerId, body);
+      await load();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  if (messages === null) return <View style={s.centerPad}><ActivityIndicator color={c.accent} /></View>;
+
+  return (
+    <SectionCard title="Messages" colors={c}>
+      {error && <Text style={{ color: c.terracotta || '#C97855', fontSize: 12, marginBottom: 10 }}>{error}</Text>}
+      <TextInput
+        style={[s.noteInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
+        value={draft}
+        onChangeText={setDraft}
+        placeholder="Write a message…"
+        placeholderTextColor={c.textMuted}
+        multiline
+      />
+      <Pressable
+        style={[s.addNoteBtn, { backgroundColor: draft.trim() ? c.accent : c.border }]}
+        onPress={send}
+        disabled={!draft.trim() || sending}
+      >
+        <Text style={s.addNoteBtnText}>{sending ? 'Sending…' : 'Send'}</Text>
+      </Pressable>
+      {messages.length === 0 ? (
+        <Text style={[s.mutedNote, { color: c.textMuted, marginTop: 10 }]}>No messages yet.</Text>
+      ) : (
+        [...messages].reverse().map(m => (
+          <View key={m.id} style={[s.noteRow, { borderTopColor: c.border }]}>
+            <Text style={[s.noteDate, { color: c.textMuted }]}>
+              {m.sender_id === practitionerId ? 'You' : 'Client'} · {new Date(m.created_at).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+            </Text>
+            <Text style={[s.noteText, { color: c.text }]}>{m.body}</Text>
+          </View>
+        ))
+      )}
     </SectionCard>
   );
 }
@@ -1102,6 +1183,10 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
 
             {activeTab === 'manual' && (
               <ManualSection clientId={client.id} practitionerId={practitionerId} colors={c} />
+            )}
+
+            {activeTab === 'messages' && (
+              <MessagesSection clientId={client.id} practitionerId={practitionerId} colors={c} />
             )}
 
             {activeTab === 'notes' && (

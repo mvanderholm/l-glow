@@ -5,6 +5,14 @@
 // instead of her having to check manually with no signal at all (the gap
 // flagged in roadmap #30 as "explicitly deferred").
 //
+// Aug 7 2026: also pushes Thea via Expo's push service if she has a
+// registered device (see data/user/pushNotifications.js, push_tokens
+// table). First real consumer of the new push infrastructure — no
+// messaging feature exists yet (roadmap #59), so this intake-complete
+// signal is the concrete starting point. Best-effort and non-blocking:
+// unlike the email send below, a push failure (no token registered yet,
+// Expo API hiccup) never fails this function or skips marking notified_at.
+//
 // Deploy via the Supabase dashboard: Edge Functions -> Create a new
 // function -> name it "notify-intake-complete" -> paste this file's
 // contents. Then set the RESEND_API_KEY secret under Edge Functions ->
@@ -46,6 +54,30 @@ function jsonResponse(body: unknown, status = 200) {
     status,
     headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
   });
+}
+
+// deno-lint-ignore no-explicit-any
+async function pushPractitioners(admin: any, clientLabel: string) {
+  try {
+    const { data: practitioners } = await admin.from('users').select('id').eq('role', 'practitioner');
+    const ids = (practitioners ?? []).map((p: { id: string }) => p.id);
+    if (!ids.length) return;
+
+    const { data: tokens } = await admin.from('push_tokens').select('token').in('user_id', ids);
+    if (!tokens?.length) return;
+
+    await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(tokens.map((t: { token: string }) => ({
+        to: t.token,
+        title: 'New intake form',
+        body: `${clientLabel} just completed their intake form.`,
+      }))),
+    });
+  } catch (err) {
+    console.warn('Push notification failed (non-fatal):', (err as Error).message);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -116,6 +148,7 @@ Deno.serve(async (req) => {
   }
 
   await admin.from('intake_forms').update({ notified_at: new Date().toISOString() }).eq('user_id', user.id);
+  await pushPractitioners(admin, clientLabel);
 
   return jsonResponse({ status: 'sent' });
 });

@@ -12,17 +12,19 @@ import Header from '../../components/Header';
 // check lives here once, gating every sub-route under /practitioner instead
 // of each screen re-checking it.
 
-// Quiz entries (dosha/prakriti/guna/vikriti) ordered to match the consumer
-// sequence Matt scoped in supabase/migrations/TODO.md — Dosha Quiz first
-// (the ungated entry point), then Prakriti, Guna, Vikriti. Agni and Tongue
-// Check have no admin editor yet (no dedicated content table), so they're
-// not in this list — a known gap, not an oversight of this reorder.
+// Quiz entries (dosha/prakriti/guna/vikriti/agni) ordered to match the
+// consumer sequence Matt scoped in supabase/migrations/TODO.md — Dosha Quiz
+// first (the ungated entry point), then Prakriti, Guna, Vikriti, Agni.
+// Tongue Check still has no admin editor (its 4-step shape/size/color/
+// coating protocol is fixed, not a growable question list like the others —
+// see roadmap notes, Aug 2026) — a known, deliberate gap, not an oversight.
 const NAV_ITEMS = [
   { key: 'clients',      label: 'Clients',      href: '/practitioner' },
   { key: 'dosha',        label: 'Dosha Quiz',   href: '/practitioner/dosha-questions' },
   { key: 'prakriti',     label: 'Prakriti',     href: '/practitioner/prakriti-questions' },
   { key: 'guna',         label: 'Guna Quiz',    href: '/practitioner/guna-questions' },
   { key: 'vikriti',      label: 'Vikriti',      href: '/practitioner/vikriti-questions' },
+  { key: 'agni',         label: 'Agni Quiz',    href: '/practitioner/agni-questions' },
   { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
   { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
   { key: 'mythbusters',  label: 'Mythbusters',  href: '/practitioner/mythbusters' },

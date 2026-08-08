@@ -15,7 +15,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#9A5151"
+        }
+      ]
     ],
     "web": {
       "favicon": "./assets/icon.png",

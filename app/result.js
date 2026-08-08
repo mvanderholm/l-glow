@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -6,6 +6,7 @@ import { doshaInfo } from '../data/content/quiz';
 import { useTheme } from '../context/ThemeContext';
 import { BotanicalDivider } from '../components/BotanicalAccent';
 import BackButton, { smartBack } from '../components/BackButton';
+import { BOOKING_URL } from '../data/booking';
 
 export default function Result() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -168,6 +169,10 @@ export default function Result() {
 
         <Pressable style={styles.retakeBtn} onPress={() => router.replace('/quiz')}>
           <Text style={styles.retakeText}>Retake quiz</Text>
+        </Pressable>
+
+        <Pressable style={styles.retakeBtn} onPress={() => Linking.openURL(BOOKING_URL)}>
+          <Text style={[styles.retakeText, { color: colors.accent }]}>Want to talk to Thea? Book a session</Text>
         </Pressable>
 
       </ScrollView>

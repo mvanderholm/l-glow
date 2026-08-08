@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { agniQuestions } from '../data/content/agniQuiz';
+import { agniQuestions as staticAgniQuestions } from '../data/content/agniQuiz';
+import { loadAgniQuestions, refreshAgniQuestions } from '../data/content/remote';
 import { saveAgniResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
 import BackButton, { smartBack } from '../components/BackButton';
@@ -12,6 +13,12 @@ export default function AgniQuiz() {
   const [index, setIndex]     = useState(0);
   const [answers, setAnswers] = useState([]);
   const [picked, setPicked]   = useState(null); // index of the selected option for the current question
+  const [agniQuestions, setAgniQuestions] = useState(staticAgniQuestions);
+
+  useEffect(() => {
+    loadAgniQuestions().then(setAgniQuestions);
+    refreshAgniQuestions().then(loadAgniQuestions).then(setAgniQuestions);
+  }, []);
 
   const q        = agniQuestions[index];
   const progress = (index / agniQuestions.length) * 100;

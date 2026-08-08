@@ -4,6 +4,7 @@ import { mythbusters as staticMythbusters } from './mythbusters';
 import { affirmations as staticAffirmations } from './affirmations';
 import { checkinDimensions as staticCheckinDimensions } from './checkinDimensions';
 import { gunaQuestions as staticGunaQuestions } from './gunaQuiz';
+import { agniQuestions as staticAgniQuestions } from './agniQuiz';
 import { quizQuestions as staticDoshaQuestions } from './quiz';
 import { intentions as staticIntentions } from './intentions';
 import { routineAnchors as staticRoutineAnchors, routines as staticRoutines } from './routines';
@@ -27,6 +28,7 @@ const CACHE_KEYS = {
   affirmations:       '@lglow/content_cache/affirmations',
   checkinDimensions:  '@lglow/content_cache/checkin_dimensions',
   gunaQuestions:      '@lglow/content_cache/guna_questions',
+  agniQuestions:      '@lglow/content_cache/agni_questions',
   doshaQuestions:     '@lglow/content_cache/dosha_questions',
   intentions:         '@lglow/content_cache/intentions',
   routines:           '@lglow/content_cache/routines',
@@ -138,6 +140,39 @@ export async function refreshGunaQuestions() {
     await AsyncStorage.setItem(CACHE_KEYS.gunaQuestions, JSON.stringify(data.map(rowToGunaQuestion)));
   } catch (err) {
     console.warn('Refresh guna questions failed (using cached/static):', err.message);
+  }
+}
+
+// Agni Assessment (`/agni-quiz`) — same flattened-columns shape as
+// guna_questions, one option per agni type (sama/vishama/tikshna/manda).
+function rowToAgniQuestion(row) {
+  return {
+    id: row.id,
+    prompt: row.prompt,
+    options: [
+      { label: row.sama_label, agni: 'sama' },
+      { label: row.vishama_label, agni: 'vishama' },
+      { label: row.tikshna_label, agni: 'tikshna' },
+      { label: row.manda_label, agni: 'manda' },
+    ],
+  };
+}
+
+export async function loadAgniQuestions() {
+  const cached = await AsyncStorage.getItem(CACHE_KEYS.agniQuestions);
+  if (cached) {
+    try { return JSON.parse(cached); } catch { /* fall through to static */ }
+  }
+  return staticAgniQuestions;
+}
+
+export async function refreshAgniQuestions() {
+  try {
+    const { data, error } = await supabase.from('agni_questions').select('*').order('sort_order', { ascending: true });
+    if (error || !data) return;
+    await AsyncStorage.setItem(CACHE_KEYS.agniQuestions, JSON.stringify(data.map(rowToAgniQuestion)));
+  } catch (err) {
+    console.warn('Refresh agni questions failed (using cached/static):', err.message);
   }
 }
 

@@ -4,6 +4,7 @@ import { supabase } from '../config/supabase';
 import { hydrateFromSupabase, migrateLocalToSupabase } from '../data/user/storage';
 import { hydrateIntake, migrateIntake } from '../app/intake';
 import { hydrateJournal, migrateJournal } from '../app/journal';
+import { registerForPushNotifications } from '../data/user/pushNotifications';
 
 const AuthContext = createContext(null);
 
@@ -96,6 +97,7 @@ export function AuthProvider({ children }) {
       setUser(session.user);
       hydrateAll(session.user.id);
       migrateAll(session.user.id);
+      registerForPushNotifications(session.user.id);
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => handleSession(session));

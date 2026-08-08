@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -315,6 +315,10 @@ export default function You() {
             { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true, progressText: vikritiProgressText, notTaken: !vikritiProgressText },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
+            // Native only — Matt's call, Aug 7 2026: in-app messaging is an
+            // app feature, not a web one. The /messages route still works
+            // if reached directly on web, just not promoted here.
+            ...(user && Platform.OS !== 'web' ? [{ label: 'Message Thea', Icon: MessageIcon, message: true }] : []),
           ];
           return (
             <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
@@ -374,6 +378,7 @@ export default function You() {
                     }
                     if (item.prakriti) router.push('/prakriti');
                     if (item.vikriti) router.push('/vikriti');
+                    if (item.message) router.push('/messages');
                   }}
                 >
                   <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
@@ -605,6 +610,11 @@ function PrakritiIcon({ color, size }) {
 function VikritiIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M3 12h3.5l2-6 3 12 2-9 1.5 3H21" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>;
+}
+function MessageIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M4 5.5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4.5 3.5V17.5H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
   </Svg>;
 }
 function ShareIcon({ color, size }) {

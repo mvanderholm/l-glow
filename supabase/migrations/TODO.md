@@ -44,5 +44,6 @@ Midwest area is $222 per 90 minute consult split 111 up front to hold the appt, 
 
 For every year, we have a month of work together
 
+-- we want to drive people to the daily checkin after their initial onboarding.  we want the daily rythms to get to what todays guide is and have one suggestion for the morning, midday, evening and night category
 
 

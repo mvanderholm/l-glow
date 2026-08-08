@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card, accentShadowSm } from '../theme/index';
 import { tongueReadings, amaReadings, tongueMap, tongueSignList, computeReading } from '../data/content/tongueCheck';
 import BackButton, { smartBack } from '../components/BackButton';
+import { BOOKING_URL } from '../data/booking';
 
 // Source: transcript 27 (062426_01), June 2026. Content is DRAFT — Thea to review.
 
@@ -126,6 +127,10 @@ export default function TongueResult() {
 
         <Pressable style={s.retakeBtn} onPress={() => router.replace('/tongue-check')}>
           <Text style={[s.retakeText, { color: c.textMuted }]}>Check again</Text>
+        </Pressable>
+
+        <Pressable style={s.retakeBtn} onPress={() => Linking.openURL(BOOKING_URL)}>
+          <Text style={[s.retakeText, { color: c.accent }]}>Want to talk to Thea? Book a session</Text>
         </Pressable>
 
       </ScrollView>
