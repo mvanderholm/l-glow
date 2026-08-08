@@ -377,13 +377,20 @@ function AsanaModal({ asana, onClose }) {
   );
 }
 
+const ROUTINE_TIME_STYLE_KEYS = {
+  morning: 'routineTimeMorning',
+  midday:  'routineTimeMidday',
+  evening: 'routineTimeEvening',
+  night:   'routineTimeNight',
+};
+
 function RoutineRow({ time, label }) {
   const { theme: { colors, spacing, radius, type } } = useTheme();
   const styles = makeStyles(colors, spacing, radius);
-  const isMorning = time === 'morning';
+  const timeStyle = styles[ROUTINE_TIME_STYLE_KEYS[time]] ?? styles.routineTimeMorning;
   return (
     <View style={styles.routineRow}>
-      <View style={[styles.routineTimeBadge, isMorning ? styles.routineTimeMorning : styles.routineTimeEvening]}>
+      <View style={[styles.routineTimeBadge, timeStyle]}>
         <Text style={styles.routineTimeText}>{time}</Text>
       </View>
       <Text style={[type.body, { flex: 1 }]}>{label}</Text>
@@ -533,7 +540,9 @@ return StyleSheet.create({
     alignItems: 'center',
   },
   routineTimeMorning: { backgroundColor: colors.saffron + '33' },
+  routineTimeMidday:  { backgroundColor: colors.terracotta + '33' },
   routineTimeEvening: { backgroundColor: colors.vata + '33' },
+  routineTimeNight:   { backgroundColor: colors.kapha + '33' },
   routineTimeText: {
     color: colors.textMuted,
     fontSize: 11,

@@ -12,7 +12,7 @@ import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert
 // else, rather than being carved out as a separate un-editable set.
 
 const DOSHA_OPTIONS = ['universal', 'vata', 'pitta', 'kapha'];
-const TIME_OPTIONS = ['morning', 'evening'];
+const TIME_OPTIONS = ['morning', 'midday', 'evening', 'night'];
 const EMPTY_DRAFT = { id: '', label: '', dosha: 'universal', time: 'morning', sort_order: '0' };
 
 function Field({ label, value, onChangeText, colors: c, placeholder, keyboardType }) {
