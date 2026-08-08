@@ -8,13 +8,14 @@ import { useViewMode } from '../context/ViewModeContext';
 import { card, accentShadow } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadRecentCheckins } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadTodayCheckin, loadPrakritiProgress } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { loadMythbusters, refreshMythbusters, loadIntentions, refreshIntentions, loadPlaylists, refreshPlaylists } from '../data/content/remote';
 import { playlistForDosha } from '../data/content/music';
 import SearchButton from '../components/SearchButton';
+import OnboardingJourneyModal from '../components/OnboardingJourneyModal';
 import Svg, { Path, Circle, G } from 'react-native-svg';
 
 const WEEK_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -46,16 +47,15 @@ export default function Home() {
   const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
   const [userName, setUserName] = useState(null);
-  const [hasCheckedIn, setHasCheckedIn] = useState(null); // null = loading
+  const [hasCheckedInToday, setHasCheckedInToday] = useState(null); // null = loading
+  const [prakritiDone, setPrakritiDone] = useState(null); // null = loading
   const scrollRef = useRef(null);
 
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
     loadOnboarded().then(flag => { if (!flag) router.replace('/welcome'); });
-    // 365-day window as a practical stand-in for "ever checked in" — same
-    // proxy app/you.js's stats already use, no dedicated "any row exists"
-    // query needed.
-    loadRecentCheckins(365).then(list => setHasCheckedIn(list.length > 0));
+    loadTodayCheckin().then(entry => setHasCheckedInToday(!!entry));
+    loadPrakritiProgress().then(progress => setPrakritiDone(!!progress.foundation));
   }, []);
 
   // No more anonymous "what's your name" prompt — name only shows once
@@ -76,6 +76,7 @@ export default function Home() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
+      <OnboardingJourneyModal />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         ref={scrollRef}
@@ -106,13 +107,16 @@ export default function Home() {
         {/* CTA button */}
         <CtaButton colors={c} />
 
-        {/* Getting started — only while there's something left to start.
-            Both steps are independently tappable in any order (no locking,
-            no streaks) — the only "guidance" is which row gets the
-            emphasized treatment. Disappears entirely once both are done,
-            not a permanent nag. */}
-        {savedDosha !== null && hasCheckedIn !== null && (!savedDosha || !hasCheckedIn) && (
-          <GettingStartedCard hasDosha={!!savedDosha} hasCheckedIn={hasCheckedIn} colors={c} type={type} />
+        {/* Getting started — shown from first login through Prakriti
+            completion (Matt's call, Aug 7 2026), not just until dosha +
+            first-ever check-in are done. The check-in row tracks *today's*
+            check-in specifically (resets each day) so it keeps nudging the
+            daily habit throughout that window instead of marking itself
+            permanently done after one check-in. Both rows are independently
+            tappable in any order (no locking, no streaks) — the only
+            "guidance" is which row gets the emphasized treatment. */}
+        {savedDosha !== null && hasCheckedInToday !== null && prakritiDone !== null && (!savedDosha || !prakritiDone) && (
+          <GettingStartedCard hasDosha={!!savedDosha} hasCheckedIn={hasCheckedInToday} colors={c} type={type} />
         )}
 
         {/* Affirmation card */}

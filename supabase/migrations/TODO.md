@@ -40,5 +40,9 @@ Where is your mind at (Guna)
 
 - Then can we integrate a way to charge for 75 - 90 minute 1:1 consults to be paid via squarespace?
 
-Midwest area is $222 per 90 minute consult
+Midwest area is $222 per 90 minute consult split 111 up front to hold the appt, 111 on the backend when the thing is done
+
+For every year, we have a month of work together
+
+
 

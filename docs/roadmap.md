@@ -1439,6 +1439,24 @@ Real React Native + web SDKs from one vendor (most alternatives are web-first), 
 
 ---
 
+**60. Onboarding journey modal + Practitioner Hub quiz reorder.** Source: real test-user feedback in `supabase/migrations/TODO.md` — "overwhelmed, don't really know where to go or what's next," plus an explicit ask to guide new users through Dosha Quiz → Intake → Prakriti → Vikriti in order.
+
+- **Practitioner Hub quiz nav reordered** (`app/practitioner/_layout.js`) to Dosha → Prakriti → Guna → Vikriti, matching the intended consumer sequence. Agni and Tongue Check have no admin content editor yet (no dedicated table) — a known, separate gap, not folded into this reorder.
+- **`OnboardingJourneyModal`** (`components/OnboardingJourneyModal.js`, rendered from `app/index.js`) — a full-screen "New here? We got you." modal shown once, automatically, on a new signee's first home-screen visit. Two paths: self-serve (all six assessments — Dosha, Prakriti, Guna, Vikriti, Agni, Tongue Check — listed as tappable rows, take in any order, no locking) or "Work with Thea directly" (skips straight to `/intake`). Step-done status is derived from existing result data (no new schema) — Prakriti/Vikriti count as started once their first tier is complete, same proxy the tier hubs already use. Gated on its own AsyncStorage flag (`loadOnboardingJourneySeen`/`saveOnboardingJourneySeen` in `data/user/storage.js`), separate from the existing `ONBOARDED` flag (which only means "has seen `/welcome`"). **Matt's call, Aug 7 2026: kept alongside the existing `GettingStartedCard` rather than replacing it** — this modal is the one-time full tour; #61 below changed what that card does afterward.
+- Verified via Playwright: modal appears for a fresh account, each step routes correctly and dismisses+sets the seen flag (confirmed it doesn't reappear on a second visit), the intake skip path routes to `/intake`, and the × close button dismisses in place without navigating.
+- **Copy is [DRAFT]**, written in Thea's voice per the voice guide but not yet reviewed by her — same flag as `welcome.js`/`about.js`.
+- **Web-frame bug found + fixed same day:** React Native Web's `Modal` renders via a portal straight to `document.body`, bypassing the 480px mobile-frame wrapper `app/_layout.js` uses to simulate the phone frame on web — the sheet was stretching to the full browser width instead of matching the frame. Fixed by capping the sheet at `maxWidth: 480` + `alignSelf: 'center'` (no-ops on native). **`HerbModal`/`AsanaModal` in `app/recommendations.js` have the identical unfixed bug** (same `Modal` component, no width cap) — flagged, not fixed, since it wasn't in scope for this pass.
+
+---
+
+**61. Drive people toward the daily check-in through Prakriti, and a "Today's Rhythm" pick per time slot.** Source: Matt's follow-up note in `supabase/migrations/TODO.md`.
+
+- **`GettingStartedCard` (`app/index.js`) re-scoped, Aug 7 2026.** Previously showed until dosha *and* a first-ever check-in were both done, then vanished for good. Now: the check-in row tracks *today's* check-in (`loadTodayCheckin`) instead of "ever checked in," so it resets and re-nudges daily; and the card's visibility condition changed from "dosha or ever-checkin missing" to "dosha not done, or Prakriti's foundation tier not done" (`loadPrakritiProgress`). Net effect, per Matt's call: the card — and its daily check-in nudge — now persists across every login from first sign-in through Prakriti completion, not just until one check-in happens.
+- **"Today's Rhythm" strip on `/today`** (`app/today.js`) — one deterministically-rotating pick per time slot (morning/midday/evening/night), reusing the existing `dailyPick()` helper the screen's four pillar cards already use, sourced from `routine_items` (the same Daily Rhythms data `/recommendations` shows in full). **Deliberately not a 5th pillar card** — Matt agreed a full card didn't fit (the other four are one blurb each; this is inherently four short items) — built instead as a lighter compact strip (small time-badges + one-line pick) below the card grid, above the existing "See full guidance" link, which stays pointed at the full `/recommendations` list. A time slot with no matching content for the user's dosha (midday/night are new — see #59's migration — and still sparse) just doesn't render a row rather than showing an empty one.
+- Verified via Playwright across all three `GettingStartedCard` visibility states (neither done, dosha-done-only, Prakriti-done) plus the rhythm strip rendering correctly with only the slots that have real content.
+
+---
+
 ## Full QA pass, July 2026 — one deploy-pipeline incident, one code fix
 
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~

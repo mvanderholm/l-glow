@@ -65,6 +65,7 @@ const KEYS = {
   STATE:          '@lglow/state',
   ZIP:            '@lglow/zip',
   ONBOARDED:      '@lglow/onboarded',
+  ONBOARDING_JOURNEY_SEEN: '@lglow/onboarding_journey_seen',
   PRAKRITI_TIER_PREFIX: '@lglow/prakriti_answers/',
   VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
 };
@@ -253,6 +254,17 @@ export async function loadOnboarded() {
 
 export async function saveOnboarded() {
   await AsyncStorage.setItem(KEYS.ONBOARDED, 'true');
+}
+
+// Separate from ONBOARDED above (which just means "has seen the welcome
+// screen") — this flag is specifically "has seen/dismissed the full
+// six-step guided journey modal," so the two don't reference each other.
+export async function loadOnboardingJourneySeen() {
+  return AsyncStorage.getItem(KEYS.ONBOARDING_JOURNEY_SEEN);
+}
+
+export async function saveOnboardingJourneySeen() {
+  await AsyncStorage.setItem(KEYS.ONBOARDING_JOURNEY_SEEN, 'true');
 }
 
 // --- User name ---

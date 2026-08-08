@@ -6,12 +6,39 @@ import { useTheme } from '../context/ThemeContext';
 import { loadDoshaResult, loadTodayCheckin } from '../data/user/storage';
 import { recommendations, currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
+import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
+import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import BackButton, { smartBack } from '../components/BackButton';
 
 // Deterministic daily pick — stable on refresh, rotates each day
 function dailyPick(arr) {
   const dayIndex = Math.floor(Date.now() / 86400000);
   return arr[dayIndex % arr.length];
+}
+
+// Today's Rhythm — one pick per time slot (Aug 2026), not a 5th pillar card
+// like the four below (those are one blurb each; this is inherently four
+// short items, so it'd break the card grid's rhythm). A slot with no
+// matching items (dosha-specific midday/night content is still sparse right
+// after the 4-value expansion) just doesn't render a row.
+const RHYTHM_TIME_SLOTS = ['morning', 'midday', 'evening', 'night'];
+
+// Same badge-color convention as app/recommendations.js's RoutineRow.
+const RHYTHM_BADGE_STYLE_KEYS = {
+  morning: 'rhythmBadgeMorning',
+  midday:  'rhythmBadgeMidday',
+  evening: 'rhythmBadgeEvening',
+  night:   'rhythmBadgeNight',
+};
+
+function buildTodayRhythm(dosha, routinesData) {
+  const pool = [...(routinesData.anchors ?? []), ...(routinesData.routines[dosha] ?? [])];
+  return RHYTHM_TIME_SLOTS
+    .map(time => {
+      const candidates = pool.filter(item => item.time === time);
+      return candidates.length ? { time, label: dailyPick(candidates).label } : null;
+    })
+    .filter(Boolean);
 }
 
 function buildCards(dosha) {
@@ -35,6 +62,7 @@ export default function Today() {
   const [dosha, setDosha]     = useState(null);
   const [checkin, setCheckin] = useState(null);
   const [ready, setReady]     = useState(false);
+  const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
 
   useEffect(() => {
     Promise.all([loadDoshaResult(), loadTodayCheckin()])
@@ -43,6 +71,8 @@ export default function Today() {
         setCheckin(checkinResult ?? null);
       })
       .finally(() => setReady(true));
+    loadRoutines().then(setRoutinesData);
+    refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
   }, []);
 
   if (!ready) return null;
@@ -68,6 +98,7 @@ export default function Today() {
 
   const info    = doshaInfo[dosha];
   const cards   = buildCards(dosha);
+  const todayRhythm = buildTodayRhythm(dosha, routinesData);
   const season  = currentSeason();
   const date    = new Date().toLocaleDateString(undefined, {
     weekday: 'long', month: 'long', day: 'numeric',
@@ -144,6 +175,21 @@ export default function Today() {
           ))}
         </View>
 
+        {/* Today's Rhythm — compact strip, one pick per time slot */}
+        {todayRhythm.length > 0 && (
+          <View style={[styles.rhythmStrip, { backgroundColor: c.surface, borderColor: c.border }]}>
+            <Text style={[type.label, { color: c.textMuted, marginBottom: spacing.sm }]}>Today's Rhythm</Text>
+            {todayRhythm.map(item => (
+              <View key={item.time} style={styles.rhythmRow}>
+                <View style={[styles.rhythmBadge, styles[RHYTHM_BADGE_STYLE_KEYS[item.time]]]}>
+                  <Text style={styles.rhythmBadgeText}>{item.time}</Text>
+                </View>
+                <Text style={[type.body, { color: c.text, flex: 1 }]} numberOfLines={1}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+
         {/* Reference link */}
         <Pressable
           style={[styles.refLink, { borderTopColor: c.border }]}
@@ -207,6 +253,36 @@ function makeStyles(c, spacing, radius) {
     cardFooter: {
       marginTop: spacing.md,
       alignItems: 'flex-end',
+    },
+    rhythmStrip: {
+      marginTop: spacing.xl,
+      padding: spacing.lg,
+      borderRadius: radius.md,
+      borderWidth: 1,
+    },
+    rhythmRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: 6,
+    },
+    rhythmBadge: {
+      paddingHorizontal: spacing.sm,
+      paddingVertical: 2,
+      borderRadius: radius.pill,
+      minWidth: 62,
+      alignItems: 'center',
+    },
+    rhythmBadgeMorning: { backgroundColor: c.saffron + '33' },
+    rhythmBadgeMidday:  { backgroundColor: c.terracotta + '33' },
+    rhythmBadgeEvening: { backgroundColor: c.vata + '33' },
+    rhythmBadgeNight:   { backgroundColor: c.kapha + '33' },
+    rhythmBadgeText: {
+      color: c.textMuted,
+      fontSize: 10,
+      fontWeight: '700',
+      textTransform: 'uppercase',
+      letterSpacing: 0.4,
     },
     refLink: {
       marginTop: spacing.xl,

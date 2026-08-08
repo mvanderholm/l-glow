@@ -12,11 +12,16 @@ import Header from '../../components/Header';
 // check lives here once, gating every sub-route under /practitioner instead
 // of each screen re-checking it.
 
+// Quiz entries (dosha/prakriti/guna/vikriti) ordered to match the consumer
+// sequence Matt scoped in supabase/migrations/TODO.md — Dosha Quiz first
+// (the ungated entry point), then Prakriti, Guna, Vikriti. Agni and Tongue
+// Check have no admin editor yet (no dedicated content table), so they're
+// not in this list — a known gap, not an oversight of this reorder.
 const NAV_ITEMS = [
   { key: 'clients',      label: 'Clients',      href: '/practitioner' },
   { key: 'dosha',        label: 'Dosha Quiz',   href: '/practitioner/dosha-questions' },
-  { key: 'guna',         label: 'Guna Quiz',    href: '/practitioner/guna-questions' },
   { key: 'prakriti',     label: 'Prakriti',     href: '/practitioner/prakriti-questions' },
+  { key: 'guna',         label: 'Guna Quiz',    href: '/practitioner/guna-questions' },
   { key: 'vikriti',      label: 'Vikriti',      href: '/practitioner/vikriti-questions' },
   { key: 'checkin',      label: 'Check-in Qs',  href: '/practitioner/checkin-questions' },
   { key: 'affirmations', label: 'Affirmations', href: '/practitioner/affirmations' },
