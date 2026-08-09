@@ -116,7 +116,7 @@ export default function Messages() {
   return (
     <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1, backgroundColor: c.bg }}>
       <Header title="Message Thea" left="back" onBack={() => smartBack('/you')} bordered />
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView ref={scrollRef} contentContainerStyle={{ padding: spacing.lg, paddingBottom: spacing.xl }}>
           {error && <Text style={{ color: c.terracotta, marginBottom: 12 }}>{error}</Text>}
           {messages === null ? (

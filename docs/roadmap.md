@@ -1147,7 +1147,7 @@ Full organized notes in `docs/feedback-thea-testflight-1.md`. Summary of what ne
 - ~~Saved favorites not discoverable — either wire it up or hide the section~~ — removed from Settings list; no defined feature yet.
 
 **Images (blocked on Thea):**
-- About Thea photo — she's getting a new one
+- ~~About Thea photo — she's getting a new one~~ Done Aug 7 2026 — real headshot (`assets/thea.jpg`) live on both `/about` and `/welcome`, cropped/sized after a couple of follow-up passes.
 - Kapha insights card image looks off — she has a screenshot
 
 **Her content ask:** Interested in video for doshas, breathwork, recipes. Referenced "2B Magnetic" (TBM) app as style inspiration. Conversation needed before she starts recording.
@@ -1540,7 +1540,8 @@ Source: Matt, July 30 2026, asked what it would take to let Thea and a client me
 - **`supabase/functions/notify-new-message/index.ts`** (new) — same "client calls it directly after insert" pattern as `notify-intake-complete`. Direction-aware: a client sending pushes every practitioner-role user with a token (mirrors `notify-intake-complete`'s `pushPractitioners` helper); a practitioner sending must pass `{ recipientUserId }` and gets re-checked server-side against `consented_to_practitioner_view` before anything sends.
 - Reuses the `push_tokens` infrastructure built the same day for #3/#63 — the one piece of the original sketch that's already in place rather than a separate blocker.
 - Verified via Playwright: `/messages` renders its sign-in gate correctly with no console errors; `/you` and `/practitioner` still load cleanly with the new imports. **Not verified:** the actual authenticated thread flow (send/receive, the consent gate, the practitioner tab with real data) — same testing ceiling as everything auth-gated this session, and push delivery itself is still blocked on the EAS build noted in #63.
-- **Deploy step for Matt, not something Claude Code can do remotely:** create the `notify-new-message` function in the Supabase dashboard (Edge Functions → Create → paste `supabase/functions/notify-new-message/index.ts`) and run the `messages` migration.
+- ~~**Deploy step for Matt, not something Claude Code can do remotely:** create the `notify-new-message` function in the Supabase dashboard and run the `messages` migration.~~ Both done, confirmed Aug 8 2026 — backend is fully live. Still needs a native build with `expo-notifications` before push actually delivers (the Aug 7 Android APK predates that dependency, so it doesn't count).
+- **Bug found + fixed, Aug 8 2026:** the client thread screen's `KeyboardAvoidingView` had no Android `behavior` (`undefined`), so the on-screen keyboard covered the composer bar. Fixed to `behavior="height"` on Android (iOS already used `"padding"`) — `journal.js` has the same `undefined`-on-Android pattern but its input sits inside the scroll view rather than a fixed bottom bar, so it wasn't affected the same way. Not yet in any shipped build.
 
 ---
 
