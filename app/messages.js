@@ -11,11 +11,12 @@ import Header from '../components/Header';
 
 // Message Thea (roadmap #59) — one flat thread, no read receipts, no live
 // updates (reloads on send and on focus, not a Realtime subscription — v1,
-// same "start simple" call the roadmap sketch made). Promoted as a nav
-// entry only on native (app/you.js) — Matt's call, Aug 7 2026: in-app
-// messaging is app-only, not a web feature. The route itself still works
-// on web if reached directly, same as /practitioner having no nav entry
-// but a working route — nothing below is Platform-gated.
+// same "start simple" call the roadmap sketch made). Originally native-only
+// per Matt's Aug 7 2026 scope call; the You-tab nav entry was promoted on
+// web too Aug 11 2026. Sending/receiving works identically on either
+// platform — what's still native-only is push notifications themselves
+// (no web push mechanism exists), so a signed-in web user can read and send
+// messages fine, they just won't get pushed when a reply arrives.
 
 export default function Messages() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();

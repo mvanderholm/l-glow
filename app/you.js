@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
@@ -315,10 +315,13 @@ export default function You() {
             { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true, progressText: vikritiProgressText, notTaken: !vikritiProgressText },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
-            // Native only — Matt's call, Aug 7 2026: in-app messaging is an
-            // app feature, not a web one. The /messages route still works
-            // if reached directly on web, just not promoted here.
-            ...(user && Platform.OS !== 'web' ? [{ label: 'Message Thea', Icon: MessageIcon, message: true }] : []),
+            // Was native-only per Matt's original Aug 7 2026 scope call (in-app
+            // messaging as an app feature, not a web one) — reversed Aug 11
+            // 2026, promoted on web too now. Push notifications themselves are
+            // still native-only (no web push mechanism exists), so a web user
+            // sending/receiving here won't get pushed, only whoever's on the
+            // native app does — same as before, just visible from both places.
+            ...(user ? [{ label: 'Message Thea', Icon: MessageIcon, message: true }] : []),
           ];
           return (
             <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
