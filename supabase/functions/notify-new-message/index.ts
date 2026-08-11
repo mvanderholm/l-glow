@@ -32,6 +32,16 @@
 // right thread instead of just opening the app to its default screen — see
 // app/_layout.js's notification-response listener for the client-side half.
 //
+// Aug 11 2026: pushTokensForUsers now runs under EdgeRuntime.waitUntil()
+// instead of a plain inline await. A real invocation showed a "shutdown ...
+// EarlyDrop" log entry with no push ever sent and no logging output from
+// this function at all — Supabase's documented behavior is that the
+// isolate can recycle before in-flight work finishes, even work that's
+// technically awaited before the response returns. waitUntil is the
+// documented fix (explicitly keeps the isolate alive until the promise
+// settles); it also means the response returns to the client immediately
+// instead of blocking on Expo's push API round-trip.
+//
 // CORS: same preflight handling as every other function here — Supabase
 // Edge Functions don't add CORS headers automatically.
 
@@ -61,17 +71,31 @@ async function pushTokensForUsers(admin: any, userIds: string[], title: string, 
   // unregistered token, a malformed request) was indistinguishable from "it
   // worked" — check Edge Functions -> notify-new-message -> Logs in the
   // Supabase dashboard after a test send to see what actually happened.
-  if (!userIds.length) { console.log('pushTokensForUsers: no recipient user ids'); return; }
-  const { data: tokens, error: tokenError } = await admin.from('push_tokens').select('token').in('user_id', userIds);
-  if (tokenError) { console.warn('pushTokensForUsers: token lookup failed:', tokenError.message); return; }
-  if (!tokens?.length) { console.log('pushTokensForUsers: no registered push token for', userIds); return; }
-  const res = await fetch('https://exp.host/--/api/v2/push/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(tokens.map((t: { token: string }) => ({ to: t.token, title, body, data }))),
-  });
-  const result = await res.json().catch(() => null);
-  console.log(`pushTokensForUsers: sent to ${tokens.length} token(s), Expo response:`, JSON.stringify(result));
+  //
+  // Self-contained try/catch, Aug 11 2026: this now runs under
+  // EdgeRuntime.waitUntil() (see below) rather than being awaited inline
+  // before the response returns — a real invocation showed a "shutdown ...
+  // EarlyDrop" log with no pushTokensForUsers output at all, matching
+  // Supabase's documented gotcha where the isolate can recycle before
+  // in-flight work (even awaited work) finishes. waitUntil is the
+  // documented fix; since the caller no longer awaits this function
+  // directly, it needs to swallow its own errors instead of relying on the
+  // outer handler's try/catch.
+  try {
+    if (!userIds.length) { console.log('pushTokensForUsers: no recipient user ids'); return; }
+    const { data: tokens, error: tokenError } = await admin.from('push_tokens').select('token').in('user_id', userIds);
+    if (tokenError) { console.warn('pushTokensForUsers: token lookup failed:', tokenError.message); return; }
+    if (!tokens?.length) { console.log('pushTokensForUsers: no registered push token for', userIds); return; }
+    const res = await fetch('https://exp.host/--/api/v2/push/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(tokens.map((t: { token: string }) => ({ to: t.token, title, body, data }))),
+    });
+    const result = await res.json().catch(() => null);
+    console.log(`pushTokensForUsers: sent to ${tokens.length} token(s), Expo response:`, JSON.stringify(result));
+  } catch (err) {
+    console.warn('pushTokensForUsers: failed:', (err as Error).message);
+  }
 }
 
 Deno.serve(async (req) => {
@@ -105,36 +129,32 @@ Deno.serve(async (req) => {
 
   const senderLabel = sender?.display_name || sender?.email || 'Someone';
 
-  try {
-    if (sender?.role === 'practitioner') {
-      const body = await req.json().catch(() => ({}));
-      const recipientUserId = body?.recipientUserId;
-      if (!recipientUserId) {
-        return jsonResponse({ error: 'recipientUserId is required when a practitioner sends a message' }, 400);
-      }
-      const { data: client } = await admin
-        .from('users')
-        .select('id, consented_to_practitioner_view')
-        .eq('id', recipientUserId)
-        .maybeSingle();
-      if (!client?.consented_to_practitioner_view) {
-        return jsonResponse({ error: 'That client has not consented to practitioner contact' }, 403);
-      }
-      await pushTokensForUsers(admin, [recipientUserId], 'New message from Thea', 'Open L. Glow to read it.', {
-        type: 'message', recipientRole: 'client',
-      });
-    } else {
-      const { data: practitioners } = await admin.from('users').select('id').eq('role', 'practitioner');
-      const ids = (practitioners ?? []).map((p: { id: string }) => p.id);
-      await pushTokensForUsers(admin, ids, 'New message', `${senderLabel} sent you a message.`, {
-        type: 'message', recipientRole: 'practitioner', clientId: user.id,
-      });
+  // deno-lint-ignore no-explicit-any
+  const backgroundTask = globalThis as any;
+
+  if (sender?.role === 'practitioner') {
+    const body = await req.json().catch(() => ({}));
+    const recipientUserId = body?.recipientUserId;
+    if (!recipientUserId) {
+      return jsonResponse({ error: 'recipientUserId is required when a practitioner sends a message' }, 400);
     }
-  } catch (err) {
-    // Best-effort, same as notify-intake-complete's push half — a push
-    // failure shouldn't read as "the message failed to send," since the
-    // insert already succeeded before this function was ever called.
-    console.warn('Push notification failed (non-fatal):', (err as Error).message);
+    const { data: client } = await admin
+      .from('users')
+      .select('id, consented_to_practitioner_view')
+      .eq('id', recipientUserId)
+      .maybeSingle();
+    if (!client?.consented_to_practitioner_view) {
+      return jsonResponse({ error: 'That client has not consented to practitioner contact' }, 403);
+    }
+    backgroundTask.EdgeRuntime?.waitUntil(pushTokensForUsers(admin, [recipientUserId], 'New message from Thea', 'Open L. Glow to read it.', {
+      type: 'message', recipientRole: 'client',
+    }));
+  } else {
+    const { data: practitioners } = await admin.from('users').select('id').eq('role', 'practitioner');
+    const ids = (practitioners ?? []).map((p: { id: string }) => p.id);
+    backgroundTask.EdgeRuntime?.waitUntil(pushTokensForUsers(admin, ids, 'New message', `${senderLabel} sent you a message.`, {
+      type: 'message', recipientRole: 'practitioner', clientId: user.id,
+    }));
   }
 
   return jsonResponse({ status: 'sent' });
