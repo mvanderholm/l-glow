@@ -966,7 +966,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
             </View>
           )}
 
-          <View style={[s.tabBar, { borderBottomColor: c.border }]}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.tabBar, { borderBottomColor: c.border }]} contentContainerStyle={s.tabBarContent}>
             {CLIENT_TABS.map(tab => (
               <Pressable
                 key={tab.key}
@@ -976,7 +976,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                 <Text style={[s.tabBtnText, { color: activeTab === tab.key ? c.text : c.textMuted }]}>{tab.label}</Text>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
 
           <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 48 }} showsVerticalScrollIndicator={false}>
 
@@ -1365,7 +1365,8 @@ const s = StyleSheet.create({
   detailTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 18 },
   detailSub:    { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
 
-  tabBar:     { flexDirection: 'row', borderBottomWidth: StyleSheet.hairlineWidth, paddingHorizontal: 8 },
+  tabBar:        { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  tabBarContent: { flexDirection: 'row', paddingHorizontal: 8 },
   tabBtn:     { paddingVertical: 12, paddingHorizontal: 10, marginRight: 4 },
   tabBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
 
