@@ -3,9 +3,10 @@ import { Platform, View, Text, Pressable } from 'react-native';
 import { useFonts } from 'expo-font';
 import { PlayfairDisplay_400Regular, PlayfairDisplay_600SemiBold, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
-import { Stack, usePathname } from 'expo-router';
+import { Stack, usePathname, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as NavigationBar from 'expo-navigation-bar';
+import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { ViewModeProvider, useViewMode } from '../context/ViewModeContext';
 import { DrawerProvider } from '../context/DrawerContext';
@@ -51,6 +52,7 @@ function AppNavigator() {
   // wide. Always render it full-bleed on web; on native it just fills the
   // screen like everything else already does. See roadmap #50.
   const isPractitionerRoute = pathname.startsWith('/practitioner');
+  const router = useRouter();
 
   useEffect(() => {
     if (Platform.OS === 'android') {
@@ -58,6 +60,35 @@ function AppNavigator() {
       NavigationBar.setButtonStyleAsync(theme.statusBar === 'light' ? 'light' : 'dark');
     }
   }, [theme]);
+
+  // Tapping a message push used to just open the app to its default screen
+  // — no way to tell it landed you anywhere near the actual message. Both
+  // paths below read the `data` payload notify-new-message now attaches
+  // (see that function's own comment) and route straight to the thread:
+  // a client always goes to /messages; a practitioner goes to that specific
+  // client's Messages tab via the same ?clientId=&tab=messages deep link
+  // the Dashboard and Inbox screens already use. Covers both a cold start
+  // (app launched by the tap — getLastNotificationResponseAsync) and a
+  // warm/background tap while the app's already running (the listener).
+  useEffect(() => {
+    if (Platform.OS === 'web') return; // no real push on web, nothing to catch
+
+    function routeFromNotification(response) {
+      const data = response?.notification?.request?.content?.data;
+      if (data?.type !== 'message') return;
+      if (data.recipientRole === 'practitioner' && data.clientId) {
+        router.push({ pathname: '/practitioner', params: { clientId: data.clientId, tab: 'messages' } });
+      } else if (data.recipientRole === 'client') {
+        router.push('/messages');
+      }
+    }
+
+    Notifications.getLastNotificationResponseAsync().then(response => {
+      if (response) routeFromNotification(response);
+    });
+    const sub = Notifications.addNotificationResponseReceivedListener(routeFromNotification);
+    return () => sub.remove();
+  }, []);
 
   const stack = (
     <Stack

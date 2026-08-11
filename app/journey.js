@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { SEASONAL_CONTENT, LUNAR_CONTENT } from '../data/content/cycles';
-import { loadDoshaResult, loadRecentCheckins } from '../data/user/storage';
+import { loadDoshaResult, loadRecentCheckins, loadTodayPracticeCompletions, togglePracticeCompletion } from '../data/user/storage';
 import { loadCheckinDimensions, refreshCheckinDimensions, loadRoutines, refreshRoutines } from '../data/content/remote';
 import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
 import { recommendations } from '../data/content/recommendations';
@@ -19,11 +19,14 @@ const TABS = ['Overview', 'Ayurveda', 'Habits', 'Cycles'];
 
 const FOCUS = ['Nourish your body', 'Calm your mind', 'Honor your pace'];
 
-// done: false for all — this seeds Journey's "checked" state (see below) and
-// has no persistence behind it yet (practice_completions table exists but
-// nothing writes to it, see roadmap). Starting two of these pre-checked
-// showed every user, including a brand-new one, fake completed progress on
-// first load. Fixed July 2026.
+// done: false for all — buildPractices() only fills in content, never
+// completion state. Real completion state now lives in Supabase's
+// practice_completions table (data/user/storage.js's loadTodayPracticeCompletions/
+// togglePracticeCompletion, wired below), keyed per day so it resets every
+// morning rather than carrying yesterday's checks forward. Starting two of
+// these pre-checked showed every user, including a brand-new one, fake
+// completed progress on first load — fixed July 2026, stayed fixed now that
+// completion is real persisted state instead of local-only.
 //
 // Stable ids for the checked-state initializer below — independent of
 // whatever personalized content buildPractices() fills in, so toggling a
@@ -133,6 +136,19 @@ export default function Journey() {
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
   }, []);
+  useEffect(() => {
+    loadTodayPracticeCompletions().then(saved =>
+      setChecked(prev => ({ ...prev, ...saved }))
+    );
+  }, []);
+
+  function toggleChecked(id) {
+    setChecked(prev => {
+      const done = !prev[id];
+      togglePracticeCompletion(id, done);
+      return { ...prev, [id]: done };
+    });
+  }
 
   const practices = buildPractices(doshaResult?.dosha, routinesData);
 
@@ -169,7 +185,7 @@ export default function Journey() {
         {activeTab === 0 && (
           <OverviewTab
             c={c} spacing={spacing} type={type}
-            checked={checked} setChecked={setChecked} doneCount={doneCount}
+            checked={checked} toggleChecked={toggleChecked} doneCount={doneCount}
             practices={practices}
           />
         )}
@@ -183,7 +199,7 @@ export default function Journey() {
 
 // ── Overview tab ────────────────────────────────────────────────────────────
 
-function OverviewTab({ c, spacing, type, checked, setChecked, doneCount, practices }) {
+function OverviewTab({ c, spacing, type, checked, toggleChecked, doneCount, practices }) {
   return (
     <>
       {/* Today's focus card */}
@@ -221,7 +237,7 @@ function OverviewTab({ c, spacing, type, checked, setChecked, doneCount, practic
             <Pressable
               key={p.id}
               style={[styles.checkRow, idx < practices.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-              onPress={() => setChecked(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+              onPress={() => toggleChecked(p.id)}
             >
               <View style={[styles.iconCircle, { backgroundColor: c.surfaceAlt }]}>
                 <p.Icon color={c.textMuted} size={18} />

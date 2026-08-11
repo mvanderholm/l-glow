@@ -27,6 +27,11 @@
 // identify who they are, same as notify-intake-complete. Never trusts a
 // client-supplied sender identity.
 //
+// Aug 11 2026: each push now carries a `data` payload (type/recipientRole/
+// clientId) so tapping the notification can deep-link straight into the
+// right thread instead of just opening the app to its default screen — see
+// app/_layout.js's notification-response listener for the client-side half.
+//
 // CORS: same preflight handling as every other function here — Supabase
 // Edge Functions don't add CORS headers automatically.
 
@@ -50,14 +55,14 @@ function jsonResponse(body: unknown, status = 200) {
 }
 
 // deno-lint-ignore no-explicit-any
-async function pushTokensForUsers(admin: any, userIds: string[], title: string, body: string) {
+async function pushTokensForUsers(admin: any, userIds: string[], title: string, body: string, data?: Record<string, unknown>) {
   if (!userIds.length) return;
   const { data: tokens } = await admin.from('push_tokens').select('token').in('user_id', userIds);
   if (!tokens?.length) return;
   await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(tokens.map((t: { token: string }) => ({ to: t.token, title, body }))),
+    body: JSON.stringify(tokens.map((t: { token: string }) => ({ to: t.token, title, body, data }))),
   });
 }
 
@@ -107,11 +112,15 @@ Deno.serve(async (req) => {
       if (!client?.consented_to_practitioner_view) {
         return jsonResponse({ error: 'That client has not consented to practitioner contact' }, 403);
       }
-      await pushTokensForUsers(admin, [recipientUserId], 'New message from Thea', 'Open L. Glow to read it.');
+      await pushTokensForUsers(admin, [recipientUserId], 'New message from Thea', 'Open L. Glow to read it.', {
+        type: 'message', recipientRole: 'client',
+      });
     } else {
       const { data: practitioners } = await admin.from('users').select('id').eq('role', 'practitioner');
       const ids = (practitioners ?? []).map((p: { id: string }) => p.id);
-      await pushTokensForUsers(admin, ids, 'New message', `${senderLabel} sent you a message.`);
+      await pushTokensForUsers(admin, ids, 'New message', `${senderLabel} sent you a message.`, {
+        type: 'message', recipientRole: 'practitioner', clientId: user.id,
+      });
     }
   } catch (err) {
     // Best-effort, same as notify-intake-complete's push half — a push

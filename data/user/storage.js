@@ -68,6 +68,7 @@ const KEYS = {
   ONBOARDING_JOURNEY_SEEN: '@lglow/onboarding_journey_seen',
   PRAKRITI_TIER_PREFIX: '@lglow/prakriti_answers/',
   VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
+  PRACTICE_COMPLETIONS_PREFIX: '@lglow/practice_completions/',
 };
 
 // --- Dosha result ---
@@ -416,6 +417,56 @@ export async function loadTodayIntention() {
   return AsyncStorage.getItem(key);
 }
 
+// --- Daily practice completions ---
+// practice_completions is a log table (user_id, practice_id, completed_at) —
+// no uniqueness constraint, since it was scaffolded ahead of any feature
+// using it (see roadmap #30). AsyncStorage holds one flat {practiceId: bool}
+// map per day as the source of truth (same shape as a check-in day); each
+// toggle mirrors to Supabase as an insert (checking on) or a delete scoped to
+// today's completed_at range (checking off), so the log never accumulates
+// duplicate rows for the same day's toggling back and forth.
+
+function practiceKey(date) {
+  return KEYS.PRACTICE_COMPLETIONS_PREFIX + date;
+}
+
+function todayDate() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dayRange(date) {
+  const start = `${date}T00:00:00.000Z`;
+  const end = new Date(new Date(start).getTime() + 86400000).toISOString();
+  return { start, end };
+}
+
+export async function loadTodayPracticeCompletions() {
+  const raw = await AsyncStorage.getItem(practiceKey(todayDate()));
+  return raw ? JSON.parse(raw) : {};
+}
+
+export async function togglePracticeCompletion(practiceId, done) {
+  const date = todayDate();
+  const current = await loadTodayPracticeCompletions();
+  await AsyncStorage.setItem(practiceKey(date), JSON.stringify({ ...current, [practiceId]: done }));
+
+  await syncToSupabase(async userId => {
+    const { start, end } = dayRange(date);
+    if (done) {
+      const { data: existing } = await supabase.from('practice_completions')
+        .select('id').eq('user_id', userId).eq('practice_id', practiceId)
+        .gte('completed_at', start).lt('completed_at', end).maybeSingle();
+      if (!existing) {
+        await supabase.from('practice_completions').insert({ user_id: userId, practice_id: practiceId });
+      }
+    } else {
+      await supabase.from('practice_completions').delete()
+        .eq('user_id', userId).eq('practice_id', practiceId)
+        .gte('completed_at', start).lt('completed_at', end);
+    }
+  });
+}
+
 // --- Cross-device hydration ---
 // Pulls existing Supabase data down to a fresh device's AsyncStorage. Only
 // fills in what's missing locally — never overwrites existing local data, so
@@ -437,6 +488,7 @@ export async function hydrateFromSupabase() {
       hydrateIntention(userId),
       hydratePrakritiTiers(userId),
       hydrateVikritiTiers(userId),
+      hydratePracticeCompletions(userId),
     ]);
   } catch (err) {
     console.warn('Hydration from Supabase failed:', err.message);
@@ -561,6 +613,18 @@ async function hydrateIntention(userId) {
   if (await loadTodayIntention()) return;
   const { data } = await supabase.from('intentions').select('text').eq('user_id', userId).eq('date', date).maybeSingle();
   if (data?.text) await AsyncStorage.setItem(KEYS.INTENTION_PREFIX + date, data.text);
+}
+
+async function hydratePracticeCompletions(userId) {
+  const date = todayDate();
+  if (await AsyncStorage.getItem(practiceKey(date))) return;
+  const { start, end } = dayRange(date);
+  const { data } = await supabase.from('practice_completions')
+    .select('practice_id').eq('user_id', userId)
+    .gte('completed_at', start).lt('completed_at', end);
+  if (!data?.length) return;
+  const completions = Object.fromEntries(data.map(row => [row.practice_id, true]));
+  await AsyncStorage.setItem(practiceKey(date), JSON.stringify(completions));
 }
 
 // --- One-time local→Supabase migration ---

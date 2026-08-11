@@ -131,8 +131,8 @@ export default function Dashboard() {
       });
   }, [practitionerId]);
 
-  function openClient(client) {
-    router.push({ pathname: '/practitioner', params: { clientId: client.id } });
+  function openClient(client, tab) {
+    router.push({ pathname: '/practitioner', params: tab ? { clientId: client.id, tab } : { clientId: client.id } });
   }
 
   if (error) {
@@ -192,7 +192,7 @@ export default function Dashboard() {
         <Text style={[s.mutedNote, { color: c.textMuted }]}>Nothing yet.</Text>
       ) : (
         activity.map(event => (
-          <Pressable key={event.id} style={[s.itemCard, { backgroundColor: c.surface, ...card }]} onPress={() => openClient(event.client)}>
+          <Pressable key={event.id} style={[s.itemCard, { backgroundColor: c.surface, ...card }]} onPress={() => openClient(event.client, event.type === 'message' ? 'messages' : undefined)}>
             <Text style={[s.itemTitle, { color: c.text }]} numberOfLines={1}>
               {event.text}
               <Text style={{ color: c.textMuted, fontWeight: '400' }}>  ·  {relativeTime(event.ts)}</Text>

@@ -20,6 +20,7 @@ import Header from '../../components/Header';
 // see roadmap notes, Aug 2026) — a known, deliberate gap, not an oversight.
 const NAV_ITEMS = [
   { key: 'dashboard',    label: 'Dashboard',    href: '/practitioner/dashboard' },
+  { key: 'inbox',        label: 'Inbox',        href: '/practitioner/inbox' },
   { key: 'clients',      label: 'Clients',      href: '/practitioner' },
   { key: 'dosha',        label: 'Dosha Quiz',   href: '/practitioner/dosha-questions' },
   { key: 'prakriti',     label: 'Prakriti',     href: '/practitioner/prakriti-questions' },

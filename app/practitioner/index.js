@@ -1,5 +1,5 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
@@ -842,7 +842,7 @@ function StatCard({ label, value, colors: c }) {
   );
 }
 
-function ClientDetail({ client, practitionerId, colors: c, onBack }) {
+function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab }) {
   const [clientData, setClientData] = useState(null);
   const [error, setError] = useState(null);
   const [noteDraft, setNoteDraft] = useState('');
@@ -851,8 +851,17 @@ function ClientDetail({ client, practitionerId, colors: c, onBack }) {
   const [editDraft, setEditDraft] = useState('');
   const [activeTab, setActiveTab] = useState('summary');
   const [expandedResponseId, setExpandedResponseId] = useState(null);
+  // Deep-linked from the Dashboard/Inbox screens (?clientId=&tab=messages) —
+  // only honored on the very first client this instance loads, then
+  // forgotten, so clicking around the client list afterward still resets to
+  // Summary like it always did rather than getting stuck on Messages.
+  const initialTabRef = useRef(initialTab);
 
-  useEffect(() => { setActiveTab('summary'); load(); }, [client.id]);
+  useEffect(() => {
+    setActiveTab(initialTabRef.current || 'summary');
+    initialTabRef.current = null;
+    load();
+  }, [client.id]);
 
   async function load() {
     const [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
@@ -1276,9 +1285,10 @@ export default function PractitionerClients() {
   const { theme: { colors: c } } = useTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
-  // Deep-linked from the Dashboard tab's activity feed (?clientId=...) —
-  // see ClientList's own effect for how this gets consumed once clients load.
-  const { clientId } = useLocalSearchParams();
+  // Deep-linked from the Dashboard tab's activity feed or the Inbox screen
+  // (?clientId=&tab=) — see ClientList's own effect for how clientId gets
+  // consumed once clients load, and ClientDetail's initialTabRef for tab.
+  const { clientId, tab } = useLocalSearchParams();
   const [practitionerId, setPractitionerId] = useState(null);
   const [practitionerSelf, setPractitionerSelf] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -1312,7 +1322,7 @@ export default function PractitionerClients() {
         </View>
         <View style={{ flex: 1 }}>
           {selectedClient
-            ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
+            ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} initialTab={tab} />
             : <View style={s.centerPad}><Text style={[s.emptyText, { color: c.textMuted }]}>Select a client to view their details.</Text></View>}
         </View>
       </View>
@@ -1320,7 +1330,7 @@ export default function PractitionerClients() {
   }
 
   return selectedClient
-    ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
+    ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} initialTab={tab} />
     : <>{viewOwnData}<ClientList colors={c} onSelect={setSelectedClient} initialClientId={clientId} /></>;
 }
 
