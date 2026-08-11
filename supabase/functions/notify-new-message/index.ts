@@ -56,14 +56,22 @@ function jsonResponse(body: unknown, status = 200) {
 
 // deno-lint-ignore no-explicit-any
 async function pushTokensForUsers(admin: any, userIds: string[], title: string, body: string, data?: Record<string, unknown>) {
-  if (!userIds.length) return;
-  const { data: tokens } = await admin.from('push_tokens').select('token').in('user_id', userIds);
-  if (!tokens?.length) return;
-  await fetch('https://exp.host/--/api/v2/push/send', {
+  // Logged, not just fired-and-forgotten: this used to send to Expo and never
+  // look at the response, so a real failure (no token registered, a stale/
+  // unregistered token, a malformed request) was indistinguishable from "it
+  // worked" — check Edge Functions -> notify-new-message -> Logs in the
+  // Supabase dashboard after a test send to see what actually happened.
+  if (!userIds.length) { console.log('pushTokensForUsers: no recipient user ids'); return; }
+  const { data: tokens, error: tokenError } = await admin.from('push_tokens').select('token').in('user_id', userIds);
+  if (tokenError) { console.warn('pushTokensForUsers: token lookup failed:', tokenError.message); return; }
+  if (!tokens?.length) { console.log('pushTokensForUsers: no registered push token for', userIds); return; }
+  const res = await fetch('https://exp.host/--/api/v2/push/send', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
     body: JSON.stringify(tokens.map((t: { token: string }) => ({ to: t.token, title, body, data }))),
   });
+  const result = await res.json().catch(() => null);
+  console.log(`pushTokensForUsers: sent to ${tokens.length} token(s), Expo response:`, JSON.stringify(result));
 }
 
 Deno.serve(async (req) => {
