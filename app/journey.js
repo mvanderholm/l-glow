@@ -7,7 +7,10 @@ import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { SEASONAL_CONTENT, LUNAR_CONTENT } from '../data/content/cycles';
 import { loadDoshaResult, loadRecentCheckins } from '../data/user/storage';
-import { loadCheckinDimensions, refreshCheckinDimensions } from '../data/content/remote';
+import { loadCheckinDimensions, refreshCheckinDimensions, loadRoutines, refreshRoutines } from '../data/content/remote';
+import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
+import { recommendations } from '../data/content/recommendations';
+import { asanas } from '../data/content/movement';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import CheckinTrendChart from '../components/CheckinTrendChart';
 import Header from '../components/Header';
@@ -21,13 +24,53 @@ const FOCUS = ['Nourish your body', 'Calm your mind', 'Honor your pace'];
 // nothing writes to it, see roadmap). Starting two of these pre-checked
 // showed every user, including a brand-new one, fake completed progress on
 // first load. Fixed July 2026.
-const PRACTICES = [
-  { id: 'morning', title: 'Morning Ritual',    desc: 'Warm water, oil pulling, tongue scrape', time: '10 min',    Icon: SunIcon,    done: false },
-  { id: 'move',    title: 'Movement',           desc: 'Gentle flow + breath',                   time: '20 min',    Icon: BreathIcon, done: false },
-  { id: 'meal',    title: 'Nourishing Meal',    desc: 'Breakfast — warm & grounding',           time: 'Breakfast', Icon: BowlIcon,   done: false },
-  { id: 'mind',    title: 'Mindful Moment',     desc: 'Seated stillness',                       time: '10 min',    Icon: LotusIcon,  done: false },
-  { id: 'eve',     title: 'Evening Wind Down',  desc: 'Abhyanga + early rest',                  time: '15 min',    Icon: MoonIcon,   done: false },
-];
+//
+// Stable ids for the checked-state initializer below — independent of
+// whatever personalized content buildPractices() fills in, so toggling a
+// checkbox never breaks when the dosha/routines data finishes loading after
+// mount.
+const PRACTICE_IDS = ['morning', 'move', 'meal', 'mind', 'eve'];
+
+// Deterministic daily pick — stable on refresh, rotates each day. Same
+// helper as app/today.js's "Today's Rhythm"/pillar-card picks; duplicated
+// rather than shared since it's a 3-line pure function, not worth a new
+// module for.
+function dailyPick(arr) {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  return arr[dayIndex % arr.length];
+}
+
+function pickForTime(pool, time) {
+  const candidates = pool.filter(item => item.time === time);
+  return candidates.length ? dailyPick(candidates) : null;
+}
+
+// Daily Practices, personalized where real content exists — pulls from the
+// same authored sources already used elsewhere (Daily Rhythms routine
+// items, movement.js asanas, recommendations.js foods/meditation) rather
+// than inventing anything new. Falls back to the original generic line
+// for any slot without dosha-specific content yet (e.g. a dosha with no
+// morning routine_items authored, or before the quiz is taken at all).
+function buildPractices(dosha, routinesData) {
+  const rec = dosha && recommendations[dosha];
+  const asanaList = dosha && asanas[dosha];
+  const pool = dosha && routinesData
+    ? [...(routinesData.anchors ?? []), ...(routinesData.routines[dosha] ?? [])]
+    : [];
+  const morningPick = pickForTime(pool, 'morning');
+  const eveningPick = pickForTime(pool, 'evening');
+  const asanaPick = asanaList?.length ? dailyPick(asanaList) : null;
+  const foodPick = rec?.foods?.favor?.length ? dailyPick(rec.foods.favor) : null;
+  const meditationLine = rec?.meditation ? rec.meditation.split('. ')[0].replace(/\.$/, '') + '.' : null;
+
+  return [
+    { id: 'morning', title: 'Morning Ritual',   desc: morningPick?.label ?? 'Warm water, oil pulling, tongue scrape', time: '10 min',                    Icon: SunIcon,    done: false },
+    { id: 'move',    title: 'Movement',          desc: asanaPick?.name ?? 'Gentle flow + breath',                     time: asanaPick?.duration ?? '20 min', Icon: BreathIcon, done: false },
+    { id: 'meal',    title: 'Nourishing Meal',   desc: foodPick ?? 'Breakfast — warm & grounding',                    time: 'Breakfast',                 Icon: BowlIcon,   done: false },
+    { id: 'mind',    title: 'Mindful Moment',    desc: meditationLine ?? 'Seated stillness',                          time: '10 min',                    Icon: LotusIcon,  done: false },
+    { id: 'eve',     title: 'Evening Wind Down', desc: eveningPick?.label ?? 'Abhyanga + early rest',                 time: '15 min',                    Icon: MoonIcon,   done: false },
+  ];
+}
 
 // DRAFT — Ayurveda tab copy written in Thea's voice. Awaiting her review before treating as final.
 const AYURVEDA_HISTORY = [
@@ -81,10 +124,17 @@ export default function Journey() {
   const { tab } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState(0);
   const [checked, setChecked] = useState(() =>
-    Object.fromEntries(PRACTICES.map(p => [p.id, p.done]))
+    Object.fromEntries(PRACTICE_IDS.map(id => [id, false]))
   );
   const [doshaResult, setDoshaResult] = useState(null);
+  const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
   useEffect(() => { loadDoshaResult().then(r => setDoshaResult(r || false)); }, []);
+  useEffect(() => {
+    loadRoutines().then(setRoutinesData);
+    refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
+  }, []);
+
+  const practices = buildPractices(doshaResult?.dosha, routinesData);
 
   // Deep link from global search — see data/searchIndex.js
   useEffect(() => {
@@ -120,6 +170,7 @@ export default function Journey() {
           <OverviewTab
             c={c} spacing={spacing} type={type}
             checked={checked} setChecked={setChecked} doneCount={doneCount}
+            practices={practices}
           />
         )}
         {activeTab === 1 && <AyurvedaTab c={c} type={type} doshaResult={doshaResult} router={router} />}
@@ -132,7 +183,7 @@ export default function Journey() {
 
 // ── Overview tab ────────────────────────────────────────────────────────────
 
-function OverviewTab({ c, spacing, type, checked, setChecked, doneCount }) {
+function OverviewTab({ c, spacing, type, checked, setChecked, doneCount, practices }) {
   return (
     <>
       {/* Today's focus card */}
@@ -156,20 +207,20 @@ function OverviewTab({ c, spacing, type, checked, setChecked, doneCount }) {
       {/* Daily Practices */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
         <Text style={[styles.sectionH, { color: c.text }]}>Daily Practices</Text>
-        <Text style={{ color: c.textMedium, fontFamily: 'Inter_500Medium', fontSize: 12.5 }}>{doneCount} of {PRACTICES.length} completed</Text>
+        <Text style={{ color: c.textMedium, fontFamily: 'Inter_500Medium', fontSize: 12.5 }}>{doneCount} of {practices.length} completed</Text>
       </View>
 
       <View style={[styles.track, { backgroundColor: c.border }]}>
-        <View style={[styles.fill, { backgroundColor: c.accent, width: `${(doneCount / PRACTICES.length) * 100}%` }]} />
+        <View style={[styles.fill, { backgroundColor: c.accent, width: `${(doneCount / practices.length) * 100}%` }]} />
       </View>
 
       <View style={[styles.checkList, { backgroundColor: c.surface, ...card }]}>
-        {PRACTICES.map((p, idx) => {
+        {practices.map((p, idx) => {
           const done = checked[p.id];
           return (
             <Pressable
               key={p.id}
-              style={[styles.checkRow, idx < PRACTICES.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+              style={[styles.checkRow, idx < practices.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
               onPress={() => setChecked(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
             >
               <View style={[styles.iconCircle, { backgroundColor: c.surfaceAlt }]}>

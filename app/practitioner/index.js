@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, ActivityIndicator, TextInput, useWindowDimensions } from 'react-native';
 import { useState, useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { notify, confirmAsync } from '../../components/practitioner/webSafeAlert';
 import { card } from '../../theme/index';
@@ -81,8 +82,10 @@ function fieldDisplayValue(value) {
 }
 
 // Objective, computed signals only — no invented clinical judgment.
-// checkins must already be sorted newest-first.
-function computeAttention(checkins = [], intakeData) {
+// checkins must already be sorted newest-first. Exported for the Dashboard
+// tab (dashboard.js), which needs the same "needs attention" logic against
+// its own client query rather than duplicating it.
+export function computeAttention(checkins = [], intakeData) {
   const reasons = [];
 
   if (checkins.length === 0) {
@@ -110,7 +113,7 @@ function computeAttention(checkins = [], intakeData) {
   return reasons;
 }
 
-function ClientList({ colors: c, onSelect, selectedId }) {
+function ClientList({ colors: c, onSelect, selectedId, initialClientId }) {
   const [clients, setClients] = useState(null);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
@@ -134,6 +137,15 @@ function ClientList({ colors: c, onSelect, selectedId }) {
         setClients(withAttention);
       });
   }, []);
+
+  // Deep-link support for the Dashboard tab's activity feed — jumping here
+  // with ?clientId=... auto-opens that client once the list finishes
+  // loading, same client object shape onSelect always uses.
+  useEffect(() => {
+    if (!initialClientId || !clients) return;
+    const match = clients.find(cl => cl.id === initialClientId);
+    if (match) onSelect(match);
+  }, [initialClientId, clients]);
 
   // Roadmap #53 follow-up — "are people getting lost after signup," scoped
   // to what a practitioner can actually see. RLS only exposes dosha_results/
@@ -1264,6 +1276,9 @@ export default function PractitionerClients() {
   const { theme: { colors: c } } = useTheme();
   const { width } = useWindowDimensions();
   const isWide = width >= WIDE_BREAKPOINT;
+  // Deep-linked from the Dashboard tab's activity feed (?clientId=...) —
+  // see ClientList's own effect for how this gets consumed once clients load.
+  const { clientId } = useLocalSearchParams();
   const [practitionerId, setPractitionerId] = useState(null);
   const [practitionerSelf, setPractitionerSelf] = useState(null);
   const [selectedClient, setSelectedClient] = useState(null);
@@ -1293,7 +1308,7 @@ export default function PractitionerClients() {
       <View style={{ flex: 1, flexDirection: 'row' }}>
         <View style={[s.listPane, { borderRightColor: c.border }]}>
           {viewOwnData}
-          <ClientList colors={c} onSelect={setSelectedClient} selectedId={selectedClient?.id} />
+          <ClientList colors={c} onSelect={setSelectedClient} selectedId={selectedClient?.id} initialClientId={clientId} />
         </View>
         <View style={{ flex: 1 }}>
           {selectedClient
@@ -1306,7 +1321,7 @@ export default function PractitionerClients() {
 
   return selectedClient
     ? <ClientDetail client={selectedClient} practitionerId={practitionerId} colors={c} onBack={() => setSelectedClient(null)} />
-    : <>{viewOwnData}<ClientList colors={c} onSelect={setSelectedClient} /></>;
+    : <>{viewOwnData}<ClientList colors={c} onSelect={setSelectedClient} initialClientId={clientId} /></>;
 }
 
 const s = StyleSheet.create({
