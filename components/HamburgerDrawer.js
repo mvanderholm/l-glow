@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useAuth } from '../context/AuthContext';
 import { NAV_SECTIONS, PRACTITIONER_NAV_SECTION } from '../data/nav';
-import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import Svg, { Path, Circle } from 'react-native-svg';
 
 // Icons keyed by data/nav.js's item `key` — kept here (not in the shared
 // data module) since they're a presentation detail specific to this
@@ -19,8 +19,6 @@ const ICONS = {
   journal: PenIcon,
   about: PersonIcon,
   booking: CalendarIcon,
-  quizzes: QuizIcon,
-  tools: ToolsIcon,
   playlist: MusicIcon,
   practitioner: HubIcon,
 };
@@ -205,24 +203,6 @@ function PenIcon({ color, size }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke={color} strokeWidth={1.4} />
       <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
-  );
-}
-function QuizIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M9 11.5 11 13.5 15.5 9" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-function ToolsIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="4"    y="4"    width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
-      <Rect x="12.5" y="4"    width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
-      <Rect x="4"    y="12.5" width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
-      <Rect x="12.5" y="12.5" width="7.5" height="7.5" rx="1.6" stroke={color} strokeWidth={1.4} />
     </Svg>
   );
 }

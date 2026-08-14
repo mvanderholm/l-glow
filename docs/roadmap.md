@@ -1294,6 +1294,8 @@ Some of that is earned — a real practice has more to offer than a single quiz 
 
 **Dug in further, July 30 2026 — the overlap is now mapped exactly, not just gestured at.** Quizzes (drawer) turns out to be a near-total subset of You tab's "Your Assessments" section — same 6 items (My Dosha, Agni, Guna, Tongue Check, Prakriti, Vikriti), same order, You's version just adds Intake Form + Share with Thea. Tools (drawer) has zero destinations that aren't already reachable elsewhere: Recipes lives inside Nourishment, Herbs is its own bottom tab, Breathwork/Meditation/Self Massage live inside Movement, Journal is a Lifestyle-tab item and its own drawer entry, Tongue Check is in both Quizzes and You's Assessments, Learn/About Thea are drawer items directly. Tongue Check specifically has three separate entry points; Journal has three too. Matt's call: hold the structural question (trim the drawer? consolidate? accept it?) for an actual conversation with Thea rather than deciding unilaterally now — but fixed the one clear bug that surfaced along the way: Tools labeled its Journal tile "Journaling," every other entry point calls it "Journal." Now consistent.
 
+**The "future IA pass" this item flagged happened Aug 14 2026 — see #70.** Matt asked directly for nav-cleanup recommendations rather than waiting on a Thea conversation first; the actual cuts (Tools, Quizzes, Tongue Check's extra copies) are exactly what this item predicted. Web-only for now — Matt wants Thea to review the live Vercel site before it touches the native app.
+
 ---
 
 ## About Thea — image restructure
@@ -1551,6 +1553,25 @@ Found by re-reading `app/practitioner/_layout.js`'s own header — it still used
 **Why this traps her specifically, not a general user:** `router.back()` silently no-ops when there's no navigation history — exactly what a bookmarked/home-screen-shortcut direct load produces, which is Thea's only way into the hub by design. The hub also has no bottom nav (deliberately hidden on `/practitioner*` routes) and no other exit path, so a no-op back button leaves genuinely nowhere to go except force-closing the app.
 
 **Fixed:** both `onBack` handlers in `app/practitioner/_layout.js` switched to `smartBack('/')`. Verified via Playwright — a direct load of `/practitioner` with zero prior history, followed by a tap on the back chevron: before the fix this would no-op; confirmed it now navigates away cleanly (to `/welcome` for a signed-out session, matching how the rest of the app resolves `/` when signed out), zero console errors.
+
+---
+
+**70. Navigation cleanup — cutting real duplication found in a fresh audit.** Source: Matt, Aug 14 2026 — asked for recommendations on making the nav cleaner, breadth feeling disjointed. Directly acts on #58's long-flagged "future IA pass," which had been waiting on a Thea conversation rather than a specific fix.
+
+**Re-audited the live code first, not the July 30 notes** — the picture had gotten worse, not better, since then: Tongue Check had grown from 3 to 5 entry points, Journal from 3 to 4 (both `/activity` and `/messages`, added this session, are new rows on You tab that Quizzes never picked up, so the two lists were actively diverging even as their original overlap sat untouched). Presented findings as a set of prioritized, opinionated recommendations (not a unilateral rewrite) — Matt's call: build all of it.
+
+**Shipped, web only — native build deliberately held off** so Thea can review the live Vercel site first, per Matt's explicit request:
+- **Cut Tools and Quizzes as destinations.** Removed from `data/nav.js`'s drawer sections, the "Tools" settings row on You tab, and the now-dead `QuizIcon`/`ToolsIcon` icon code in `HamburgerDrawer.js` and `you.js`. `app/tools.js` and `app/quizzes.js` deleted outright (confirmed nothing else referenced either route — `data/searchIndex.js` didn't index them), Stack.Screen registrations removed from `app/_layout.js`. Every destination either pointed to is still reachable exactly where it already lived — this removes duplication, not coverage.
+- **Tongue Check given one pillar home.** Removed from Movement's Self-assessments section (`app/movement.js`) — Lifestyle tab is now its only pillar-tab home, paired with the "read your body first thing" cluster (check-in, affirmations) it actually belongs with. Combined with the Tools/Quizzes cut, this takes it from 5 entry points down to 2 (Lifestyle + You tab).
+- **Home's "Begin here" grid gated to first-run**, same condition the existing Getting Started card already uses (`!savedDosha || !prakritiDone`) — previously showed forever for every user, duplicating four pillar-tab destinations one tap away via bottom nav regardless of how engaged someone already was.
+- **Nourishment's stale "Herb + Food Guide" coming-soon card removed** — it described the searchable herb/food encyclopedia that shipped as #36 and lives at `/herbs`; the card had gone stale, advertising a feature that already existed elsewhere under a different tab.
+- Recommendation "let You tab be the one canonical assessments hub" needed no separate code change — it falls out of the Tools/Quizzes cut directly, since You tab was already the richer version of that list (badges, progress, "not taken yet" state) with nothing left competing for the job.
+
+**Deliberately not touched:** the bottom nav's five pillars and Journey's internal-tabs pattern (Overview/Ayurveda/Habits/Cycles) — both already well-scoped, named explicitly as the model worth extending rather than a source of the duplication.
+
+**Verified via Playwright** against a local dev server: drawer now shows exactly the 8 items proposed (Home, Your Profile, My Journey, Learn, Journal, About Thea, Book a Session, Playlist); Movement's Tongue Check row is gone with clean spacing; Nourishment's stale card is gone; `/tools` now correctly renders expo-router's "Unmatched Route" page instead of the old grid; a freshly-onboarded (first-run) session still shows "Begin here," confirming the gate doesn't hide it from the users it's actually for. Zero console errors across every screen checked.
+
+Full audit and before/after breakdown: **[Where the Nav Breaks Down](https://claude.ai/code/artifact/640aa855-27b3-48e9-bbc6-18f0494fc740)**.
 
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.

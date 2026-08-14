@@ -7,6 +7,15 @@
 // navigational plane that only exists on the app-frame/native bottom bar;
 // WebLayout imports BottomNav's own TABS export instead, so that also can't
 // drift out of sync with its single source.
+//
+// Quizzes and Tools removed Aug 14 2026 (nav-duplication audit, Matt's ask):
+// every one of Tools' 9 tiles and all 6 of Quizzes' items were reachable
+// elsewhere already — Quizzes was a near-exact subset of You tab's
+// Assessments list, Tools had zero destinations not already on a pillar tab,
+// You tab, or Home. Removing them here cuts real duplication, not coverage
+// — nothing they pointed to moved or disappeared. See docs/roadmap.md #70.
+// The screens themselves (app/tools.js, app/quizzes.js) were deleted along
+// with this, since nothing links to them anymore.
 
 import { BOOKING_URL } from './booking';
 import { SPOTIFY_PROFILE_URL } from './content/music';
@@ -24,8 +33,6 @@ export const NAV_SECTIONS = [
     { key: 'booking', label: 'Book a Session', external: BOOKING_URL },
   ],
   [
-    { key: 'quizzes',  label: 'Quizzes',  href: '/quizzes' },
-    { key: 'tools',    label: 'Tools',    href: '/tools' },
     { key: 'playlist', label: 'Playlist', external: SPOTIFY_PROFILE_URL },
   ],
 ];

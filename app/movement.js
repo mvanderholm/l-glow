@@ -12,10 +12,6 @@ const PRACTICES = [
   { href: '/selfmassage', title: 'Self Massage',  desc: 'Abhyanga rituals',    Icon: HandIcon,   dark: false },
 ];
 
-const ASSESSMENTS = [
-  { href: '/tongue-check', title: 'Tongue Check', desc: 'An ayurvedic morning read — what your tongue is telling you.', Icon: TongueIcon },
-];
-
 const COMING_SOON = [
   { title: 'Asana & Postures', desc: 'Dosha-tuned movement sequences — Vata, Pitta, and Kapha each have their own medicine.' },
   { title: 'Pulse Reading',    desc: 'Seasonal self-assessment. Thea\'s content coming.' },
@@ -50,24 +46,10 @@ export default function Movement() {
           ))}
         </View>
 
-        {/* Self-assessments */}
-        <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Self-assessments</Text>
-        {ASSESSMENTS.map(item => (
-          <Pressable
-            key={item.href}
-            style={({ pressed }) => [styles.rowCard, { backgroundColor: c.surface, opacity: pressed ? 0.85 : 1, ...card }]}
-            onPress={() => router.push(item.href)}
-          >
-            <View style={[styles.rowIcon, { backgroundColor: c.surfaceAlt }]}>
-              <item.Icon color={c.textMuted} size={20} />
-            </View>
-            <View style={styles.rowBody}>
-              <Text style={[styles.rowTitle, { color: c.text }]}>{item.title}</Text>
-              <Text style={[styles.rowDesc, { color: c.textMuted }]}>{item.desc}</Text>
-            </View>
-            <ChevronIcon color={c.textMuted} />
-          </Pressable>
-        ))}
+        {/* Tongue Check lived here too until Aug 14 2026 (nav-duplication
+            audit) — it's a "read your body first thing" practice, same
+            cluster as check-in and affirmations, so it now lives only on
+            Lifestyle + You tab instead of also duplicating here. */}
 
         {/* Coming soon */}
         <Text style={[styles.sectionLabel, { color: c.textMuted }]}>Coming soon</Text>
@@ -90,12 +72,6 @@ export default function Movement() {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
-function ChevronIcon({ color }) {
-  return <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>;
-}
-
 function BreathIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M3 8c3 0 5 3 5 3s2-3 5-3 5 3 5 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
@@ -117,13 +93,6 @@ function HandIcon({ color, size }) {
   </Svg>;
 }
 
-function TongueIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 3C8.5 3 6 6 6 9.5v5a6 6 0 0 0 12 0v-5C18 6 15.5 3 12 3Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
-    <Path d="M12 3v9" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-  </Svg>;
-}
-
 const styles = StyleSheet.create({
 
   subtitle: { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 16, fontStyle: 'italic', lineHeight: 22, marginBottom: 8 },
@@ -141,12 +110,6 @@ const styles = StyleSheet.create({
   iconCircle: { width: 39, height: 39, borderRadius: 999, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   tileTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 17, lineHeight: 22 },
   tileDesc:   { fontFamily: 'Inter_400Regular', fontSize: 12, lineHeight: 17, marginTop: 3 },
-
-  rowCard: { flexDirection: 'row', alignItems: 'center', gap: 14, borderRadius: 18, padding: 16, marginBottom: 10 },
-  rowIcon: { width: 44, height: 44, borderRadius: 999, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  rowBody: { flex: 1 },
-  rowTitle:{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 17, lineHeight: 22 },
-  rowDesc: { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18, marginTop: 3 },
 
   soonRow: {
     flexDirection: 'row', alignItems: 'center',

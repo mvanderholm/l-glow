@@ -10,11 +10,14 @@ const PRACTICES = [
   { href: '/recipes', title: 'Recipes', desc: 'Seasonal, dosha-balancing meals', Icon: BowlIcon, dark: false },
 ];
 
+// "Herb + Food Guide" removed from this list Aug 14 2026 — it described a
+// searchable herb/food encyclopedia with dosha medicine/poison breakdowns,
+// which shipped as roadmap #36 and lives at /herbs. This card had gone
+// stale, advertising a feature that already existed elsewhere.
 const COMING_SOON = [
   { title: 'Food Guide',        desc: 'Thea\'s A–Z guide: what\'s medicine and what\'s poison depends entirely on who you are.' },
   { title: 'Freedom with Food', desc: 'Untangling the fear, the guilt, and the rules you didn\'t choose. Thea\'s signature content area.' },
   { title: 'Weight Balancing',  desc: 'Not weight loss. Weight balancing — because it goes both directions and starts with agni.' },
-  { title: 'Herb + Food Guide', desc: 'A searchable encyclopedia of herbs and foods with dosha-specific medicine/poison breakdowns.' },
 ];
 
 export default function Nourishment() {

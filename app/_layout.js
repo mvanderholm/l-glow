@@ -114,11 +114,9 @@ function AppNavigator() {
       <Stack.Screen name="herbs"           options={{ headerShown: false }} />
       {/* legacy screens — still reachable, not in bottom nav */}
       <Stack.Screen name="journey"         options={{ headerShown: false }} />
-      <Stack.Screen name="tools"           options={{ headerShown: false }} />
       <Stack.Screen name="journal"         options={{ headerShown: false }} />
       <Stack.Screen name="you"             options={{ headerShown: false }} />
       <Stack.Screen name="quiz"     options={{ headerShown: false }} />
-      <Stack.Screen name="quizzes" options={{ headerShown: false }} />
       <Stack.Screen name="prakriti" options={{ headerShown: false }} />
       <Stack.Screen name="vikriti"  options={{ headerShown: false }} />
       <Stack.Screen name="prakriti-quiz" options={{ headerShown: false }} />

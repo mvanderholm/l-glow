@@ -139,9 +139,19 @@ export default function Home() {
         {/* Mythbusters */}
         <MythbusterCard colors={c} type={type} />
 
-        {/* Begin here */}
-        <Text style={[type.h2, { color: c.text, marginBottom: spacing.md }]}>Begin here</Text>
-        <BeginGrid colors={c} />
+        {/* Begin here — gated to first-run same as GettingStartedCard above,
+            Aug 14 2026 (nav-duplication audit). Previously showed forever,
+            for every user, duplicating four things already one tap away via
+            bottom nav. This grid is genuinely useful for someone still
+            finding their way around; it isn't for someone who's already
+            engaged, so it disappears on the same condition Getting Started
+            already uses instead of running as a permanent parallel path. */}
+        {savedDosha !== null && hasCheckedInToday !== null && prakritiDone !== null && (!savedDosha || !prakritiDone) && (
+          <>
+            <Text style={[type.h2, { color: c.text, marginBottom: spacing.md }]}>Begin here</Text>
+            <BeginGrid colors={c} />
+          </>
+        )}
 
         {/* Footer */}
         <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
