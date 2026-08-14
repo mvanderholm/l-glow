@@ -4,6 +4,7 @@ import { Slot, useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
 import Header from '../../components/Header';
+import { smartBack } from '../../components/BackButton';
 
 // Practitioner hub — its own nav structure, separate from the rest of the
 // app (Matt's call, July 2026): a "Clients" dashboard plus an admin content
@@ -94,7 +95,7 @@ export default function PractitionerLayout() {
     const noSession = authorized === null;
     return (
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-        <Header title="Practitioner View" left="back" onBack={() => router.back()} bordered />
+        <Header title="Practitioner View" left="back" onBack={() => smartBack('/')} bordered />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32 }}>
           <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 15, lineHeight: 22, color: c.textMuted, textAlign: 'center' }}>
             {noSession ? "You'll need to sign in first." : 'This view is for practitioners only.'}
@@ -114,7 +115,7 @@ export default function PractitionerLayout() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <Header title="Practitioner Hub" left="back" onBack={() => router.back()} bordered />
+      <Header title="Practitioner Hub" left="back" onBack={() => smartBack('/')} bordered />
 
       {isWide ? (
         <View style={{ flex: 1, flexDirection: 'row' }}>
