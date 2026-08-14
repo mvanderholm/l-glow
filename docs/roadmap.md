@@ -1526,6 +1526,22 @@ Matt's call on placement (asked directly rather than guessed): a new unified cli
 
 **Not done:** practice completions aren't surfaced to the practitioner (only client-side, per what was actually asked) — flag if Thea wants that visibility too later.
 
+---
+
+**68. Separate Prakriti and Vikriti wheels on Journey's Ayurveda tab, with alignment guidance reserved (not written).** Source: Matt, Aug 12 2026 — "we want to have separate Prakriti and Vikriti renderings of the 'venn diagram' of the blend of doshas... the guidance should show how to bring your prakriti and vikriti back into alignment." Directly touches #57's still-open "three separate constitution readings can disagree" question — this doesn't resolve that broader question, just makes an explicit, asked-for choice for what feeds these two specific wheels.
+
+**The real blocker, surfaced before building anything:** Vikriti's layered-tier questions carry per-option dosha tags, but that tagging pass was at **0/943 options tagged** as of the last live check (see #52) — there's no honest percentage to compute yet for almost anyone. Asked Matt directly rather than guess at three real decisions:
+- **Prakriti wheel source:** the existing standalone Dosha Quiz (already has real computed percentages, already renders via `DoshaWheel`) — not the new unscored Prakriti tiers.
+- **Vikriti wheel source:** the new Vikriti tiers, once tagged — not the originally-sketched check-in/Guna/Agni/Tongue aggregate approach (that path is blocked on #19, itself blocked on Thea).
+- **Build the shell now** with an honest empty state rather than wait for tagging to catch up.
+
+**Built:**
+- **New `data/user/vikritiScoring.js`** — `computeVikritiScores(userId)`. Fetches the user's most-recent-per-tier `vikriti_responses` plus all `vikriti_questions` (for `id → options[].dosha` lookup), scores full-point-per-tagged-dosha on each selected option (the roadmap's own documented-but-unconfirmed scoring rule from #52 — a placeholder, not a clinical decision made here), returns scores plus a `hasEnoughData` flag (`total >= 10`, an arbitrary floor flagged in a comment to revisit once real data volume exists). Returns `null` when signed out or no data at all.
+- **`app/journey.js`'s `AyurvedaTab`** reworked: the existing wheel section is relabeled "Your Prakriti / The blueprint you were born with" (was "Dosha Balance / Your current constitution this season") — pure UI copy reusing terminology Matt already established elsewhere (Prakriti Foundation's own "Who have you always been?" framing from #52), not new clinical content. The wheel, percentage rows, and the existing DRAFT Insights card are otherwise untouched. A new "Your Vikriti / How you're expressing right now" section follows: loading state, a real `DoshaWheel` + percentage rows when `hasEnoughData`, otherwise an honest empty-state card (different copy for "hasn't started Vikriti yet" with a CTA to `/vikriti` vs. "started but not enough tagged data").
+- **A deliberately empty "Coming from Thea" placeholder card** below both wheels — the "how to bring Vikriti back into alignment with Prakriti" guidance is real clinical interpretation and must come from Thea in her own words per `CLAUDE.md`'s content-authorship rules, not invented here. Needs to be added to her printable checklist artifact — not yet done as of this writing.
+
+Verified via Playwright against the local dev server (signed-out state): both empty states render correctly, zero console errors, layout holds at phone width. The `hasEnoughData` wheel-rendering path is structurally identical to the already-proven Prakriti wheel (same `DoshaWheel` component, same row layout) but couldn't be visually verified with real tagged data, since realistically no test account has enough tagged Vikriti answers yet — expected, matches the empty-state-by-design intent.
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 

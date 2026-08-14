@@ -7,6 +7,8 @@ import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { SEASONAL_CONTENT, LUNAR_CONTENT } from '../data/content/cycles';
 import { loadDoshaResult, loadRecentCheckins, loadTodayPracticeCompletions, togglePracticeCompletion } from '../data/user/storage';
+import { computeVikritiScores } from '../data/user/vikritiScoring';
+import { useAuth } from '../context/AuthContext';
 import { loadCheckinDimensions, refreshCheckinDimensions, loadRoutines, refreshRoutines } from '../data/content/remote';
 import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
 import { recommendations } from '../data/content/recommendations';
@@ -123,6 +125,7 @@ function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 export default function Journey() {
   const { theme: { colors: c, spacing, type } } = useTheme();
+  const { user } = useAuth();
   const router = useRouter();
   const { tab } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState(0);
@@ -130,8 +133,13 @@ export default function Journey() {
     Object.fromEntries(PRACTICE_IDS.map(id => [id, false]))
   );
   const [doshaResult, setDoshaResult] = useState(null);
+  const [vikritiScores, setVikritiScores] = useState(undefined); // undefined = loading, null = signed out or not enough data
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
   useEffect(() => { loadDoshaResult().then(r => setDoshaResult(r || false)); }, []);
+  useEffect(() => {
+    if (!user) { setVikritiScores(null); return; }
+    computeVikritiScores(user.id).then(setVikritiScores);
+  }, [user]);
   useEffect(() => {
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
@@ -189,7 +197,7 @@ export default function Journey() {
             practices={practices}
           />
         )}
-        {activeTab === 1 && <AyurvedaTab c={c} type={type} doshaResult={doshaResult} router={router} />}
+        {activeTab === 1 && <AyurvedaTab c={c} type={type} doshaResult={doshaResult} vikritiScores={vikritiScores} router={router} />}
         {activeTab === 2 && <HabitsTab c={c} type={type} />}
         {activeTab === 3 && <CyclesTab c={c} type={type} />}
       </ScrollView>
@@ -262,7 +270,7 @@ function OverviewTab({ c, spacing, type, checked, toggleChecked, doneCount, prac
 
 // ── Ayurveda tab ────────────────────────────────────────────────────────────
 
-function AyurvedaTab({ c, type, doshaResult, router }) {
+function AyurvedaTab({ c, type, doshaResult, vikritiScores, router }) {
   const scores = doshaResult && doshaResult.scores;
   const hasResult = !!(scores && (scores.vata || scores.pitta || scores.kapha));
 
@@ -277,12 +285,25 @@ function AyurvedaTab({ c, type, doshaResult, router }) {
     primaryDosha = ['vata', 'pitta', 'kapha'].reduce((a, b) => pcts[a] > pcts[b] ? a : b);
   }
 
+  // Vikriti percentages, computed the same way as Prakriti's above, but
+  // from computeVikritiScores() (data/user/vikritiScoring.js) instead of
+  // the Dosha Quiz result — see that file for the scoring/coverage rules.
+  const vikritiPcts = vikritiScores?.hasEnoughData ? (() => {
+    const { vata, pitta, kapha } = vikritiScores.scores;
+    const total = (vata + pitta + kapha) || 1;
+    return {
+      vata:  Math.round((vata  / total) * 100),
+      pitta: Math.round((pitta / total) * 100),
+      kapha: Math.round((kapha / total) * 100),
+    };
+  })() : null;
+
   return (
     <>
-      {/* ── Dosha Balance header ── */}
+      {/* ── Prakriti header ── */}
       <View style={{ alignItems: 'center', marginBottom: 8, marginTop: 4 }}>
-        <Text style={[styles.doshaBalanceTitle, { color: c.text }]}>Dosha Balance</Text>
-        <Text style={[styles.doshaBalanceSub, { color: c.textMuted }]}>Your current constitution this season</Text>
+        <Text style={[styles.doshaBalanceTitle, { color: c.text }]}>Your Prakriti</Text>
+        <Text style={[styles.doshaBalanceSub, { color: c.textMuted }]}>The blueprint you were born with</Text>
       </View>
 
       {hasResult ? (
@@ -342,6 +363,68 @@ function AyurvedaTab({ c, type, doshaResult, router }) {
           </Pressable>
         </View>
       ) : null}
+
+      {/* ── Vikriti — how you're expressing right now, distinct from
+          Prakriti above. Aug 12 2026, Matt's ask: separate Prakriti/Vikriti
+          renderings, with Prakriti as the sticky/fixed reading and Vikriti
+          as the thing that moves — the "Longer horizon" design goal this
+          roadmap already named. No computed Vikriti score exists for
+          almost anyone yet (dosha-tagging on Vikriti's questions was at
+          0/943 options as of the last check) — vikritiScores === undefined
+          means still loading; a resolved result without hasEnoughData
+          means real, not-yet-sufficient data, so this shows an honest
+          empty state rather than a wheel built on noise. */}
+      <View style={{ height: 24 }} />
+      <View style={{ alignItems: 'center', marginBottom: 8 }}>
+        <Text style={[styles.doshaBalanceTitle, { color: c.text }]}>Your Vikriti</Text>
+        <Text style={[styles.doshaBalanceSub, { color: c.textMuted }]}>How you're expressing right now</Text>
+      </View>
+
+      {vikritiScores === undefined ? (
+        <ActivityIndicator color={c.accent} style={{ marginVertical: 20 }} />
+      ) : vikritiPcts ? (
+        <>
+          <DoshaWheel scores={vikritiScores.scores} labelsInside size={220} />
+          {['vata', 'pitta', 'kapha'].map(d => (
+            <View key={d} style={[styles.doshaRow, { backgroundColor: c.surface, ...card }]}>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
+                <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: DOSHA_COLORS[d], marginTop: 5 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 14, color: c.text }}>{cap(d)}</Text>
+                </View>
+              </View>
+              <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 30, color: DOSHA_COLORS[d], lineHeight: 36, marginLeft: 8 }}>{vikritiPcts[d]}%</Text>
+            </View>
+          ))}
+        </>
+      ) : (
+        <View style={[styles.contentCard, { backgroundColor: c.surface, borderLeftColor: c.border, ...card }]}>
+          <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>Not ready yet</Text>
+          <Text style={[type.h2, { color: c.text, marginBottom: 10 }]}>Your Vikriti reading is still gathering signal</Text>
+          <Text style={[type.muted, { lineHeight: 22, marginBottom: vikritiScores ? 0 : 16 }]}>
+            {vikritiScores
+              ? "You've started the Vikriti assessment, but there isn't quite enough tagged information behind your answers yet to show a real reading — this fills in as more of the assessment gets connected to constitution data, not as you retake anything."
+              : "Take the Vikriti assessment to start building this — it looks at how you're doing right now, separately from the constitution you were born with."}
+          </Text>
+          {!vikritiScores && (
+            <Pressable style={[styles.quizBtn, { borderColor: c.accent }]} onPress={() => router.push('/vikriti')}>
+              <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 13.5, color: c.accent }}>Take the Vikriti assessment</Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
+      {/* ── Alignment guidance — intentionally empty. This is real clinical
+          interpretation (what it means when Vikriti differs from Prakriti,
+          and how to move back toward it) and must come from Thea in her
+          own words, not be invented here — see CLAUDE.md's content-
+          authorship rules. Flagged on her printable checklist. */}
+      <View style={[styles.draftNotice, { backgroundColor: c.surfaceAlt, borderColor: c.border, marginTop: 16 }]}>
+        <Text style={[type.label, { color: c.textMuted, marginBottom: 4 }]}>Coming from Thea</Text>
+        <Text style={[type.caption, { color: c.textMuted, lineHeight: 18 }]}>
+          Guidance on bringing your Vikriti back into alignment with your Prakriti is being written in Thea's own words — this space is reserved for it, not filled with a placeholder.
+        </Text>
+      </View>
 
       {/* ── Existing Ayurveda history + herbs content ── */}
       <View style={{ height: 16 }} />
