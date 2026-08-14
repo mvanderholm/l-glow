@@ -314,6 +314,7 @@ export default function You() {
             { label: 'Prakriti',        Icon: PrakritiIcon, prakriti: true, progressText: prakritiProgressText, notTaken: !prakritiProgressText },
             { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true, progressText: vikritiProgressText, notTaken: !vikritiProgressText },
             { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
+            { label: 'Your Activity',   Icon: ActivityIcon, activity: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
             // Was native-only per Matt's original Aug 7 2026 scope call (in-app
             // messaging as an app feature, not a web one) — reversed Aug 11
@@ -333,6 +334,7 @@ export default function You() {
                   onPress={() => {
                     if (item.dosha) router.push('/quiz');
                     if (item.intake) router.push('/intake');
+                    if (item.activity) router.push('/activity');
                     if (item.agni) {
                       if (agniResult) {
                         router.push({
@@ -626,6 +628,12 @@ function ShareIcon({ color, size }) {
     <Circle cx="18" cy="6" r="2.5" stroke={color} strokeWidth={1.4} />
     <Circle cx="18" cy="18" r="2.5" stroke={color} strokeWidth={1.4} />
     <Path d="M8.2 10.8 15.8 7.2M8.2 13.2 15.8 16.8" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+  </Svg>;
+}
+function ActivityIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth={1.4} />
+    <Path d="M12 7.5V12l3 2" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }
 function ClipboardIcon({ color, size }) {

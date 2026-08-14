@@ -864,7 +864,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
   }, [client.id]);
 
   async function load() {
-    const [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes] = await Promise.all([
+    const [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, intentionsRes, journalRes, intakeRes, notesRes] = await Promise.all([
       supabase.from('dosha_results').select('id, dosha, vata_score, pitta_score, kapha_score, answers, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('guna_results').select('id, dominant, sattva_score, rajas_score, tamas_score, answers, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('agni_results').select('id, agni_type, answers, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
@@ -872,18 +872,19 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
       supabase.from('prakriti_responses').select('id, tier, answers, completed_at, platform').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
       supabase.from('vikriti_responses').select('id, tier, answers, completed_at, platform').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
       supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
+      supabase.from('intentions').select('date, text, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
       supabase.from('journal_entries').select('date, grateful, showed, tomorrow, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(10),
       supabase.from('intake_forms').select('data, updated_at, platform').eq('user_id', client.id).maybeSingle(),
       supabase.from('practitioner_notes').select('id, note, created_at').eq('client_id', client.id).order('created_at', { ascending: false }),
     ]);
 
-    const firstError = [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, journalRes, intakeRes, notesRes].find(r => r.error)?.error;
+    const firstError = [doshaRes, gunaRes, agniRes, tongueRes, prakritiRes, vikritiRes, checkinsRes, intentionsRes, journalRes, intakeRes, notesRes].find(r => r.error)?.error;
     if (firstError) { setError(firstError.message); return; }
 
     setClientData({
       doshaResults: doshaRes.data ?? [], gunaResults: gunaRes.data ?? [], agniResults: agniRes.data ?? [], tongueResults: tongueRes.data ?? [],
       prakritiResponses: prakritiRes.data ?? [], vikritiResponses: vikritiRes.data ?? [],
-      checkins: checkinsRes.data ?? [], journal: journalRes.data ?? [],
+      checkins: checkinsRes.data ?? [], intentions: intentionsRes.data ?? [], journal: journalRes.data ?? [],
       intakeRow: intakeRes.data, notes: notesRes.data ?? [],
     });
   }
@@ -1143,24 +1144,45 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
               </>
             )}
 
-            {activeTab === 'checkins' && (
-              <>
-                <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>{`Check-ins (${clientData.checkins.length})`}</Text>
-                {clientData.checkins.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No check-ins yet.</Text>}
-                {clientData.checkins.map(ci => (
-                  <View key={ci.date} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
-                    <Text style={[s.logDate, { color: c.text }]}>
-                      {new Date(ci.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
-                    </Text>
-                    <Text style={[s.logDetail, { color: c.textMuted }]}>
-                      P{ci.physical} M{ci.mental} E{ci.emotional}{ci.hunger != null ? ` H${ci.hunger}` : ''}{ci.tongue != null ? ` T${ci.tongue}` : ''}
-                      {platformLabel(ci.platform) ? ` · ${platformLabel(ci.platform)}` : ''}
-                    </Text>
-                    {ci.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{ci.note}"</Text> : null}
-                  </View>
-                ))}
-              </>
-            )}
+            {activeTab === 'checkins' && (() => {
+              // Merged chronologically with intentions, Aug 12 2026 — "Just
+              // for today, I will..." picks were never readable by a
+              // practitioner at all before this; folded into the same daily
+              // log Check-ins already showed rather than a separate tab,
+              // since a day's check-in and its intention are the same kind
+              // of "what did this person do today" signal.
+              const byDate = {};
+              const touch = date => (byDate[date] ??= { date, checkin: null, intention: null });
+              for (const ci of clientData.checkins) touch(ci.date).checkin = ci;
+              for (const it of clientData.intentions) touch(it.date).intention = it;
+              const merged = Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date));
+
+              return (
+                <>
+                  <Text style={[s.sectionTitle, { color: c.text, marginBottom: 10 }]}>{`Check-ins & Intentions (${merged.length})`}</Text>
+                  {merged.length === 0 && <Text style={[s.mutedNote, { color: c.textMuted }]}>No check-ins or intentions yet.</Text>}
+                  {merged.map(day => (
+                    <View key={day.date} style={[s.entryCard, { backgroundColor: c.surface, ...card }]}>
+                      <Text style={[s.logDate, { color: c.text }]}>
+                        {new Date(day.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </Text>
+                      {day.checkin && (
+                        <Text style={[s.logDetail, { color: c.textMuted }]}>
+                          P{day.checkin.physical} M{day.checkin.mental} E{day.checkin.emotional}{day.checkin.hunger != null ? ` H${day.checkin.hunger}` : ''}{day.checkin.tongue != null ? ` T${day.checkin.tongue}` : ''}
+                          {platformLabel(day.checkin.platform) ? ` · ${platformLabel(day.checkin.platform)}` : ''}
+                        </Text>
+                      )}
+                      {day.checkin?.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{day.checkin.note}"</Text> : null}
+                      {day.intention && (
+                        <Text style={[s.logNote, { color: c.textMedium }]}>
+                          "Just for today, I will {day.intention.text}"{platformLabel(day.intention.platform) ? ` · ${platformLabel(day.intention.platform)}` : ''}
+                        </Text>
+                      )}
+                    </View>
+                  ))}
+                </>
+              );
+            })()}
 
             {activeTab === 'journal' && (
               <>

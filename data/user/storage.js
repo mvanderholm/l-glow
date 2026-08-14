@@ -417,6 +417,19 @@ export async function loadTodayIntention() {
   return AsyncStorage.getItem(key);
 }
 
+export async function loadRecentIntentions(days = 90) {
+  const keys = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    keys.push(KEYS.INTENTION_PREFIX + d.toISOString().slice(0, 10));
+  }
+  const pairs = await AsyncStorage.multiGet(keys);
+  return pairs
+    .filter(([, v]) => v !== null)
+    .map(([k, v]) => ({ date: k.replace(KEYS.INTENTION_PREFIX, ''), text: v }));
+}
+
 // --- Daily practice completions ---
 // practice_completions is a log table (user_id, practice_id, completed_at) —
 // no uniqueness constraint, since it was scaffolded ahead of any feature
@@ -443,6 +456,19 @@ function dayRange(date) {
 export async function loadTodayPracticeCompletions() {
   const raw = await AsyncStorage.getItem(practiceKey(todayDate()));
   return raw ? JSON.parse(raw) : {};
+}
+
+export async function loadRecentPracticeCompletions(days = 90) {
+  const keys = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    keys.push(practiceKey(d.toISOString().slice(0, 10)));
+  }
+  const pairs = await AsyncStorage.multiGet(keys);
+  return pairs
+    .filter(([, v]) => v !== null)
+    .map(([k, v]) => ({ date: k.replace(KEYS.PRACTICE_COMPLETIONS_PREFIX, ''), completions: JSON.parse(v) }));
 }
 
 export async function togglePracticeCompletion(practiceId, done) {
