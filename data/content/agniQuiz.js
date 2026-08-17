@@ -1,7 +1,10 @@
 // Source: transcript 21 (062126_02), June 2026. Thea explicitly requested this feature.
 // DRAFT — questions below are a structural scaffold. Thea must review and rewrite every
 // question and answer before this quiz ships. Do NOT treat placeholder wording as final.
-// Result copy is adapted from transcript 21 descriptions — still awaiting Thea's full review.
+//
+// Result copy (agniResults below) — reviewed and approved by Thea, Aug 17 2026. The one
+// exception is each type's lGlowNote closing line, which is still genuinely unwritten
+// (not a review gap — the content itself doesn't exist yet), see the comment at each one.
 
 export const agniQuestions = [
   // DRAFT QUESTIONS — Thea to provide final wording for all. These capture the right
@@ -116,7 +119,10 @@ export const agniResults = {
       lifestyle: ['Consistent sleep and wake times', 'Daily movement — even a short walk after meals', 'No screens or work during meals', 'Regular seasonal cleanse to maintain the baseline'],
       spiritual: ['Daily meditation or stillness practice', 'Gratitude at meals — attention changes the quality of digestion'],
     },
-    // DRAFT — awaiting Thea's review and authorship
+    // Not a review gap — the rest of this type's content is approved (Aug 17
+    // 2026). This closing line specifically hasn't been written by Thea yet;
+    // leave null (never invent it) until she provides one, same pattern
+    // Guna's equivalent field already uses once populated.
     lGlowNote: null,
   },
 
@@ -144,7 +150,10 @@ export const agniResults = {
       lifestyle: ['Consistent wake and sleep times — same-time rhythm is the medicine', 'Daily oil self-massage (abhyanga) before shower — calms Vata quickly', 'Short walk after meals to stimulate digestion', 'Reduce screen time and multitasking — overstimulation feeds Vishama'],
       spiritual: ['Stillness practice — even 5 minutes of silence daily', 'Grounding breath work (slow exhale, longer than inhale)', 'Rest before it becomes exhaustion'],
     },
-    // DRAFT — awaiting Thea's review and authorship
+    // Not a review gap — the rest of this type's content is approved (Aug 17
+    // 2026). This closing line specifically hasn't been written by Thea yet;
+    // leave null (never invent it) until she provides one, same pattern
+    // Guna's equivalent field already uses once populated.
     lGlowNote: null,
   },
 
@@ -173,7 +182,10 @@ export const agniResults = {
       lifestyle: ['Exercise in the cool of the morning, not in midday heat', 'Time outdoors in nature, especially near water', 'Reduce competitive and high-stakes environments where possible', 'Rest between intense focus periods — Tikshna burns out'],
       spiritual: ['Cooling pranayama: Sheetali or Sheetkari breath', 'Cultivate patience and forgiveness as deliberate practices', 'Meditation — particularly practices that soften rather than sharpen'],
     },
-    // DRAFT — awaiting Thea's review and authorship
+    // Not a review gap — the rest of this type's content is approved (Aug 17
+    // 2026). This closing line specifically hasn't been written by Thea yet;
+    // leave null (never invent it) until she provides one, same pattern
+    // Guna's equivalent field already uses once populated.
     lGlowNote: null,
   },
 
@@ -202,7 +214,10 @@ export const agniResults = {
       lifestyle: ['Brisk daily movement — walking, yoga, anything that generates internal heat', 'Dry brushing before shower to stimulate circulation', 'Wake before 6am — Kapha time (6-10am) makes this pattern heavier if you sleep into it', 'Avoid napping during the day'],
       spiritual: ['Energizing breathwork: Kapalabhati (breath of fire)', 'Set a small daily intention — Manda benefits from gentle structure', 'Notice what activities bring genuine enthusiasm — cultivate those'],
     },
-    // DRAFT — awaiting Thea's review and authorship
+    // Not a review gap — the rest of this type's content is approved (Aug 17
+    // 2026). This closing line specifically hasn't been written by Thea yet;
+    // leave null (never invent it) until she provides one, same pattern
+    // Guna's equivalent field already uses once populated.
     lGlowNote: null,
   },
 };

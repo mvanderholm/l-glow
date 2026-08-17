@@ -8,7 +8,10 @@ import { agniResults } from '../data/content/agniQuiz';
 import BackButton, { smartBack } from '../components/BackButton';
 import { BOOKING_URL } from '../data/booking';
 
-// Source: transcript 21 (062126_02). Result copy is DRAFT — Thea to review before launch.
+// Source: transcript 21 (062126_02). Result copy reviewed and approved by
+// Thea, Aug 17 2026 — the one gap is each type's lGlowNote closing line
+// (data/content/agniQuiz.js), which is unwritten, not just unreviewed; the
+// section below only renders when that field is populated.
 
 function Bullet({ text, color }) {
   const { theme: { colors: c } } = useTheme();
