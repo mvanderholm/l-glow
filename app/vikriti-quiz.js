@@ -146,6 +146,17 @@ export default function VikritiQuiz() {
             {tierClosings.vikriti[tier]}
           </Text>
 
+          {/* Honest expectation-setting, Aug 17 2026 — see the identical note
+              in prakriti-quiz.js. Vikriti specifically also gets a real
+              computed wheel once enough is tagged (Journey's Ayurveda tab),
+              so this points there rather than just saying "not yet." */}
+          <View style={[s.noteCard, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+            <Text style={[s.noteLabel, { color: c.textMuted }]}>Not scored yet</Text>
+            <Text style={[s.noteBody, { color: c.textMuted }]}>
+              This tier doesn't have a computed dosha reading yet — that's still being built. What's below is exactly what you shared. Once it's ready, you'll see a real reading on your Vikriti wheel in Journey's Ayurveda tab.
+            </Text>
+          </View>
+
           {sections.length > 0 && (
             <View style={[s.recapCard, { backgroundColor: c.surface, borderColor: c.border }]}>
               <Text style={[s.recapTitle, { color: c.text }]}>Here's what you shared</Text>
@@ -355,6 +366,10 @@ const s = StyleSheet.create({
   doneTitle:   { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 24 },
   primaryBtn:     { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999, alignItems: 'center', marginTop: 8 },
   primaryBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 14.5 },
+
+  noteCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 16 },
+  noteLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10.5, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 },
+  noteBody: { fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 18 },
 
   recapCard: { borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 20 },
   recapTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 17, marginBottom: 12 },

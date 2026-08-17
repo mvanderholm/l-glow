@@ -112,6 +112,18 @@ export default function PrakritiQuiz() {
             {tierClosings.prakriti[tier]}
           </Text>
 
+          {/* Honest expectation-setting, Aug 17 2026 — this used to just show
+              the recap with no explanation, which could read as a lesser
+              version of what the Dosha Quiz gives rather than what it
+              actually is: real content waiting on the dosha-tagging pass
+              (#52), not a finished, deliberately spare result. */}
+          <View style={[s.noteCard, { backgroundColor: c.surfaceAlt, borderColor: c.border }]}>
+            <Text style={[s.noteLabel, { color: c.textMuted }]}>Not scored yet</Text>
+            <Text style={[s.noteBody, { color: c.textMuted }]}>
+              This tier doesn't have a computed dosha reading yet — that's still being built. What's below is exactly what you shared, kept as-is until it's ready.
+            </Text>
+          </View>
+
           {sections.length > 0 && (
             <View style={[s.recapCard, { backgroundColor: c.surface, borderColor: c.border }]}>
               <Text style={[s.recapTitle, { color: c.text }]}>Here's what you shared</Text>
@@ -317,6 +329,10 @@ const s = StyleSheet.create({
   doneTitle:   { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 24 },
   primaryBtn:     { paddingVertical: 14, paddingHorizontal: 28, borderRadius: 999, alignItems: 'center', marginTop: 8 },
   primaryBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 14.5 },
+
+  noteCard: { borderWidth: 1, borderRadius: 14, padding: 14, marginBottom: 16 },
+  noteLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 10.5, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 4 },
+  noteBody: { fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 18 },
 
   recapCard: { borderWidth: 1, borderRadius: 18, padding: 16, marginBottom: 20 },
   recapTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 17, marginBottom: 12 },

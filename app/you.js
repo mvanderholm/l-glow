@@ -331,7 +331,7 @@ export default function You() {
                   style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
                   disabled={item.share}
                   onPress={() => {
-                    if (item.dosha) router.push('/quiz');
+                    if (item.dosha) router.push(result ? '/result' : '/quiz');
                     if (item.intake) router.push('/intake');
                     if (item.activity) router.push('/activity');
                     if (item.agni) {

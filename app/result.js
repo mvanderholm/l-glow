@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, Platform, useWindowDimensions, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { doshaInfo } from '../data/content/quiz';
+import { loadDoshaResult } from '../data/user/storage';
 import { useTheme } from '../context/ThemeContext';
 import { BotanicalDivider } from '../components/BotanicalAccent';
 import BackButton, { smartBack } from '../components/BackButton';
@@ -16,18 +17,37 @@ export default function Result() {
   const styles = makeStyles(colors, spacing, radius);
   const params = useLocalSearchParams();
   // The quiz always sends a floor of 3 per dosha (see quiz.js), so real
-  // completions never arrive with every param missing. Landing here with
-  // none of them set means a stale link, browser history weirdness, or
-  // direct navigation — not a real result. Redirect instead of saving a
-  // fake all-zero dosha over whatever the user actually has (or doesn't).
+  // completions never arrive with every param missing.
   const hasParams = params.vata !== undefined || params.pitta !== undefined || params.kapha !== undefined;
   const [redirecting, setRedirecting] = useState(false);
+  // undefined = haven't checked storage yet, null = checked and nothing
+  // saved, object = a real saved result. Aug 17 2026: this screen used to
+  // treat "no params" as always meaning a stale/direct-nav landing and
+  // redirect straight to the quiz — which meant there was no way to ever
+  // see your own saved result again without retaking (Today's dosha
+  // "blueprint" badge links here with no params, and You tab's "My Dosha"
+  // row skipped this screen entirely for the same reason). Now it checks
+  // storage first and only redirects if there's genuinely nothing saved.
+  const [savedResult, setSavedResult] = useState(undefined);
 
-  const scores = {
-    vata:  Number(params.vata  || 0),
-    pitta: Number(params.pitta || 0),
-    kapha: Number(params.kapha || 0),
-  };
+  useEffect(() => {
+    if (hasParams) return;
+    loadDoshaResult().then(r => {
+      if (r && r.scores) {
+        setSavedResult(r);
+      } else {
+        setSavedResult(null);
+        setRedirecting(true);
+        setTimeout(() => router.replace('/quiz'), 1800);
+      }
+    });
+  }, []);
+
+  const scores = hasParams
+    ? { vata: Number(params.vata || 0), pitta: Number(params.pitta || 0), kapha: Number(params.kapha || 0) }
+    : savedResult
+    ? { vata: savedResult.scores?.vata ?? 0, pitta: savedResult.scores?.pitta ?? 0, kapha: savedResult.scores?.kapha ?? 0 }
+    : { vata: 0, pitta: 0, kapha: 0 };
   const total = scores.vata + scores.pitta + scores.kapha || 1;
   const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   const primary = sorted[0][0];
@@ -39,14 +59,13 @@ export default function Result() {
     kapha: Math.round((scores.kapha / total) * 100),
   };
 
-  useEffect(() => {
-    // quiz.js saves the result (with per-question answers) before navigating
-    // here — this screen only needs to redirect on a params-less landing.
-    if (!hasParams) {
-      setRedirecting(true);
-      setTimeout(() => router.replace('/quiz'), 1800);
-    }
-  }, []);
+  if (!hasParams && savedResult === undefined) {
+    return (
+      <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.accent} />
+      </SafeAreaView>
+    );
+  }
 
   if (redirecting) {
     return (
