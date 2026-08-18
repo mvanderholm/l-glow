@@ -69,6 +69,7 @@ const KEYS = {
   PRAKRITI_TIER_PREFIX: '@lglow/prakriti_answers/',
   VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
   PRACTICE_COMPLETIONS_PREFIX: '@lglow/practice_completions/',
+  ROUTINE_DECLINES_PREFIX: '@lglow/routine_declines/',
 };
 
 // --- Dosha result ---
@@ -493,6 +494,37 @@ export async function togglePracticeCompletion(practiceId, done) {
   });
 }
 
+// --- Daily Rhythms declines ---
+// Aug 18 2026 — /recommendations used to show every qualifying routine item
+// at once (every universal anchor plus every dosha-matching item). Now it
+// shows one per time-of-day category, with a way to decline it and see the
+// next qualifying item in that category. Declines reset daily (Matt's
+// call) — "declined today" is derived from a log, not a stored/mutable
+// field, same shape as practice_completions: `routine_declines` gets one
+// row per decline event, and the "active" pick for a category is always
+// computed as the first qualifying item not in that day's declined set,
+// never persisted redundantly.
+
+function routineDeclineKey(date) {
+  return KEYS.ROUTINE_DECLINES_PREFIX + date;
+}
+
+export async function loadTodayRoutineDeclines() {
+  const raw = await AsyncStorage.getItem(routineDeclineKey(todayDate()));
+  return raw ? JSON.parse(raw) : {}; // { morning: [itemId, ...], midday: [...], evening: [...], night: [...] }
+}
+
+export async function declineRoutineItem(category, itemId) {
+  const date = todayDate();
+  const current = await loadTodayRoutineDeclines();
+  const next = { ...current, [category]: [...(current[category] ?? []), itemId] };
+  await AsyncStorage.setItem(routineDeclineKey(date), JSON.stringify(next));
+
+  await syncToSupabase(userId => supabase.from('routine_declines').insert({
+    user_id: userId, date, category, item_id: itemId,
+  }));
+}
+
 // --- Cross-device hydration ---
 // Pulls existing Supabase data down to a fresh device's AsyncStorage. Only
 // fills in what's missing locally — never overwrites existing local data, so
@@ -515,6 +547,7 @@ export async function hydrateFromSupabase() {
       hydratePrakritiTiers(userId),
       hydrateVikritiTiers(userId),
       hydratePracticeCompletions(userId),
+      hydrateRoutineDeclines(userId),
     ]);
   } catch (err) {
     console.warn('Hydration from Supabase failed:', err.message);
@@ -651,6 +684,17 @@ async function hydratePracticeCompletions(userId) {
   if (!data?.length) return;
   const completions = Object.fromEntries(data.map(row => [row.practice_id, true]));
   await AsyncStorage.setItem(practiceKey(date), JSON.stringify(completions));
+}
+
+async function hydrateRoutineDeclines(userId) {
+  const date = todayDate();
+  if (await AsyncStorage.getItem(routineDeclineKey(date))) return;
+  const { data } = await supabase.from('routine_declines')
+    .select('category, item_id').eq('user_id', userId).eq('date', date);
+  if (!data?.length) return;
+  const declines = {};
+  for (const row of data) (declines[row.category] ??= []).push(row.item_id);
+  await AsyncStorage.setItem(routineDeclineKey(date), JSON.stringify(declines));
 }
 
 // --- One-time local→Supabase migration ---

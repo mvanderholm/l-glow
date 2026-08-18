@@ -10,7 +10,7 @@ import { agniResults } from '../data/content/agniQuiz';
 import { useTheme } from '../context/ThemeContext';
 import { routineAnchors, routines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
-import { loadDoshaResult, loadAgniResult } from '../data/user/storage';
+import { loadDoshaResult, loadAgniResult, loadTodayRoutineDeclines, declineRoutineItem } from '../data/user/storage';
 import BackButton, { smartBack } from '../components/BackButton';
 import SearchButton from '../components/SearchButton';
 
@@ -37,6 +37,25 @@ function findHerb(name) {
   return herbFoodDatabase.find(h => h.name === resolved) || null;
 }
 
+// Daily Rhythms — one pick per time-of-day category instead of showing
+// every qualifying item at once (Aug 18 2026, Matt's ask). A category's
+// pick is always the first qualifying item (universal anchors, then the
+// client's dosha-specific ones, in their existing sort order) that isn't
+// in that category's declined-today set — never stored separately, always
+// derived, so declining just means "recompute with one more id excluded."
+const ROUTINE_TIME_ORDER = ['morning', 'midday', 'evening', 'night'];
+
+function buildDailyRhythmPicks(routinesData, dosha, declines) {
+  const pool = [...(routinesData.anchors ?? []), ...((dosha && routinesData.routines[dosha]) ?? [])];
+  return ROUTINE_TIME_ORDER
+    .map(category => {
+      const declinedIds = declines?.[category] ?? [];
+      const item = pool.find(r => r.time === category && !declinedIds.includes(r.id));
+      return item ? { category, item } : null;
+    })
+    .filter(Boolean);
+}
+
 export default function Recommendations() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
   const styles = makeStyles(colors, spacing, radius);
@@ -48,10 +67,12 @@ export default function Recommendations() {
   const [redirecting, setRedirecting] = useState(false);
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines });
   const [agniResult, setAgniResult] = useState(null); // null = loading, false = not taken
+  const [declines, setDeclines] = useState(null); // null = loading, then { category: [itemId, ...] }
 
   useEffect(() => {
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
+    loadTodayRoutineDeclines().then(setDeclines);
     loadAgniResult().then(r => setAgniResult(r || false));
   }, []);
 
@@ -67,6 +88,11 @@ export default function Recommendations() {
       });
     }
   }, []);
+
+  function declineRhythm(category, itemId) {
+    setDeclines(prev => ({ ...prev, [category]: [...(prev?.[category] ?? []), itemId] }));
+    declineRoutineItem(category, itemId);
+  }
 
   if (redirecting) {
     return (
@@ -215,12 +241,22 @@ export default function Recommendations() {
         </Section>
 
         <Section title="Daily Rhythms" accent={colors.accentAlt}>
-          {routinesData.routines[dosha].map(r => (
-            <RoutineRow key={r.id} time={r.time} label={r.label} />
-          ))}
-          {routinesData.anchors.map(a => (
-            <RoutineRow key={a.id} time={a.time} label={a.label} />
-          ))}
+          {(() => {
+            const picks = buildDailyRhythmPicks(routinesData, dosha, declines);
+            if (!picks.length) {
+              return <Text style={type.muted}>That's everything for today — check back tomorrow.</Text>;
+            }
+            return picks.map(({ category, item }) => (
+              <View key={category} style={styles.routineRhythmRow}>
+                <View style={{ flex: 1 }}>
+                  <RoutineRow time={item.time} label={item.label} />
+                </View>
+                <Pressable onPress={() => declineRhythm(category, item.id)} hitSlop={8}>
+                  <Text style={[type.captionSm, { color: colors.textMuted }]}>Not today</Text>
+                </Pressable>
+              </View>
+            ));
+          })()}
         </Section>
       </ScrollView>
 
@@ -531,6 +567,12 @@ return StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.sm,
+  },
+  routineRhythmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
   routineTimeBadge: {
     paddingHorizontal: spacing.sm,
