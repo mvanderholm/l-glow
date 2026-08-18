@@ -271,12 +271,14 @@ export async function refreshRoutines() {
   }
 }
 
+// Aug 17 2026: playlists is now a real list, not a fixed dosha-keyed object
+// (see the Sound Library migration) — rows pass through as-is, ordered so
+// pickTodaysPlaylist()'s daily rotation is stable across a refresh.
 function rowsToPlaylists(rows) {
-  const out = {};
-  for (const row of rows) {
-    out[row.dosha] = { name: row.name, url: row.url, mood: row.mood };
-  }
-  return out;
+  return rows
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+    .map(row => ({ id: row.id, category: row.category, name: row.name, url: row.url, mood: row.mood, dosha: row.dosha ?? [] }));
 }
 
 export async function loadPlaylists() {

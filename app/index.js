@@ -13,7 +13,7 @@ import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { loadMythbusters, refreshMythbusters, loadIntentions, refreshIntentions, loadPlaylists, refreshPlaylists } from '../data/content/remote';
-import { playlistForDosha } from '../data/content/music';
+import { pickTodaysPlaylist } from '../data/content/music';
 import SearchButton from '../components/SearchButton';
 import OnboardingJourneyModal from '../components/OnboardingJourneyModal';
 import Svg, { Path, Circle, G } from 'react-native-svg';
@@ -177,7 +177,7 @@ function MusicCard({ dosha, colors: c, type }) {
   }, []);
 
   if (!playlists) return null;
-  const playlist = playlistForDosha(dosha, playlists);
+  const playlist = pickTodaysPlaylist(dosha, playlists);
   if (!playlist) return null;
 
   return (
