@@ -118,7 +118,7 @@ Deno.serve(async (req) => {
   let message;
   try {
     message = await anthropic.messages.create({
-      model: 'claude-opus-4-8',
+      model: 'claude-opus-5',
       max_tokens: 512,
       output_config: { effort: 'low' },
       system,
