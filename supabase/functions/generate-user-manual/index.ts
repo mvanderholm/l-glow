@@ -128,7 +128,16 @@ Deno.serve(async (req) => {
   try {
     message = await anthropic.messages.create({
       model: 'claude-opus-5',
-      max_tokens: 2000,
+      // Aug 18 2026: was 2000 -- with adaptive thinking on, the model's own
+      // reasoning shares this same budget with the actual output. A real
+      // client history (intake + assessments + check-ins + journal) gives
+      // it a lot to reason through before it ever starts writing the
+      // 400-700 word manual, and 2000 wasn't leaving enough room for both --
+      // confirmed live via "Couldn't generate — Model returned no text,"
+      // meaning the call succeeded but got cut off mid-thought with no text
+      // block produced at all. Raised well above what the output alone
+      // needs so thinking has real room without eating the whole budget.
+      max_tokens: 8000,
       thinking: { type: 'adaptive' },
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: JSON.stringify(promptData) }],
