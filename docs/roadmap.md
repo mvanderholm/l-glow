@@ -1636,6 +1636,21 @@ Full audit and before/after breakdown: **[Where the Nav Breaks Down](https://cla
 
 **Deploy step for Matt, same as every Edge Function change:** re-paste both `generate-ai-guidance/index.ts` and `generate-user-manual/index.ts` into their Supabase dashboard functions — editing the local files doesn't touch what's live. Neither the model bump nor the max_tokens fix takes effect until that happens.
 
+---
+
+**75. Export the User's Manual as a branded PDF, matching Thea's existing templates — planned, not scoped yet.** Source: Matt, Aug 18 2026. The Manual currently only exists as plain narrative text/paragraphs in-app (`app/manual.js`, sourced from `user_manuals.content`) — Matt has real PDF templates from Thea he wants the generated content laid into, instead of (or alongside) the in-app reading view.
+
+**Blocked on:** the actual template files. Matt hasn't sent them yet — plan is for him to save them somewhere local and hand over the file path; the Read tool can open PDFs directly (multi-page included) to see the real layout, fonts, and branding rather than guessing.
+
+**Likely technical approach, sketched ahead of seeing the templates:** `expo-print` (renders HTML/CSS to a real PDF on-device, hands off to the native share sheet or a web download — no backend involved, consistent with this app staying local-first everywhere else). Not yet a dependency in this project — would be a new one, but there's no way to generate an actual PDF without some renderer, so this is a legitimate addition rather than something to avoid per the "prefer built-ins" default. Build an HTML template matching Thea's actual design, inject the manual's real text into it, wire up an export action.
+
+**Open questions to settle once the templates are in hand, not before:**
+- One template design, or does it vary (e.g., per dosha)?
+- Where does export live — a button on the client's own `/manual` screen, a step in Thea's approval flow in the practitioner hub, or both?
+- Anything beyond the narrative text itself that needs to be on the page (logo, date, client name, a footer disclaimer) that isn't already part of the generated content?
+
+Not started — this entry exists so the scoping conversation above isn't lost before the templates arrive.
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
