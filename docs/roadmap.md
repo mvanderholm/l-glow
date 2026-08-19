@@ -11,8 +11,8 @@ Living document. Strike through items as shipped, add new items at the bottom. R
 
 ## Key decisions and constraints
 
-**Launch target: August 17th.**
-Thea named this explicitly (transcript 13). August 17th, 2024 was the date of her first Ayurveda consultation with her mentor — the date means something to her. All pre-launch requirements (#29, #30, #31) need to be sequenced against this horizon.
+**Launch target: August 17th — slipped, did not happen.**
+Thea named this explicitly (transcript 13). August 17th, 2024 was the date of her first Ayurveda consultation with her mentor — the date means something to her, which is why it was picked over an arbitrary date. **Confirmed by Matt, Aug 18 2026: the date passed without launching, due to extenuating circumstances in Thea's schedule — not a technical or project-readiness issue.** No new target date set as of this writing. Pre-launch requirements (#29, #30, #31) are unaffected by the slip — still real work, just no longer racing a specific calendar date until a new one is picked.
 
 **Pricing: $1.99–$2.99/month subscription.**
 Thea's number is $1.99; her friend independently said $2.99. Aura app (~$5.99) named as the nearest comp. Individual consultative sessions are a paid upsell layer on top of the subscription — not in the app initially, just a CTA to book with Thea directly.
