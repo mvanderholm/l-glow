@@ -1728,6 +1728,18 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**84. Soft "don't lose this" signup nudge at three completion moments.** Source: Matt, Aug 25 2026 — asked whether unauthenticated responses get saved anywhere (yes, but only locally — `syncToSupabase()` is a deliberate no-op when signed out) and whether the app should prompt signup. Scoped before building rather than nudging everywhere.
+
+**Placement, ranked by what's actually at stake, explicitly excluding recurring actions:** the Dosha Quiz result (`app/result.js`), the shared assessments checklist modal (`components/AssessmentsChecklistModal.js` — covers Guna/Agni/Tongue/Prakriti-final/Vikriti-final/the Today screen link for free, since they all already render it), and a fully-filled intake form (`app/intake.js`). Deliberately **not** on check-ins, journal entries, or the daily intention pick — those are recurring habitual actions, and nudging on each would cross into the nagging mechanics this app's tone explicitly avoids.
+
+**Built:** one shared `components/SignupNudge.js` — gated on `useAuth()`'s `user` (never shown signed in) and a new `SIGNUP_NUDGE_DISMISSED` AsyncStorage flag, shown **at most once ever** regardless of which of the three surfaces a guest hits first (closing it, or tapping either button, dismisses it everywhere). Refactored the inline CTA card just added to `/recommendations` (#83) onto this same component rather than leaving a fourth near-duplicate implementation.
+
+**Real bug caught during verification, not just eyeballed:** the close button had no `zIndex`, so the card's own label text sat on top of it in paint order and silently ate every click — Playwright's actionability check caught this precisely ("`<div>Don't lose this</div>` intercepts pointer events"), which a plain visual screenshot would not have surfaced since the button *looked* correctly positioned. Fixed by matching the `zIndex: 1` already used on the proven-working close button in `AssessmentsChecklistModal`.
+
+**Verified end-to-end via Playwright:** a real Dosha Quiz completion shows the nudge on `/result`; closing it there sets the dismissed flag; a subsequent real Guna Quiz completion confirms the checklist modal correctly suppresses the nudge (already dismissed); a seeded fully-complete intake object (generated from every real field in `SECTIONS`, not a hand-picked subset) confirms the intake nudge renders at exactly 100% progress.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
