@@ -15,6 +15,7 @@ import { gunaResults } from '../data/content/gunaQuiz';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
+import { SECTIONS, sectionProgress, loadIntake } from './intake';
 import Header from '../components/Header';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
@@ -97,6 +98,7 @@ export default function You() {
   const [agniResult, setAgniResult] = useState(null);
   const [prakritiProgress, setPrakritiProgress] = useState(null);
   const [vikritiProgress, setVikritiProgress]   = useState(null);
+  const [intake, setIntake]         = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
   const [userName, setUserName]     = useState('');
   const [firstName, setFirstName]   = useState('');
@@ -120,6 +122,7 @@ export default function You() {
     loadAgniResult().then(r => setAgniResult(r));
     loadPrakritiProgress().then(setPrakritiProgress);
     loadVikritiProgress().then(setVikritiProgress);
+    loadIntake().then(setIntake);
     loadUserName().then(n => { if (n) setUserName(n); });
     loadFirstName().then(v => setFirstName(v || ''));
     loadLastName().then(v => setLastName(v || ''));
@@ -304,6 +307,12 @@ export default function You() {
             : null;
           const prakritiProgressText = tierProgressLabel(prakritiProgress);
           const vikritiProgressText = tierProgressLabel(vikritiProgress);
+          const intakeFilled = intake ? SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, intake)?.filled || 0), 0) : 0;
+          const intakeTotal  = intake ? SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, intake)?.total  || 0), 0) : 0;
+          const intakeProgressText = !intakeTotal ? null
+            : intakeFilled === 0 ? 'Not started'
+            : intakeFilled === intakeTotal ? 'Complete'
+            : `${Math.round((intakeFilled / intakeTotal) * 100)}% complete — tap to continue`;
 
           const rows = [
             { label: 'My Dosha',        Icon: LeafIcon, dosha: true, badge: doshaBadge, notTaken: !doshaBadge },
@@ -312,7 +321,7 @@ export default function You() {
             { label: 'Tongue Check',    Icon: TongueIcon, tongue: true, badge: tongueBadge, notTaken: !tongueBadge },
             { label: 'Prakriti',        Icon: PrakritiIcon, prakriti: true, progressText: prakritiProgressText, notTaken: !prakritiProgressText },
             { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true, progressText: vikritiProgressText, notTaken: !vikritiProgressText },
-            { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true },
+            { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true, progressText: intakeProgressText },
             { label: 'Your Activity',   Icon: ActivityIcon, activity: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
             // Was native-only per Matt's original Aug 7 2026 scope call (in-app

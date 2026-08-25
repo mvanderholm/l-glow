@@ -406,7 +406,10 @@ const EMPTY_INTAKE = {
 
 // ── Storage helpers ────────────────────────────────────────────────────────
 
-async function loadIntake() {
+// Exported for the You tab's "My Intake Form" row (Aug 25 2026, Matt's
+// report: no visible way to tell there was more to fill out) — needs the
+// same completion numbers this screen already computes for itself.
+export async function loadIntake() {
   const raw = await AsyncStorage.getItem(INTAKE_KEY);
   if (!raw) return { ...EMPTY_INTAKE };
   try { return { ...EMPTY_INTAKE, ...JSON.parse(raw) }; } catch { return { ...EMPTY_INTAKE }; }
