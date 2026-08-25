@@ -1740,6 +1740,14 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**85. "My Intake Form" row on You tab had no progress indicator.** Source: Matt, Aug 25 2026 — "there doesn't seem to be a place to go into my profile and continue filling out more about me." The link was always there (`app/you.js`'s "Your Assessments" list already pushed to `/intake`), but it was the only row in that list showing no badge or progress text at all — every other row (Dosha, Agni, Guna, Tongue, Prakriti, Vikriti) shows either a result badge or a completion fraction, so this one looked like a static link rather than something with more to do.
+
+**Built:** exported `loadIntake()` from `app/intake.js` (was module-private); You tab now loads it and computes the same `SECTIONS`/`sectionProgress` numbers the intake screen itself already uses, showing "Not started" / "X% complete — tap to continue" / "Complete" on the row.
+
+**Verified via Playwright:** with no local intake data, the row reads "Not started"; seeded with a real half-filled intake object (half of every actual field from `SECTIONS`, not a hand-picked subset), it correctly reads "50% complete — tap to continue," matching the intake screen's own math exactly.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
