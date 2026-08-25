@@ -9,6 +9,7 @@ import { doshaInfo } from '../data/content/quiz';
 import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import BackButton, { smartBack } from '../components/BackButton';
+import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
 
 // Deterministic daily pick — stable on refresh, rotates each day
 function dailyPick(arr) {
@@ -63,6 +64,7 @@ export default function Today() {
   const [checkin, setCheckin] = useState(null);
   const [ready, setReady]     = useState(false);
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
+  const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
     Promise.all([loadDoshaResult(), loadTodayCheckin()])
@@ -198,7 +200,21 @@ export default function Today() {
           <Text style={[type.muted, { color: c.textMuted }]}>See full guidance  ›</Text>
         </Pressable>
 
+        <Pressable
+          style={styles.assessmentsLink}
+          onPress={() => setShowAssessments(true)}
+        >
+          <Text style={[type.muted, { color: c.accent, fontFamily: 'Inter_600SemiBold' }]}>See what else you can explore  ›</Text>
+        </Pressable>
+
       </ScrollView>
+
+      <AssessmentsChecklistModal
+        visible={showAssessments}
+        onDismiss={() => setShowAssessments(false)}
+        title="Nice work checking in."
+        subtitle="Six quick reads on your body and mind, whenever you're ready — take them in any order."
+      />
     </SafeAreaView>
   );
 }
@@ -289,6 +305,10 @@ function makeStyles(c, spacing, radius) {
       paddingTop: spacing.lg,
       alignItems: 'center',
       borderTopWidth: 1,
+    },
+    assessmentsLink: {
+      marginTop: spacing.sm,
+      alignItems: 'center',
     },
     primaryBtn: {
       paddingVertical: spacing.md,
