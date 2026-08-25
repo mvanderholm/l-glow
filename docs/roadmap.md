@@ -1766,6 +1766,10 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**88. Home's "It changes." line moved to the true bottom of the page.** Source: Matt, Aug 25 2026. It sat above the returning-user section (Welcome back card, intention picker, Today's Guidance button) instead of after it. Moved below that block. Verified via Playwright (seeded a saved dosha result + the onboarded flag to reach the real Home screen, not the pre-onboarding welcome page) — "TODAY'S GUIDANCE" now renders before "It changes." in document order.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
