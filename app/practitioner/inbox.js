@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
+import { clientDisplayName } from './index';
 
 // Inbox — Matt's ask, Aug 11 2026: somewhere to look through every client's
 // messages without opening clients one at a time. Distinct from the
@@ -20,7 +21,7 @@ import { supabase } from '../../config/supabase';
 // consented clients' threads, so no extra consent filter is needed here.
 
 function clientLabel(client) {
-  return client?.display_name || client?.email || 'A client';
+  return clientDisplayName(client, 'A client');
 }
 
 function formatTimestamp(iso) {
@@ -59,7 +60,7 @@ export default function Inbox() {
     const clientIds = [...latestByClient.keys()];
     if (!clientIds.length) { setThreads([]); return; }
 
-    const { data: clients } = await supabase.from('users').select('id, display_name, email').in('id', clientIds);
+    const { data: clients } = await supabase.from('users').select('id, first_name, last_name, display_name, email').in('id', clientIds);
     const clientsById = Object.fromEntries((clients ?? []).map(cl => [cl.id, cl]));
 
     const rows = clientIds

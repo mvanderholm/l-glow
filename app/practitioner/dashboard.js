@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
 import { card } from '../../theme/index';
 import { supabase } from '../../config/supabase';
-import { computeAttention } from './index';
+import { computeAttention, clientDisplayName } from './index';
 import { SECTIONS, sectionProgress } from '../intake';
 
 // Dashboard — Matt's ask, Aug 10 2026: "she doesn't want to have to go into
@@ -35,7 +35,7 @@ function relativeTime(iso) {
 }
 
 function clientLabel(client) {
-  return client?.display_name || client?.email || 'A client';
+  return clientDisplayName(client, 'A client');
 }
 
 // Same completeness check as app/intake.js's own isFullyComplete — not
@@ -86,7 +86,7 @@ export default function Dashboard() {
     supabase
       .from('users')
       .select(`
-        id, email, display_name,
+        id, email, first_name, last_name, display_name,
         checkins(date, physical, mental, emotional, saved_at),
         intake_forms(data, updated_at),
         dosha_results(taken_at),

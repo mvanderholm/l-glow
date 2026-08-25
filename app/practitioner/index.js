@@ -26,6 +26,16 @@ function cap(s) {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
+// Prefers a first/last name if either is on file, then falls back to
+// display_name, then email — same fallback chain used everywhere a
+// practitioner sees a client's name. Exported for dashboard.js/inbox.js to
+// share instead of each keeping its own copy. Aug 25 2026, Matt's ask:
+// client cards showed display_name/email even when a real name existed.
+export function clientDisplayName(client, fallback = 'Unnamed client') {
+  const full = [client?.first_name, client?.last_name].filter(Boolean).join(' ');
+  return full || client?.display_name || client?.email || fallback;
+}
+
 const PRAKRITI_TIER_LABELS = { foundation: 'Foundation', level2: 'Level 2', level3: 'Level 3' };
 const VIKRITI_TIER_LABELS = { level1: 'Check Your Signals', level2: 'Pattern Finder', level3: 'Your Story' };
 
@@ -135,7 +145,7 @@ function ClientList({ colors: c, onSelect, selectedId, initialClientId }) {
   useEffect(() => {
     supabase
       .from('users')
-      .select('id, email, display_name, deleted_at, checkins(date, physical, mental, emotional, saved_at), intake_forms(data), dosha_results(taken_at)')
+      .select('id, email, first_name, last_name, display_name, deleted_at, checkins(date, physical, mental, emotional, saved_at), intake_forms(data), dosha_results(taken_at)')
       .eq('consented_to_practitioner_view', true)
       .eq('role', 'user')
       .order('date', { foreignTable: 'checkins', ascending: false })
@@ -201,7 +211,7 @@ function ClientList({ colors: c, onSelect, selectedId, initialClientId }) {
   const filtered = clients.filter(client => {
     if (attentionOnly && client.attentionReasons.length === 0) return false;
     if (!q) return true;
-    return (client.display_name || '').toLowerCase().includes(q) || (client.email || '').toLowerCase().includes(q);
+    return clientDisplayName(client, '').toLowerCase().includes(q) || (client.email || '').toLowerCase().includes(q);
   });
 
   return (
@@ -249,8 +259,8 @@ function ClientList({ colors: c, onSelect, selectedId, initialClientId }) {
           ]}
           onPress={() => onSelect(client)}
         >
-          <Text style={[s.clientName, { color: c.text }]}>{client.display_name || client.email || 'Unnamed client'}</Text>
-          {client.display_name && client.email && (
+          <Text style={[s.clientName, { color: c.text }]}>{clientDisplayName(client)}</Text>
+          {client.email && clientDisplayName(client) !== client.email && (
             <Text style={[s.clientEmail, { color: c.textMuted }]}>{client.email}</Text>
           )}
           {client.deleted_at && (
@@ -954,7 +964,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
       <View style={[s.detailHeader, { borderBottomColor: c.border }]}>
         <Pressable onPress={onBack} hitSlop={8} style={s.backBtn}><Text style={{ color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>← Back</Text></Pressable>
         <View style={{ flex: 1 }}>
-          <Text style={[s.detailTitle, { color: c.text }]}>{client.display_name || client.email}</Text>
+          <Text style={[s.detailTitle, { color: c.text }]}>{clientDisplayName(client)}</Text>
           <Text style={[s.detailSub, { color: c.textMuted }]}>{client.email}</Text>
         </View>
       </View>
@@ -1042,7 +1052,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
             )}
 
             {activeTab === 'profile' && (
-              <ProfileSection clientId={client.id} clientName={client.display_name || client.email} colors={c} />
+              <ProfileSection clientId={client.id} clientName={clientDisplayName(client)} colors={c} />
             )}
 
             {activeTab === 'assessments' && (
@@ -1059,7 +1069,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                     platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Dosha Quiz', null, r.taken_at, r.answers) : null}
+                    exportText={r.answers ? formatResponseExport(clientDisplayName(client), 'Dosha Quiz', null, r.taken_at, r.answers) : null}
                   />
                 ))}
                 {clientData.doshaResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="dosha" />}
@@ -1076,7 +1086,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                     platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Guna Assessment', null, r.taken_at, r.answers) : null}
+                    exportText={r.answers ? formatResponseExport(clientDisplayName(client), 'Guna Assessment', null, r.taken_at, r.answers) : null}
                   />
                 ))}
                 {clientData.gunaResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="guna" />}
@@ -1093,7 +1103,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                     platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={r.answers ? formatResponseExport(client.display_name || client.email, 'Agni Assessment', null, r.taken_at, r.answers) : null}
+                    exportText={r.answers ? formatResponseExport(clientDisplayName(client), 'Agni Assessment', null, r.taken_at, r.answers) : null}
                   />
                 ))}
                 {clientData.agniResults.length > 0 && <AIGuidanceSection colors={c} clientId={client.id} assessmentType="agni" />}
@@ -1112,7 +1122,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                       platform={r.platform}
                       expanded={expandedResponseId === r.id}
                       onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                      exportText={formatResponseExport(client.display_name || client.email, 'Tongue Check', null, r.taken_at, tongueAnswers)}
+                      exportText={formatResponseExport(clientDisplayName(client), 'Tongue Check', null, r.taken_at, tongueAnswers)}
                     />
                   );
                 })}
@@ -1130,7 +1140,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                     platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={formatResponseExport(client.display_name || client.email, 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
+                    exportText={formatResponseExport(clientDisplayName(client), 'Prakriti', PRAKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
                   />
                 ))}
                 {[...new Set(clientData.prakritiResponses.map(r => r.tier))].map(tier => (
@@ -1149,7 +1159,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                     platform={r.platform}
                     expanded={expandedResponseId === r.id}
                     onToggle={() => setExpandedResponseId(id => id === r.id ? null : r.id)}
-                    exportText={formatResponseExport(client.display_name || client.email, 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
+                    exportText={formatResponseExport(clientDisplayName(client), 'Vikriti', VIKRITI_TIER_LABELS[r.tier] || r.tier, r.completed_at, r.answers)}
                   />
                 ))}
                 {[...new Set(clientData.vikritiResponses.map(r => r.tier))].map(tier => (
@@ -1344,7 +1354,7 @@ export default function PractitionerClients() {
       const id = session?.user?.id ?? null;
       setPractitionerId(id);
       if (!id) return;
-      supabase.from('users').select('id, email, display_name').eq('id', id).single()
+      supabase.from('users').select('id, email, first_name, last_name, display_name').eq('id', id).single()
         .then(({ data }) => { if (data) setPractitionerSelf(data); });
     });
   }, []);
