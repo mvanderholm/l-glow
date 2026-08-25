@@ -9,6 +9,7 @@ import { BotanicalDivider } from '../components/BotanicalAccent';
 import BackButton, { smartBack } from '../components/BackButton';
 import { BOOKING_URL } from '../data/booking';
 import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
+import SignupNudge from '../components/SignupNudge';
 
 export default function Result() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -191,6 +192,8 @@ export default function Result() {
         <Pressable style={styles.secondaryBtn} onPress={() => setShowAssessments(true)}>
           <Text style={styles.secondaryBtnText}>See what else you can explore</Text>
         </Pressable>
+
+        <SignupNudge message="You just found your Dosha. Create a free account and it's saved and waiting for you next time." />
 
         <Pressable style={styles.retakeBtn} onPress={() => router.replace('/quiz')}>
           <Text style={styles.retakeText}>Retake quiz</Text>

@@ -10,6 +10,7 @@ import { supabase } from '../config/supabase';
 import { syncToSupabase, loadReproductiveHealthPref, saveReproductiveHealthPref } from '../data/user/storage';
 import BackButton from '../components/BackButton';
 import Header from '../components/Header';
+import SignupNudge from '../components/SignupNudge';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const INTAKE_KEY = '@lglow/intake';
@@ -785,6 +786,7 @@ function SectionList({ intake, onSelect, reproductivePref, colors: c }) {
   const totalFilled   = SECTIONS.reduce((sum, s) => sum + (sectionProgress(s, intake)?.filled || 0), 0);
   const totalFields   = SECTIONS.reduce((sum, s) => sum + (sectionProgress(s, intake)?.total || 0), 0);
   const overallPct    = totalFields ? Math.round((totalFilled / totalFields) * 100) : 0;
+  const isComplete    = totalFields > 0 && totalFilled === totalFields;
 
   return (
     <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
@@ -803,6 +805,10 @@ function SectionList({ intake, onSelect, reproductivePref, colors: c }) {
           <View style={[fs.trackFill, { backgroundColor: c.accent, width: `${overallPct}%` }]} />
         </View>
       </View>
+
+      {isComplete && (
+        <SignupNudge message="You just finished your full intake. Create a free account and it's saved for Thea to see, plus everything else you share here." />
+      )}
 
       <View style={{ marginTop: 24, gap: 10 }}>
         {SECTIONS.map((section, idx) => {

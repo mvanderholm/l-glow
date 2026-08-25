@@ -21,6 +21,7 @@ import {
   loadVikritiProgress, loadAgniResult, loadTongueResult,
 } from '../data/user/storage';
 import Svg, { Path } from 'react-native-svg';
+import SignupNudge from './SignupNudge';
 
 const STEPS = [
   { key: 'dosha',    label: 'Meet your Dosha',          sub: 'A five-minute quiz — your baseline blend.',    href: '/quiz',         Icon: LeafIcon },
@@ -87,6 +88,8 @@ export default function AssessmentsChecklistModal({ visible, onDismiss, title, s
                 <Text style={{ color: c.textMuted, fontSize: 16 }}>›</Text>
               </Pressable>
             ))}
+
+            <SignupNudge message="Create a free account and everything you've shared here is saved and waiting for you next time." />
 
             <View style={[s.divider, { borderTopColor: c.border }]} />
 

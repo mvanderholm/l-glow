@@ -66,6 +66,7 @@ const KEYS = {
   ZIP:            '@lglow/zip',
   ONBOARDED:      '@lglow/onboarded',
   ONBOARDING_JOURNEY_SEEN: '@lglow/onboarding_journey_seen',
+  SIGNUP_NUDGE_DISMISSED: '@lglow/signup_nudge_dismissed',
   PRAKRITI_TIER_PREFIX: '@lglow/prakriti_answers/',
   VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
   PRACTICE_COMPLETIONS_PREFIX: '@lglow/practice_completions/',
@@ -268,6 +269,21 @@ export async function loadOnboardingJourneySeen() {
 
 export async function saveOnboardingJourneySeen() {
   await AsyncStorage.setItem(KEYS.ONBOARDING_JOURNEY_SEEN, 'true');
+}
+
+// Shown at most once ever, across every surface that offers it (Dosha Quiz
+// result, the assessments checklist modal, a completed intake form) — a
+// signed-out guest who dismisses it on one screen shouldn't see it again on
+// the next. Purely local; never worth syncing (once someone's signed in,
+// `user` gates the nudge out everywhere regardless of this flag). Aug 25
+// 2026, Matt's ask after asking whether unauthenticated work gets saved
+// anywhere (it does, locally only — this is the "don't lose it" nudge).
+export async function loadSignupNudgeDismissed() {
+  return (await AsyncStorage.getItem(KEYS.SIGNUP_NUDGE_DISMISSED)) === 'true';
+}
+
+export async function saveSignupNudgeDismissed() {
+  await AsyncStorage.setItem(KEYS.SIGNUP_NUDGE_DISMISSED, 'true');
 }
 
 // --- User name ---
