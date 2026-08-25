@@ -394,7 +394,7 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
               {suggestions.map(s => (
                 <Pressable key={s.id} onPress={() => choose(s.text)}
-                  style={{ backgroundColor: c.surfaceAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999 }}>
+                  style={{ backgroundColor: c.surfaceAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.sm }}>
                   <Text style={{ color: c.accent, fontSize: 13, fontFamily: 'Inter_400Regular' }}>{s.text}</Text>
                 </Pressable>
               ))}
