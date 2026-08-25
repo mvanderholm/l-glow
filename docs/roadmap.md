@@ -1748,6 +1748,16 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**86. No discoverable way to add more than a first name to your profile.** Source: Matt, Aug 25 2026 — after #85's intake-progress fix, clarified the actual ask was different: "I want a way to add to my profile. When I create an account it only asks for my first name and I can't fill out anything else after signup."
+
+**Root cause: the edit form already existed, but its only entry point was a small pencil badge overlapping the avatar placeholder** — `startEditProfile()` in `app/you.js` already opened a full form (first/last name, display name, phone, address, city, state, zip), it just had no textual, obviously-clickable affordance anywhere.
+
+**Built:** a real "Personal details" row in the You tab's Settings section ("Name, phone, address" subtitle), calling the same `startEditProfile()` the pencil badge already used — no new form, just a second and much clearer way into the one that existed. Since the edit form itself renders up near the avatar (not next to Settings, further down the screen), tapping the new row also scrolls the screen to the top so the form doesn't open off-screen and go unnoticed.
+
+**Verified via Playwright:** the row renders with its subtitle; tapping it opens the form with Phone and Address fields visible, confirmed scrolled into view.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
