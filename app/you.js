@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
@@ -92,6 +92,7 @@ export default function You() {
   const { theme: { colors: c, spacing } } = useTheme();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const scrollRef = useRef(null);
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
   const [tongueResult, setTongueResult] = useState(null);
@@ -192,7 +193,7 @@ export default function You() {
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
       <Header title="You" left="menu" right="search" />
 
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 
         {/* Avatar */}
         <View style={styles.avatarSection}>
@@ -453,6 +454,28 @@ export default function You() {
         {/* Settings */}
         <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Settings</Text>
         <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
+          {/* Personal details — signup only ever collects a first name, and
+              the only other way to add the rest (last name, phone, address)
+              was a small pencil badge on the avatar placeholder above, which
+              wasn't discoverable enough. Aug 25 2026, Matt: "it only asks
+              for my first name and I can't fill out anything else after
+              signup." Reuses startEditProfile()/the same form the pencil
+              badge already opens — this is just a second, clearer way in. */}
+          <Pressable
+            style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+            onPress={() => { startEditProfile(); scrollRef.current?.scrollTo({ y: 0, animated: true }); }}
+          >
+            <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+              <PersonIcon color={c.textMuted} size={15} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingsLabel, { color: c.text }]}>Personal details</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 2 }}>
+                Name, phone, address
+              </Text>
+            </View>
+            <ChevronIcon color={c.textMuted} />
+          </Pressable>
           {SETTINGS.map((item, idx) => (
             <Pressable
               key={item.label}
