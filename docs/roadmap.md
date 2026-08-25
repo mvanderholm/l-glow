@@ -1720,6 +1720,14 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**83. Today's Guidance had no closing CTA.** Source: Matt, Aug 25 2026 — `/recommendations` just ended after Daily Rhythms with no path onward.
+
+**Built:** signed-out visitors now see a "Don't lose this — create a free account" card (Create account / Already have an account? Sign in), gated on `useAuth()`'s `user`; everyone (signed in or not) gets a "See your profile & progress" link to `/you`, which already has its own graceful signed-out state (its own Sign in/Create account rows), so it was a safe link target either way. Plain UI copy, not clinical content.
+
+**Verified via Playwright** (signed-out state only — no test credentials for a real signed-in pass): both links render, and clicking "Create account" navigates to `/signup` as expected.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
