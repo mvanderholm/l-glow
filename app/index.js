@@ -154,15 +154,15 @@ export default function Home() {
           </>
         )}
 
+        {savedDosha === null ? null : savedDosha ? (
+          <ReturningUser dosha={savedDosha} userName={userName} colors={c} spacing={spacing} type={type} scrollRef={scrollRef} />
+        ) : null}
+
         {/* Footer */}
         <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
           <Text style={{ color: c.accentSoft, fontSize: 15, marginBottom: 6 }}>❧</Text>
           <Text style={[styles.footerText, { color: c.textMuted }]}>It changes.</Text>
         </View>
-
-        {savedDosha === null ? null : savedDosha ? (
-          <ReturningUser dosha={savedDosha} userName={userName} colors={c} spacing={spacing} type={type} scrollRef={scrollRef} />
-        ) : null}
       </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
