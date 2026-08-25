@@ -1670,6 +1670,34 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**77. Check-in's notes field was hidden behind the keyboard.** Source: Matt, Aug 25 2026. `app/checkin.js` had no `KeyboardAvoidingView` at all — same pattern `journal.js` already uses elsewhere in the app. Wrapped the screen in one (`behavior: 'padding'` on iOS, native `adjustResize` on Android), added `keyboardShouldPersistTaps="handled"`, and gave the scroll content extra bottom padding (`spacing.screenPadBottom`) so the note field has room to scroll clear of the keyboard instead of sitting under it. Verified no visual regression via Playwright web screenshot (keyboard-avoidance itself isn't testable on desktop web — no on-screen keyboard to reproduce the bug against).
+
+**78. Daily Rhythms badge alignment, and a matching "what's next" link on the Today screen.** Source: Matt, Aug 25 2026, two related asks in one message.
+- **`app/recommendations.js`:** the time badge (MORNING/EVENING/etc.) was vertically centered against its label, which could wrap to multiple lines — made the badge float mid-paragraph instead of clearly marking where each rhythm starts. Switched `routineRow`/`routineRhythmRow` to `alignItems: 'flex-start'` and added `marginBottom` between rows. Verified live via Playwright screenshot — badges now top-align and each rhythm reads as a distinct block. Also confirmed (not a bug): the reason a 4th "Midday" section didn't show is a content gap, not code — the live `routine_items` table has 38 morning / 6 evening / 1 night / 0 midday rows across every dosha; the practitioner Routines editor already supports "Midday" as a Time option, Thea just hasn't added one yet. Same root cause independently confirmed on `app/today.js`'s "Today's Rhythm" strip.
+- **`app/today.js`:** added a "See what else you can explore" link below "See full guidance," opening the same shared `AssessmentsChecklistModal` from #76 — the screen you land on right after check-in had no path toward the other five assessments either. Verified live via Playwright: correctly shows "Meet your Dosha" as already-done after a real quiz completion.
+
+**79. "Just for today" intentions: decline-and-choose-another, add to Journal, visible on Today's Guidance.** Source: Matt, Aug 25 2026, alongside a corner-radius fix on the same card (#80).
+
+**Scoped via clarifying questions before building** (three genuinely ambiguous asks): "add to journal" → append into today's existing Journal entry, not a separate entry type; "add to daily guidance" → show read-only on `/recommendations`, not a new action; "decline and choose another" → track declines like Daily Rhythms does (#73), not just relabel the existing "change" link.
+
+**Built:**
+- New `suggestion_id` column on `intentions` (nullable — null for a freehand-typed intention, since there's nothing to decline against) and a new `intention_declines` log table, same shape as `routine_declines` minus a category column (intentions have only one daily slot, not four time-of-day ones). Migration: `supabase/migrations/20260825010000_intention_declines.sql` — **not yet run against the live database.**
+- `data/user/storage.js`: `saveIntention`/`loadTodayIntention` now carry `{ text, suggestionId }` instead of a bare string (with a graceful fallback for pre-existing plain-text saves, both locally and in the one-time local→Supabase migration path); new `loadTodayIntentionDeclines`/`declineIntention`, hydrated on sign-in same as routine declines.
+- `data/content/intentions.js`: `intentionSuggestions()` takes an optional `excludeIds` array, filtered *before* the 5-suggestion cap so a decline can actually surface another real suggestion once more per-dosha content exists (today there's only 3 universal ones, so this mostly matters once Thea fills in `vata`/`pitta`/`kapha`).
+- `app/index.js` (Home's "Welcome back" card): declining the active intention logs it (if it came from a suggestion) and returns to the chip menu with that chip now excluded; a new "Add to journal" link calls the new `appendIntentionToJournal()`.
+- `app/journal.js`: new exported `appendIntentionToJournal()` — tacks `"Intention: I will {text}"` onto today's `showed` field (closest existing prompt), creating today's entry if none exists yet; a second tap same day is a no-op rather than a duplicate line.
+- `app/recommendations.js`: new read-only "Just For Today" section showing the day's intention, same `Section` component the rest of the page already uses.
+
+**Verified:** `intentionSuggestions()`'s exclude-before-slice logic confirmed directly in Node (declining a suggestion correctly surfaces the next one). The new read-only section on `/recommendations` confirmed live via Playwright (seeded via localStorage, since setting an intention requires being signed in). The Home-screen write path (choose/decline/add-to-journal) is code-reviewed and structurally mirrors the already-verified Daily Rhythms decline mechanic, but **not driven live** — that screen's "Welcome back" card only renders for a signed-in user, which Playwright couldn't reach without real credentials. Worth a real on-device pass before calling this fully verified.
+
+**Not yet done: the migration needs to be run in the Supabase SQL Editor before any of this actually works in production** — until then, `saveIntention`/`declineIntention` will fail their Supabase writes (local AsyncStorage still succeeds either way, per the existing best-effort sync pattern, so nothing crashes — it just won't sync).
+
+---
+
+**80. Reduced the corner radius on the "Just for today" suggestion chips.** Source: Matt, Aug 25 2026 — "they are too round." Were `borderRadius: 999` (full pill); switched to the existing `radius.sm` (12) token already used for chips elsewhere. Not independently screenshotted live (same signed-in-only card as #79), one-line low-risk token swap.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
