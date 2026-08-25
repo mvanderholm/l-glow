@@ -1698,6 +1698,16 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**81. Practitioner portal's top nav disappearing on some client-page tabs.** Source: Matt, Aug 25 2026 — "top navigation within a client page disappears sometimes depending on which tab you click on."
+
+**Root cause: a known RN-Web flex divergence already diagnosed and fixed once in this exact file** (see the July 21 2026 session notes, and the `sidebar` style in `app/practitioner/_layout.js`, which already carries this same fix) — CSS flexbox defaults `flex-shrink` to 1 on web, while RN's own Yoga engine defaults it to 0. `app/practitioner/index.js`'s `s.tabBar` (the CLIENT_TABS bar — Summary/Profile/Assessments/etc.) and `_layout.js`'s `s.navBar` (the outer Dashboard/Inbox/Clients/... nav) both had `flexGrow: 0` but no `flexShrink: 0`, so on web only, a tab whose content pushed the column tall enough (Assessments, with potentially dozens of history entries, being the most likely trigger) could squeeze the bar down to a sliver instead of leaving it fixed-height with the content scrolling underneath. Native was never affected (Yoga's own default already matches the fix).
+
+**Confirmed the mechanism directly, not just by pattern-matching the precedent:** built an isolated repro of the exact same nested-flex structure and measured the tab bar's real rendered height before/after. Without the fix: ~12px (visually just a thin colored line, the labels effectively gone). With the fix: ~63px, holding steady regardless of sibling content height. Screenshots matched the reported symptom exactly.
+
+**Not click-tested against the real practitioner UI** — both tab bars live behind a practitioner login this session has no credentials for, so the fix is verified via the isolated repro's matching mechanism, not by reproducing the bug in the actual Assessments tab with real client data. Worth a quick real click-through once it's live.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
