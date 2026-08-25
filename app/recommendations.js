@@ -564,15 +564,16 @@ return StyleSheet.create({
   closeBtnText: { color: colors.text, fontWeight: '600', fontSize: 16 },
   routineRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
     marginTop: spacing.sm,
   },
   routineRhythmRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'space-between',
     gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   routineTimeBadge: {
     paddingHorizontal: spacing.sm,
