@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, KeyboardAvoidingView, Platform } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
@@ -37,7 +37,8 @@ export default function CheckIn() {
 
   return (
     <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.bg }}>
-    <ScrollView contentContainerStyle={styles.container}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
       <View style={styles.teaHeader}>
         <Image
           source={require('../assets/checkin-tea.jpg')}
@@ -121,13 +122,14 @@ export default function CheckIn() {
         <Text style={styles.primaryBtnText}>Save & See What Today Needs</Text>
       </Pressable>
     </ScrollView>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 function makeStyles(colors, spacing, radius) {
 return StyleSheet.create({
-  container: { padding: spacing.lg },
+  container: { padding: spacing.lg, paddingBottom: spacing.screenPadBottom },
   teaHeader: {
     marginHorizontal: -spacing.lg,
     marginTop: -spacing.lg,
