@@ -1758,6 +1758,14 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**87. Practitioner client cards show first/last name when it exists, not just display name or email.** Source: Matt, Aug 25 2026.
+
+**Built:** one shared `clientDisplayName(client, fallback)` (exported from `app/practitioner/index.js`) — joins `first_name`/`last_name` if either is on file, else `display_name`, else `email`, else a caller-provided fallback. Replaced every ad hoc `display_name || email` fallback across the practitioner hub with it: the Clients list cards, the client detail header, exported response text (Dosha/Guna/Agni/Tongue/Prakriti/Vikriti), the Dashboard's Needs Attention/Recent Activity feed, and the Inbox thread list — `dashboard.js` and `inbox.js` each had their own duplicate `clientLabel()` doing the old two-tier fallback, now both just call the shared one. Every query that builds these client objects (`ClientList`, the "View my own data" self-lookup, `dashboard.js`, `inbox.js`) now also selects `first_name`/`last_name`. Search on the Clients list matches whatever name is actually shown, not just `display_name`.
+
+**Verified:** the fallback chain directly in Node across all five cases (first+last, first-only, display_name-only, email-only, and nothing at all) — each resolves exactly as intended.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
