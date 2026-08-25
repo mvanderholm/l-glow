@@ -1708,6 +1708,18 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**82. Multiple check-ins per day, instead of a second one silently overwriting the first.** Source: Matt, Aug 25 2026 — "it appears that a new check-in overwrites the existing check-in."
+
+**Scoped via clarifying questions first** (three real decisions, each touching a different screen): Today shows every check-in from the day, not just the latest; the check-in screen quietly allows a re-check-in with no "you already did this today" prompt; the practitioner's daily log lists every check-in under its date rather than collapsing to one.
+
+**Root cause:** a `unique(user_id, date)` constraint on `checkins`, paired with an upsert-by-date both locally (one AsyncStorage object per date) and in Supabase — by design, at the time, before this app had reason to think about more than once check-in a day mattering.
+
+**Built:** dropped the unique constraint (`supabase/migrations/20260825020000_multiple_checkins_per_day.sql`); `data/user/storage.js`'s `saveCheckin` now appends to an array per date locally and does a plain `insert` (not upsert) to Supabase; new `loadTodayCheckins()` returns the full array for screens that need every entry, while `loadTodayCheckin()` keeps returning just the latest for callers that only care about "today's current state." **Deliberately kept `loadRecentCheckins()`'s existing one-row-per-day contract unchanged** (using each day's latest entry) — `you.js`'s streak/stats math, the Journey chart, the search index, and `buildSessionSummary` are all written assuming exactly one check-in per calendar day, and none of them needed to change. `app/today.js` now lists every one of today's check-ins with a time label instead of showing just one dot row. The practitioner Check-ins tab lists every check-in under its date instead of overwriting to the last one processed; `computeAttention()`'s trend logic collapses to one (the latest) check-in per day before comparing "last 3 vs prior 3," so a day with several check-ins doesn't outweigh a day with one.
+
+**Verified:** drove three real check-ins in a row via Playwright and confirmed all three are stored and all three show on Today, each with its own timestamp. Directly tested (via Node, not just code review) that the practitioner Check-ins tab's day-grouping correctly buckets multiple same-day check-ins under one date header, and that `computeAttention()`'s dedupe genuinely prevents a day with duplicate/inflated same-day entries from skewing the trend detection — constructed a case with 3 same-day check-ins (two artificially high) plus 5 trending-down days and confirmed the flag still fired correctly using only the real trend, not the padding.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
