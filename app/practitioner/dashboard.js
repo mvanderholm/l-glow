@@ -87,7 +87,7 @@ export default function Dashboard() {
       .from('users')
       .select(`
         id, email, display_name,
-        checkins(date, physical, mental, emotional),
+        checkins(date, physical, mental, emotional, saved_at),
         intake_forms(data, updated_at),
         dosha_results(taken_at),
         guna_results(taken_at),
@@ -99,6 +99,7 @@ export default function Dashboard() {
       .eq('consented_to_practitioner_view', true)
       .eq('role', 'user')
       .order('date', { foreignTable: 'checkins', ascending: false })
+      .order('saved_at', { foreignTable: 'checkins', ascending: false })
       .order('taken_at', { foreignTable: 'dosha_results', ascending: false })
       .order('taken_at', { foreignTable: 'guna_results', ascending: false })
       .order('taken_at', { foreignTable: 'agni_results', ascending: false })

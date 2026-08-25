@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { loadDoshaResult, loadTodayCheckin } from '../data/user/storage';
+import { loadDoshaResult, loadTodayCheckins } from '../data/user/storage';
 import { recommendations, currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
 import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
@@ -61,16 +61,16 @@ export default function Today() {
   const styles = makeStyles(c, spacing, radius);
 
   const [dosha, setDosha]     = useState(null);
-  const [checkin, setCheckin] = useState(null);
+  const [checkins, setCheckins] = useState([]); // today's check-ins, oldest first
   const [ready, setReady]     = useState(false);
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
   const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
-    Promise.all([loadDoshaResult(), loadTodayCheckin()])
-      .then(([doshaResult, checkinResult]) => {
+    Promise.all([loadDoshaResult(), loadTodayCheckins()])
+      .then(([doshaResult, checkinsResult]) => {
         setDosha(doshaResult?.dosha ?? null);
-        setCheckin(checkinResult ?? null);
+        setCheckins(checkinsResult ?? []);
       })
       .finally(() => setReady(true));
     loadRoutines().then(setRoutinesData);
@@ -115,19 +115,31 @@ export default function Today() {
         <Text style={[type.label, { color: c.textMuted }]}>{date}</Text>
         <Text style={[type.display, { marginTop: spacing.xs }]}>Here's today.</Text>
 
-        {/* Check-in score dots — only shown when a check-in exists for today */}
-        {checkin?.values && (
-          <View style={styles.dotsRow}>
-            {DOT_KEYS.map(k => {
-              const val = checkin.values[k] ?? 3;
-              const opacity = 0.2 + (val / 5) * 0.8;
-              return (
-                <View
-                  key={k}
-                  style={[styles.dot, { backgroundColor: info.color, opacity }]}
-                />
-              );
-            })}
+        {/* Check-in score dots — one row per check-in today (Aug 25 2026: a
+            second check-in no longer overwrites the first, so someone who
+            checks in more than once in a day sees all of them here, oldest
+            first, each labeled with when it was saved). */}
+        {checkins.length > 0 && (
+          <View>
+            {checkins.map((entry, i) => (
+              <View key={i} style={[styles.dotsRow, i > 0 && { marginTop: spacing.sm }]}>
+                {entry.savedAt && (
+                  <Text style={[type.muted, { marginRight: spacing.sm, width: 68 }]}>
+                    {new Date(entry.savedAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}
+                  </Text>
+                )}
+                {DOT_KEYS.map(k => {
+                  const val = entry.values[k] ?? 3;
+                  const opacity = 0.2 + (val / 5) * 0.8;
+                  return (
+                    <View
+                      key={k}
+                      style={[styles.dot, { backgroundColor: info.color, opacity }]}
+                    />
+                  );
+                })}
+              </View>
+            ))}
           </View>
         )}
 

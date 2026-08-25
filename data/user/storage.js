@@ -361,11 +361,20 @@ function todayKey() {
   return checkinKey(new Date().toISOString().slice(0, 10));
 }
 
+// Multiple check-ins per day, Aug 25 2026 — a new check-in used to silently
+// overwrite the day's existing one (single object + upsert-by-date on both
+// AsyncStorage and Supabase). Now AsyncStorage stores an array per date and
+// Supabase gets a plain insert (the unique(user_id,date) constraint that
+// forced the old upsert behavior is dropped in
+// 20260825020000_multiple_checkins_per_day.sql). Quietly allows re-checking
+// in the same day — no confirmation prompt, matching the app's general
+// aversion to friction/gating on things that aren't actually destructive.
 export async function saveCheckin(values, note) {
   const entry = { values, note, savedAt: new Date().toISOString() };
-  await AsyncStorage.setItem(todayKey(), JSON.stringify(entry));
   const date = new Date().toISOString().slice(0, 10);
-  await syncToSupabase(userId => supabase.from('checkins').upsert({
+  const existing = await loadTodayCheckins();
+  await AsyncStorage.setItem(todayKey(), JSON.stringify([...existing, entry]));
+  await syncToSupabase(userId => supabase.from('checkins').insert({
     user_id: userId,
     date,
     physical: values.physical,
@@ -376,14 +385,34 @@ export async function saveCheckin(values, note) {
     note: note || null,
     saved_at: entry.savedAt,
     platform: Platform.OS,
-  }, { onConflict: 'user_id,date' }));
+  }));
 }
 
-export async function loadTodayCheckin() {
+// Full list of today's check-ins, oldest first — for screens that need to
+// show every entry (Today's "how are you" strip). Most callers that just
+// want "today's state" should use loadTodayCheckin() below instead.
+export async function loadTodayCheckins() {
   const raw = await AsyncStorage.getItem(todayKey());
-  return raw ? JSON.parse(raw) : null;
+  if (!raw) return [];
+  const parsed = JSON.parse(raw);
+  return Array.isArray(parsed) ? parsed : [parsed]; // pre-Aug-25 saves were a single object, not an array
 }
 
+// The latest of today's check-ins, or null — for callers that just want
+// "has this person checked in today" / "what's their most current state,"
+// not the full list.
+export async function loadTodayCheckin() {
+  const entries = await loadTodayCheckins();
+  return entries.length ? entries[entries.length - 1] : null;
+}
+
+// One row per day (the day's latest entry, if there were several) — every
+// existing consumer (streak/stats math in you.js, the journey chart, the
+// search index, buildSessionSummary below) is written assuming exactly one
+// check-in per calendar day, so this keeps that contract rather than
+// returning every individual entry. Screens that need full same-day detail
+// (Today, the practitioner Check-ins tab) go straight to Supabase / use
+// loadTodayCheckins() instead.
 export async function loadRecentCheckins(days = 7) {
   const keys = [];
   for (let i = 0; i < days; i++) {
@@ -394,10 +423,14 @@ export async function loadRecentCheckins(days = 7) {
   const pairs = await AsyncStorage.multiGet(keys);
   return pairs
     .filter(([, v]) => v !== null)
-    .map(([k, v]) => ({
-      date: k.replace(KEYS.CHECKIN_PREFIX, ''),
-      ...JSON.parse(v),
-    }));
+    .map(([k, v]) => {
+      const parsed = JSON.parse(v);
+      const entries = Array.isArray(parsed) ? parsed : [parsed]; // pre-Aug-25 saves were a single object, not an array
+      return {
+        date: k.replace(KEYS.CHECKIN_PREFIX, ''),
+        ...entries[entries.length - 1],
+      };
+    });
 }
 
 // --- Daily intention ---
@@ -691,17 +724,22 @@ async function hydrateCheckins(userId) {
   cutoff.setDate(cutoff.getDate() - 365);
   const { data } = await supabase.from('checkins')
     .select('date, physical, mental, emotional, hunger, tongue, note, saved_at')
-    .eq('user_id', userId).gte('date', cutoff.toISOString().slice(0, 10));
+    .eq('user_id', userId).gte('date', cutoff.toISOString().slice(0, 10))
+    .order('saved_at', { ascending: true });
   if (!data?.length) return;
-  const pairs = [];
+  const byDate = {};
   for (const row of data) {
-    const key = checkinKey(row.date);
-    if (await AsyncStorage.getItem(key)) continue; // local already has this day
-    pairs.push([key, JSON.stringify({
+    (byDate[row.date] ??= []).push({
       values: { physical: row.physical, mental: row.mental, emotional: row.emotional, hunger: row.hunger, tongue: row.tongue },
       note: row.note || '',
       savedAt: row.saved_at,
-    })]);
+    });
+  }
+  const pairs = [];
+  for (const [date, entries] of Object.entries(byDate)) {
+    const key = checkinKey(date);
+    if (await AsyncStorage.getItem(key)) continue; // local already has this day
+    pairs.push([key, JSON.stringify(entries)]);
   }
   if (pairs.length) await AsyncStorage.multiSet(pairs);
 }
@@ -888,16 +926,19 @@ async function migrateCheckins(userId) {
     if (!raw) continue;
     const date = key.replace(KEYS.CHECKIN_PREFIX, '');
     if (existingDates.has(date)) continue; // Supabase already has this day
-    const entry = JSON.parse(raw);
-    rows.push({
-      user_id: userId, date,
-      physical: entry.values.physical, mental: entry.values.mental, emotional: entry.values.emotional,
-      hunger: entry.values.hunger ?? null, tongue: entry.values.tongue ?? null,
-      note: entry.note || null, saved_at: entry.savedAt,
-      platform: Platform.OS,
-    });
+    const parsed = JSON.parse(raw);
+    const entries = Array.isArray(parsed) ? parsed : [parsed]; // pre-Aug-25 saves were a single object, not an array
+    for (const entry of entries) {
+      rows.push({
+        user_id: userId, date,
+        physical: entry.values.physical, mental: entry.values.mental, emotional: entry.values.emotional,
+        hunger: entry.values.hunger ?? null, tongue: entry.values.tongue ?? null,
+        note: entry.note || null, saved_at: entry.savedAt,
+        platform: Platform.OS,
+      });
+    }
   }
-  if (rows.length) await supabase.from('checkins').upsert(rows, { onConflict: 'user_id,date' });
+  if (rows.length) await supabase.from('checkins').insert(rows); // no onConflict — multiple rows per day are allowed now
 }
 
 async function migrateIntentions(userId) {

@@ -82,9 +82,11 @@ function fieldDisplayValue(value) {
 }
 
 // Objective, computed signals only — no invented clinical judgment.
-// checkins must already be sorted newest-first. Exported for the Dashboard
-// tab (dashboard.js), which needs the same "needs attention" logic against
-// its own client query rather than duplicating it.
+// checkins must already be sorted newest-first (and, since Aug 25 2026,
+// newest-saved-first within a date too — a client can have more than one
+// check-in per day now). Exported for the Dashboard tab (dashboard.js),
+// which needs the same "needs attention" logic against its own client
+// query rather than duplicating it.
 export function computeAttention(checkins = [], intakeData) {
   const reasons = [];
 
@@ -95,10 +97,21 @@ export function computeAttention(checkins = [], intakeData) {
     if (daysSince >= 10) reasons.push(`No check-in in ${daysSince} days`);
   }
 
-  if (checkins.length >= 6) {
+  // Collapse to one (the latest) check-in per day before trending — without
+  // this, a day with several check-ins would count for more than a day
+  // with one in a "last 3 days vs prior 3 days" comparison.
+  const byDay = [];
+  const seenDates = new Set();
+  for (const ci of checkins) {
+    if (seenDates.has(ci.date)) continue;
+    seenDates.add(ci.date);
+    byDay.push(ci);
+  }
+
+  if (byDay.length >= 6) {
     const avgOf = list => list.reduce((sum, c) => sum + (c.physical + c.mental + c.emotional) / 3, 0) / list.length;
-    const recent = avgOf(checkins.slice(0, 3));
-    const prior = avgOf(checkins.slice(3, 6));
+    const recent = avgOf(byDay.slice(0, 3));
+    const prior = avgOf(byDay.slice(3, 6));
     if (recent <= prior - 0.5) reasons.push('Trending down recently');
   }
 
@@ -122,10 +135,11 @@ function ClientList({ colors: c, onSelect, selectedId, initialClientId }) {
   useEffect(() => {
     supabase
       .from('users')
-      .select('id, email, display_name, deleted_at, checkins(date, physical, mental, emotional), intake_forms(data), dosha_results(taken_at)')
+      .select('id, email, display_name, deleted_at, checkins(date, physical, mental, emotional, saved_at), intake_forms(data), dosha_results(taken_at)')
       .eq('consented_to_practitioner_view', true)
       .eq('role', 'user')
       .order('date', { foreignTable: 'checkins', ascending: false })
+      .order('saved_at', { foreignTable: 'checkins', ascending: false })
       .then(({ data, error }) => {
         if (error) { setError(error.message); return; }
         const withAttention = (data ?? []).map(client => {
@@ -871,7 +885,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
       supabase.from('tongue_checks').select('id, reading, shape, size, color, coating, ama_level, signs, taken_at, platform').eq('user_id', client.id).order('taken_at', { ascending: false }).limit(10),
       supabase.from('prakriti_responses').select('id, tier, answers, completed_at, platform').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
       supabase.from('vikriti_responses').select('id, tier, answers, completed_at, platform').eq('user_id', client.id).order('completed_at', { ascending: false }).limit(20),
-      supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
+      supabase.from('checkins').select('date, physical, mental, emotional, hunger, tongue, note, saved_at, platform').eq('user_id', client.id).order('date', { ascending: false }).order('saved_at', { ascending: false }).limit(30),
       supabase.from('intentions').select('date, text, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(15),
       supabase.from('journal_entries').select('date, grateful, showed, tomorrow, platform').eq('user_id', client.id).order('date', { ascending: false }).limit(10),
       supabase.from('intake_forms').select('data, updated_at, platform').eq('user_id', client.id).maybeSingle(),
@@ -1151,10 +1165,17 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
               // log Check-ins already showed rather than a separate tab,
               // since a day's check-in and its intention are the same kind
               // of "what did this person do today" signal.
+              // Aug 25 2026: a day can now have more than one check-in (the
+              // client-side overwrite bug this fixed), so `checkin` became
+              // `checkins` — a day's whole list, not just the last one
+              // processed. Rows already arrive newest-first per date (see
+              // the .order('saved_at', ...) on this screen's query), so
+              // reverse to oldest-first for a natural top-to-bottom read.
               const byDate = {};
-              const touch = date => (byDate[date] ??= { date, checkin: null, intention: null });
-              for (const ci of clientData.checkins) touch(ci.date).checkin = ci;
+              const touch = date => (byDate[date] ??= { date, checkins: [], intention: null });
+              for (const ci of clientData.checkins) touch(ci.date).checkins.push(ci);
               for (const it of clientData.intentions) touch(it.date).intention = it;
+              for (const day of Object.values(byDate)) day.checkins.reverse();
               const merged = Object.values(byDate).sort((a, b) => b.date.localeCompare(a.date));
 
               return (
@@ -1166,15 +1187,18 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                       <Text style={[s.logDate, { color: c.text }]}>
                         {new Date(day.date + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
                       </Text>
-                      {day.checkin && (
-                        <Text style={[s.logDetail, { color: c.textMuted }]}>
-                          P{day.checkin.physical} M{day.checkin.mental} E{day.checkin.emotional}{day.checkin.hunger != null ? ` H${day.checkin.hunger}` : ''}{day.checkin.tongue != null ? ` T${day.checkin.tongue}` : ''}
-                          {platformLabel(day.checkin.platform) ? ` · ${platformLabel(day.checkin.platform)}` : ''}
-                        </Text>
-                      )}
-                      {day.checkin?.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{day.checkin.note}"</Text> : null}
+                      {day.checkins.map((ci, i) => (
+                        <View key={i} style={i > 0 ? { marginTop: 8 } : null}>
+                          <Text style={[s.logDetail, { color: c.textMuted }]}>
+                            P{ci.physical} M{ci.mental} E{ci.emotional}{ci.hunger != null ? ` H${ci.hunger}` : ''}{ci.tongue != null ? ` T${ci.tongue}` : ''}
+                            {ci.saved_at ? ` · ${new Date(ci.saved_at).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })}` : ''}
+                            {platformLabel(ci.platform) ? ` · ${platformLabel(ci.platform)}` : ''}
+                          </Text>
+                          {ci.note ? <Text style={[s.logNote, { color: c.textMedium }]}>"{ci.note}"</Text> : null}
+                        </View>
+                      ))}
                       {day.intention && (
-                        <Text style={[s.logNote, { color: c.textMedium }]}>
+                        <Text style={[s.logNote, { color: c.textMedium, marginTop: day.checkins.length ? 8 : 0 }]}>
                           "Just for today, I will {day.intention.text}"{platformLabel(day.intention.platform) ? ` · ${platformLabel(day.intention.platform)}` : ''}
                         </Text>
                       )}
