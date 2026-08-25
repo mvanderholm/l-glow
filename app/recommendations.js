@@ -10,7 +10,7 @@ import { agniResults } from '../data/content/agniQuiz';
 import { useTheme } from '../context/ThemeContext';
 import { routineAnchors, routines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
-import { loadDoshaResult, loadAgniResult, loadTodayRoutineDeclines, declineRoutineItem } from '../data/user/storage';
+import { loadDoshaResult, loadAgniResult, loadTodayRoutineDeclines, declineRoutineItem, loadTodayIntention } from '../data/user/storage';
 import BackButton, { smartBack } from '../components/BackButton';
 import SearchButton from '../components/SearchButton';
 
@@ -68,12 +68,14 @@ export default function Recommendations() {
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines });
   const [agniResult, setAgniResult] = useState(null); // null = loading, false = not taken
   const [declines, setDeclines] = useState(null); // null = loading, then { category: [itemId, ...] }
+  const [intention, setIntention] = useState(null); // null = loading, then { text, suggestionId } | { text: '' }
 
   useEffect(() => {
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
     loadTodayRoutineDeclines().then(setDeclines);
     loadAgniResult().then(r => setAgniResult(r || false));
+    loadTodayIntention().then(v => setIntention(v ?? { text: '' }));
   }, []);
 
   useEffect(() => {
@@ -133,6 +135,12 @@ export default function Recommendations() {
         <Text style={[type.muted, { marginTop: spacing.xs }]}>
           {season.name} · this season tends to aggravate {season.aggravates}
         </Text>
+
+        {intention?.text ? (
+          <Section title="Just For Today" accent={colors.accentAlt}>
+            <Text style={type.body}>I will {intention.text}</Text>
+          </Section>
+        ) : null}
 
         <Section title="Your Constitution" accent={info.color}>
           <Text style={type.body}>{info.constitution}</Text>

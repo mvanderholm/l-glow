@@ -14,7 +14,8 @@ export const intentions = {
   kapha: [],
 };
 
-export function intentionSuggestions(dosha, data = intentions) {
+export function intentionSuggestions(dosha, data = intentions, excludeIds = []) {
   const specific = dosha ? (data[dosha] ?? []) : [];
-  return [...specific, ...data.universal].slice(0, 5);
+  const pool = [...specific, ...data.universal].filter(s => !excludeIds.includes(s.id));
+  return pool.slice(0, 5);
 }

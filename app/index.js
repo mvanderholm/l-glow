@@ -8,9 +8,10 @@ import { useViewMode } from '../context/ViewModeContext';
 import { card, accentShadow } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadTodayCheckin, loadPrakritiProgress } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadTodayCheckin, loadPrakritiProgress, loadTodayIntentionDeclines, declineIntention } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
+import { appendIntentionToJournal } from './journal';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { loadMythbusters, refreshMythbusters, loadIntentions, refreshIntentions, loadPlaylists, refreshPlaylists } from '../data/content/remote';
 import { pickTodaysPlaylist } from '../data/content/music';
@@ -353,22 +354,46 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
   const info = doshaInfo[dosha];
   const { theme: { radius } } = useTheme();
   const [intentionsData, setIntentionsData] = useState(null);
-  const suggestions = intentionsData ? intentionSuggestions(dosha, intentionsData) : [];
+  const [declinedIds, setDeclinedIds] = useState([]);
+  const suggestions = intentionsData ? intentionSuggestions(dosha, intentionsData, declinedIds) : [];
+  // null = still loading from storage; once loaded, { text, suggestionId }
+  // — text: '' means nothing chosen yet today. suggestionId is null for a
+  // freehand-typed intention (nothing to decline/log for those).
   const [intention, setIntention] = useState(null);
   const [draft, setDraft] = useState('');
+  const [journalAdded, setJournalAdded] = useState(false);
 
-  useEffect(() => { loadTodayIntention().then(v => setIntention(v ?? '')); }, []);
+  useEffect(() => {
+    loadTodayIntention().then(v => setIntention(v ?? { text: '', suggestionId: null }));
+    loadTodayIntentionDeclines().then(setDeclinedIds);
+  }, []);
   useEffect(() => {
     loadIntentions().then(setIntentionsData);
     refreshIntentions().then(() => loadIntentions()).then(setIntentionsData);
   }, []);
 
-  async function choose(text) {
+  async function choose(text, suggestionId = null) {
     const t = text.trim();
     if (!t) return;
-    await saveIntention(t);
-    setIntention(t);
+    await saveIntention(t, suggestionId);
+    setIntention({ text: t, suggestionId });
     setDraft('');
+    setJournalAdded(false);
+  }
+
+  async function declineCurrent() {
+    if (intention?.suggestionId) {
+      await declineIntention(intention.suggestionId);
+      setDeclinedIds(prev => [...prev, intention.suggestionId]);
+    }
+    setIntention({ text: '', suggestionId: null });
+    setJournalAdded(false);
+  }
+
+  async function addToJournal() {
+    if (!intention?.text) return;
+    await appendIntentionToJournal(intention.text);
+    setJournalAdded(true);
   }
 
   if (intention === null) return null;
@@ -379,13 +404,20 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
       <Text style={[type.h3, { color: info.color, marginTop: 4 }]}>{info.name}</Text>
 
       <View style={[{ marginTop: spacing.lg, padding: spacing.lg, backgroundColor: c.surface, borderRadius: 26, ...card }]}>
-        {intention ? (
+        {intention.text ? (
           <>
             <Text style={[type.label, { color: c.textMuted }]}>Just for today</Text>
-            <Text style={[type.body, { color: c.text, marginTop: 8 }]}>I will {intention}</Text>
-            <Pressable onPress={() => setIntention('')} style={{ marginTop: 8 }}>
-              <Text style={{ color: c.textMuted, fontSize: 12 }}>change</Text>
-            </Pressable>
+            <Text style={[type.body, { color: c.text, marginTop: 8 }]}>I will {intention.text}</Text>
+            <View style={{ flexDirection: 'row', gap: 18, marginTop: 10 }}>
+              <Pressable onPress={addToJournal} disabled={journalAdded}>
+                <Text style={{ color: journalAdded ? c.textMuted : c.accent, fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>
+                  {journalAdded ? 'Added to journal ✓' : 'Add to journal'}
+                </Text>
+              </Pressable>
+              <Pressable onPress={declineCurrent}>
+                <Text style={{ color: c.textMuted, fontSize: 12 }}>not feeling it? choose another</Text>
+              </Pressable>
+            </View>
           </>
         ) : (
           <>
@@ -393,7 +425,7 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
             <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 6, marginBottom: 2 }}>Choose one, or write your own.</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
               {suggestions.map(s => (
-                <Pressable key={s.id} onPress={() => choose(s.text)}
+                <Pressable key={s.id} onPress={() => choose(s.text, s.id)}
                   style={{ backgroundColor: c.surfaceAlt, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.sm }}>
                   <Text style={{ color: c.accent, fontSize: 13, fontFamily: 'Inter_400Regular' }}>{s.text}</Text>
                 </Pressable>

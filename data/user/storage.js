@@ -70,6 +70,7 @@ const KEYS = {
   VIKRITI_TIER_PREFIX:  '@lglow/vikriti_answers/',
   PRACTICE_COMPLETIONS_PREFIX: '@lglow/practice_completions/',
   ROUTINE_DECLINES_PREFIX: '@lglow/routine_declines/',
+  INTENTION_DECLINES_PREFIX: '@lglow/intention_declines/',
 };
 
 // --- Dosha result ---
@@ -401,21 +402,54 @@ export async function loadRecentCheckins(days = 7) {
 
 // --- Daily intention ---
 
-export async function saveIntention(text) {
+export async function saveIntention(text, suggestionId = null) {
   const date = new Date().toISOString().slice(0, 10);
   const key = KEYS.INTENTION_PREFIX + date;
-  await AsyncStorage.setItem(key, text);
+  await AsyncStorage.setItem(key, JSON.stringify({ text, suggestionId }));
   await syncToSupabase(userId => supabase.from('intentions').upsert({
     user_id: userId,
     date,
     text,
+    suggestion_id: suggestionId,
     platform: Platform.OS,
   }, { onConflict: 'user_id,date' }));
 }
 
 export async function loadTodayIntention() {
   const key = KEYS.INTENTION_PREFIX + new Date().toISOString().slice(0, 10);
-  return AsyncStorage.getItem(key);
+  const raw = await AsyncStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { text: raw, suggestionId: null }; // pre-Aug-25 saves were plain text, not JSON
+  }
+}
+
+// --- Intention declines ---
+// Same shape as routine declines (see below), minus a category — there's
+// only one intention slot per day, so "declined today" is just a flat list
+// of suggestion ids. A freehand-typed intention has no suggestion id, so
+// declining one is a local-only no-op (nothing to log).
+
+function intentionDeclineKey(date) {
+  return KEYS.INTENTION_DECLINES_PREFIX + date;
+}
+
+export async function loadTodayIntentionDeclines() {
+  const raw = await AsyncStorage.getItem(intentionDeclineKey(todayDate()));
+  return raw ? JSON.parse(raw) : [];
+}
+
+export async function declineIntention(suggestionId) {
+  if (!suggestionId) return;
+  const date = todayDate();
+  const current = await loadTodayIntentionDeclines();
+  if (current.includes(suggestionId)) return;
+  await AsyncStorage.setItem(intentionDeclineKey(date), JSON.stringify([...current, suggestionId]));
+  await syncToSupabase(userId => supabase.from('intention_declines').insert({
+    user_id: userId, date, item_id: suggestionId,
+  }));
 }
 
 export async function loadRecentIntentions(days = 90) {
@@ -428,7 +462,11 @@ export async function loadRecentIntentions(days = 90) {
   const pairs = await AsyncStorage.multiGet(keys);
   return pairs
     .filter(([, v]) => v !== null)
-    .map(([k, v]) => ({ date: k.replace(KEYS.INTENTION_PREFIX, ''), text: v }));
+    .map(([k, v]) => {
+      let text = v;
+      try { text = JSON.parse(v).text; } catch { /* pre-Aug-25 saves were plain text, not JSON */ }
+      return { date: k.replace(KEYS.INTENTION_PREFIX, ''), text };
+    });
 }
 
 // --- Daily practice completions ---
@@ -548,6 +586,7 @@ export async function hydrateFromSupabase() {
       hydrateVikritiTiers(userId),
       hydratePracticeCompletions(userId),
       hydrateRoutineDeclines(userId),
+      hydrateIntentionDeclines(userId),
     ]);
   } catch (err) {
     console.warn('Hydration from Supabase failed:', err.message);
@@ -670,8 +709,8 @@ async function hydrateCheckins(userId) {
 async function hydrateIntention(userId) {
   const date = new Date().toISOString().slice(0, 10);
   if (await loadTodayIntention()) return;
-  const { data } = await supabase.from('intentions').select('text').eq('user_id', userId).eq('date', date).maybeSingle();
-  if (data?.text) await AsyncStorage.setItem(KEYS.INTENTION_PREFIX + date, data.text);
+  const { data } = await supabase.from('intentions').select('text, suggestion_id').eq('user_id', userId).eq('date', date).maybeSingle();
+  if (data?.text) await AsyncStorage.setItem(KEYS.INTENTION_PREFIX + date, JSON.stringify({ text: data.text, suggestionId: data.suggestion_id ?? null }));
 }
 
 async function hydratePracticeCompletions(userId) {
@@ -695,6 +734,15 @@ async function hydrateRoutineDeclines(userId) {
   const declines = {};
   for (const row of data) (declines[row.category] ??= []).push(row.item_id);
   await AsyncStorage.setItem(routineDeclineKey(date), JSON.stringify(declines));
+}
+
+async function hydrateIntentionDeclines(userId) {
+  const date = todayDate();
+  if (await AsyncStorage.getItem(intentionDeclineKey(date))) return;
+  const { data } = await supabase.from('intention_declines')
+    .select('item_id').eq('user_id', userId).eq('date', date);
+  if (!data?.length) return;
+  await AsyncStorage.setItem(intentionDeclineKey(date), JSON.stringify(data.map(r => r.item_id)));
 }
 
 // --- One-time local→Supabase migration ---
@@ -860,11 +908,13 @@ async function migrateIntentions(userId) {
   const { data: existing } = await supabase.from('intentions').select('date').eq('user_id', userId);
   const existingDates = new Set((existing || []).map(r => r.date));
   const rows = [];
-  for (const [key, text] of pairs) {
-    if (!text) continue;
+  for (const [key, raw] of pairs) {
+    if (!raw) continue;
     const date = key.replace(KEYS.INTENTION_PREFIX, '');
     if (existingDates.has(date)) continue;
-    rows.push({ user_id: userId, date, text, platform: Platform.OS });
+    let text = raw, suggestionId = null;
+    try { ({ text, suggestionId = null } = JSON.parse(raw)); } catch { /* pre-Aug-25 saves were plain text, not JSON */ }
+    rows.push({ user_id: userId, date, text, suggestion_id: suggestionId, platform: Platform.OS });
   }
   if (rows.length) await supabase.from('intentions').upsert(rows, { onConflict: 'user_id,date' });
 }

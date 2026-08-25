@@ -80,6 +80,34 @@ const PROMPTS = [
   { id: 'tomorrow', label: "Tomorrow I will…" },
 ];
 
+const INTENTION_LINE_PREFIX = 'Intention: I will ';
+
+// Lets Home's "Just for today" card add its intention into today's Journal
+// entry without duplicating journal.js's own save logic — appends into
+// "showed" (closest existing prompt to "what I did for myself today")
+// rather than creating a separate entry type, tacking onto whatever's
+// already there if the user already wrote something. A second tap same day
+// is a no-op rather than a duplicate line. Aug 25 2026, Matt's ask.
+export async function appendIntentionToJournal(intentionText) {
+  const key = KEY(new Date());
+  const raw = await AsyncStorage.getItem(key);
+  const entry = raw ? JSON.parse(raw) : { grateful: '', showed: '', tomorrow: '' };
+  const line = `${INTENTION_LINE_PREFIX}${intentionText}`;
+  if (entry.showed?.includes(line)) return false;
+  entry.showed = entry.showed ? `${entry.showed}\n\n${line}` : line;
+  await AsyncStorage.setItem(key, JSON.stringify(entry));
+  const date = new Date().toISOString().slice(0, 10);
+  await syncToSupabase(userId => supabase.from('journal_entries').upsert({
+    user_id: userId,
+    date,
+    grateful: entry.grateful || null,
+    showed: entry.showed || null,
+    tomorrow: entry.tomorrow || null,
+    platform: Platform.OS,
+  }, { onConflict: 'user_id,date' }));
+  return true;
+}
+
 export default function Journal() {
   const { theme: { colors: c, spacing } } = useTheme();
   const { reflect } = useLocalSearchParams();
