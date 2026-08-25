@@ -11,6 +11,7 @@ import { useTheme } from '../context/ThemeContext';
 import { routineAnchors, routines } from '../data/content/routines';
 import { loadRoutines, refreshRoutines } from '../data/content/remote';
 import { loadDoshaResult, loadAgniResult, loadTodayRoutineDeclines, declineRoutineItem, loadTodayIntention } from '../data/user/storage';
+import { useAuth } from '../context/AuthContext';
 import BackButton, { smartBack } from '../components/BackButton';
 import SearchButton from '../components/SearchButton';
 
@@ -61,6 +62,7 @@ export default function Recommendations() {
   const styles = makeStyles(colors, spacing, radius);
   const params = useLocalSearchParams();
   const router = useRouter();
+  const { user } = useAuth();
   const [dosha, setDosha] = useState(params.dosha || null);
   const [selectedHerb, setSelectedHerb] = useState(null);
   const [selectedAsana, setSelectedAsana] = useState(null);
@@ -266,6 +268,27 @@ export default function Recommendations() {
             ));
           })()}
         </Section>
+
+        {/* Closing CTA — this screen used to just end after Daily Rhythms
+            with no path onward. Aug 25 2026, Matt's ask. */}
+        {!user && (
+          <View style={styles.closingCard}>
+            <Text style={type.label}>Don't lose this</Text>
+            <Text style={[type.body, { marginTop: spacing.sm, lineHeight: 24 }]}>
+              Create a free account and today's guidance — plus everything else you've shared — is saved and waiting for you next time.
+            </Text>
+            <Pressable style={styles.closingPrimaryBtn} onPress={() => router.push('/signup')}>
+              <Text style={styles.closingPrimaryBtnText}>Create account</Text>
+            </Pressable>
+            <Pressable style={styles.closingSecondaryBtn} onPress={() => router.push('/login')}>
+              <Text style={[styles.closingSecondaryBtnText, { color: colors.textMuted }]}>Already have an account? Sign in</Text>
+            </Pressable>
+          </View>
+        )}
+
+        <Pressable style={styles.closingSecondaryBtn} onPress={() => router.push('/you')}>
+          <Text style={[styles.closingSecondaryBtnText, { color: colors.accent }]}>See your profile & progress →</Text>
+        </Pressable>
       </ScrollView>
 
       <HerbModal herb={selectedHerb} onClose={() => setSelectedHerb(null)} />
@@ -481,6 +504,35 @@ return StyleSheet.create({
   },
   bulletRow: { flexDirection: 'row', marginTop: spacing.xs },
   bulletDot: { color: colors.saffron, fontSize: 20, marginRight: spacing.sm, lineHeight: 22 },
+  closingCard: {
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  closingPrimaryBtn: {
+    marginTop: spacing.md,
+    backgroundColor: colors.accent,
+    paddingVertical: spacing.md,
+    borderRadius: radius.pill,
+    alignItems: 'center',
+  },
+  closingPrimaryBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter_700Bold',
+    fontSize: 15,
+  },
+  closingSecondaryBtn: {
+    marginTop: spacing.md,
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  closingSecondaryBtnText: {
+    fontFamily: 'Inter_600SemiBold',
+    fontSize: 13.5,
+  },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   chip: {
     backgroundColor: colors.surfaceAlt,
