@@ -159,7 +159,11 @@ export default function PractitionerLayout() {
 }
 
 const s = StyleSheet.create({
-  navBar:    { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  // flexShrink: 0 — same RN-Web flex divergence already fixed on `sidebar`
+  // below (CSS defaults flex-shrink to 1; RN's Yoga defaults it to 0), so
+  // without it this bar could get squeezed by a tall Slot sibling instead
+  // of staying fixed-height with the Slot scrolling underneath it.
+  navBar:    { flexGrow: 0, flexShrink: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   navBarContent: { flexDirection: 'row', paddingHorizontal: 16 },
   navBtn:    { paddingVertical: 12, paddingHorizontal: 14, marginRight: 4 },
   navBtnText:{ fontFamily: 'Inter_600SemiBold', fontSize: 14 },

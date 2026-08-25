@@ -1387,7 +1387,12 @@ const s = StyleSheet.create({
   detailTitle:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 18 },
   detailSub:    { fontFamily: 'Inter_400Regular', fontSize: 12, marginTop: 1 },
 
-  tabBar:        { flexGrow: 0, borderBottomWidth: StyleSheet.hairlineWidth },
+  // flexShrink: 0 matters on web specifically — CSS flexbox defaults
+  // flex-shrink to 1 (RN's own Yoga engine defaults to 0), so without this
+  // a tab whose content pushes the column tall enough can squeeze this bar
+  // down instead of just scrolling underneath it. Same fix already applied
+  // to the sidebar style below; see project memory on RN-Web flex divergence.
+  tabBar:        { flexGrow: 0, flexShrink: 0, borderBottomWidth: StyleSheet.hairlineWidth },
   tabBarContent: { flexDirection: 'row', paddingHorizontal: 8 },
   tabBtn:     { paddingVertical: 12, paddingHorizontal: 10, marginRight: 4 },
   tabBtnText: { fontFamily: 'Inter_600SemiBold', fontSize: 13 },
