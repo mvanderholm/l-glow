@@ -7,6 +7,7 @@ import { saveVikritiTierAnswers, loadVikritiProgress, loadReproductiveHealthPref
 import { tierClosings } from '../data/content/tierClosings';
 import { useTheme } from '../context/ThemeContext';
 import BackButton, { smartBack } from '../components/BackButton';
+import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
 
 // Vikriti tier quiz — mirrors prakriti-quiz.js (see that file's header
 // comment for the drafts-array back-navigation fix and the recap/closing
@@ -58,6 +59,7 @@ export default function VikritiQuiz() {
   const [locked, setLocked] = useState(false);
   const [gatingDone, setGatingDone] = useState(false);
   const [includeWomensHealth, setIncludeWomensHealth] = useState(true);
+  const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
     // router.replace to this same route with a new `tier` param (the
@@ -179,11 +181,24 @@ export default function VikritiQuiz() {
             <Pressable style={[s.primaryBtn, { backgroundColor: c.accent }]} onPress={() => router.replace({ pathname: '/vikriti-quiz', params: { tier: nextTier } })}>
               <Text style={s.primaryBtnText}>Continue to {TIER_LABELS[nextTier]}</Text>
             </Pressable>
-          ) : null}
+          ) : (
+            <Pressable style={[s.primaryBtn, { backgroundColor: c.accent }]} onPress={() => setShowAssessments(true)}>
+              <Text style={s.primaryBtnText}>See what else you can explore</Text>
+            </Pressable>
+          )}
           <Pressable style={{ marginTop: 16, alignItems: 'center' }} onPress={() => router.replace('/vikriti')}>
             <Text style={{ color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Vikriti</Text>
           </Pressable>
         </ScrollView>
+
+        {!nextTier && (
+          <AssessmentsChecklistModal
+            visible={showAssessments}
+            onDismiss={() => setShowAssessments(false)}
+            title="Nice work. What's next?"
+            subtitle="You just finished checking in on your current state. A few more reads whenever you're ready — take them in any order."
+          />
+        )}
       </SafeAreaView>
     );
   }

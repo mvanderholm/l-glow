@@ -7,6 +7,7 @@ import { card, accentShadowSm } from '../theme/index';
 import { gunaResults } from '../data/content/gunaQuiz';
 import BackButton, { smartBack } from '../components/BackButton';
 import { BOOKING_URL } from '../data/booking';
+import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
 
 // Source: transcript 18 (061926_02). Result copy is DRAFT — Thea to review before launch.
 
@@ -41,6 +42,7 @@ export default function GunaResult() {
   // a fabricated "Rajas" reading nobody actually got.
   const hasParams = params.dominant !== undefined;
   const [redirecting, setRedirecting] = useState(false);
+  const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
     if (!hasParams) {
@@ -148,9 +150,9 @@ export default function GunaResult() {
         {/* CTA */}
         <Pressable
           style={[s.btn, { backgroundColor: c.accent, shadowColor: c.accent }]}
-          onPress={() => router.replace('/')}
+          onPress={() => setShowAssessments(true)}
         >
-          <Text style={s.btnText}>RETURN HOME  ›</Text>
+          <Text style={s.btnText}>SEE WHAT'S NEXT  ›</Text>
         </Pressable>
 
         {/* Retake */}
@@ -162,7 +164,18 @@ export default function GunaResult() {
           <Text style={[s.retakeText, { color: c.accent }]}>Want to talk to Thea? Book a session</Text>
         </Pressable>
 
+        <Pressable style={s.retakeBtn} onPress={() => router.replace('/')}>
+          <Text style={[s.retakeText, { color: c.textMuted }]}>Return home</Text>
+        </Pressable>
+
       </ScrollView>
+
+      <AssessmentsChecklistModal
+        visible={showAssessments}
+        onDismiss={() => setShowAssessments(false)}
+        title="Nice work. What's next?"
+        subtitle="You just read your Gunas. Five more reads whenever you're ready — take them in any order."
+      />
     </SafeAreaView>
   );
 }

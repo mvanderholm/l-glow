@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 import { BotanicalDivider } from '../components/BotanicalAccent';
 import BackButton, { smartBack } from '../components/BackButton';
 import { BOOKING_URL } from '../data/booking';
+import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
 
 export default function Result() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
@@ -29,6 +30,7 @@ export default function Result() {
   // row skipped this screen entirely for the same reason). Now it checks
   // storage first and only redirects if there's genuinely nothing saved.
   const [savedResult, setSavedResult] = useState(undefined);
+  const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
     if (hasParams) return;
@@ -186,6 +188,10 @@ export default function Result() {
           <Text style={styles.primaryBtnText}>See Today's Guidance</Text>
         </Pressable>
 
+        <Pressable style={styles.secondaryBtn} onPress={() => setShowAssessments(true)}>
+          <Text style={styles.secondaryBtnText}>See what else you can explore</Text>
+        </Pressable>
+
         <Pressable style={styles.retakeBtn} onPress={() => router.replace('/quiz')}>
           <Text style={styles.retakeText}>Retake quiz</Text>
         </Pressable>
@@ -195,6 +201,13 @@ export default function Result() {
         </Pressable>
 
       </ScrollView>
+
+      <AssessmentsChecklistModal
+        visible={showAssessments}
+        onDismiss={() => setShowAssessments(false)}
+        title="Nice work. What's next?"
+        subtitle="You just got your Dosha. Five more reads whenever you're ready — take them in any order."
+      />
     </SafeAreaView>
   );
 }
@@ -272,6 +285,19 @@ function makeStyles(colors, spacing, radius) {
       color: colors.bg,
       fontFamily: 'Inter_700Bold',
       fontSize: 16,
+    },
+    secondaryBtn: {
+      marginTop: spacing.sm,
+      borderWidth: 1,
+      borderColor: colors.accent,
+      paddingVertical: spacing.md,
+      borderRadius: radius.pill,
+      alignItems: 'center',
+    },
+    secondaryBtnText: {
+      color: colors.accent,
+      fontFamily: 'Inter_600SemiBold',
+      fontSize: 15,
     },
     retakeBtn: {
       alignSelf: 'center',

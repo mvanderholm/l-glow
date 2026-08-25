@@ -1651,6 +1651,25 @@ Full audit and before/after breakdown: **[Where the Nav Breaks Down](https://cla
 
 Not started — this entry exists so the scoping conversation above isn't lost before the templates arrive.
 
+---
+
+**76. Every assessment's completion screen now points to what's left, instead of dead-ending.** Source: Matt, Aug 24 2026 — five self-assessments landed on a generic exit ("RETURN HOME" / "DONE") with no path onward; only the Dosha Quiz's result screen already had a next step (Today's Guidance).
+
+**Built:** extracted the checklist UI from `components/OnboardingJourneyModal.js` (the six-assessment "New here? We got you." tour that only ever auto-showed once, for brand-new users) into a new shared `components/AssessmentsChecklistModal.js` — same rows, same live done-state (re-loaded fresh every time it opens, from the same six `load*Result`/`load*Progress` functions), same "Work with Thea directly" footer, now parameterized by `title`/`subtitle` so any screen can open it. `OnboardingJourneyModal` is now a thin wrapper that just owns its own auto-show-once/seen-flag logic on top of it — no behavior change there.
+
+Wired into all six assessments:
+- **Dosha** (`app/result.js`) — kept "See Today's Guidance" as the primary CTA (a real, valuable next step, not a dead end), added a new secondary "See what else you can explore" button beneath it that opens the shared modal.
+- **Guna, Agni, Tongue Check** (`app/guna-result.js`, `app/agni-result.js`, `app/tongue-result.js`) — the old sole CTA ("RETURN HOME" / "DONE") now opens the modal instead of navigating home directly, relabeled "SEE WHAT'S NEXT"; "Return home" demoted to a small text link alongside Retake/Book a Session.
+- **Prakriti, Vikriti** (`app/prakriti-quiz.js`, `app/vikriti-quiz.js`) — only shown on the *final* tier's completion (`!nextTier`), not on intermediate tiers, since those already have a working "Continue to {next tier}" flow that shouldn't be interrupted.
+
+**Verified via Playwright against a local dev server:** drove a full Guna Quiz completion end-to-end and confirmed the modal opens with "Where's your mind at" correctly showing as done (checkmark, dimmed label) — proving the done-state genuinely reflects what was just saved, not a static list. Drove a full 3-tier Prakriti completion (Foundation 21 questions, Level 2, Level 3 33 questions) and confirmed the modal trigger is absent on Foundation/Level 2 (where "Continue to {next tier}" shows instead) and present only on Level 3, opening correctly with "Discover your Blueprint" shown done. Directly loaded `/tongue-result` with query params and confirmed the modal opens there too. Zero console errors across all runs.
+
+Vikriti's final-tier wiring is code-identical to Prakriti's (same conditional, same component) — not independently click-tested this pass, but no reason to expect different behavior.
+
+Web only — native build still deliberately held off per Matt (#70/#71/#72's same constraint), not requested this pass either.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 

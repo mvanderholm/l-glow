@@ -7,6 +7,7 @@ import { card, accentShadowSm } from '../theme/index';
 import { agniResults } from '../data/content/agniQuiz';
 import BackButton, { smartBack } from '../components/BackButton';
 import { BOOKING_URL } from '../data/booking';
+import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
 
 // Source: transcript 21 (062126_02). Result copy reviewed and approved by
 // Thea, Aug 17 2026 — the one gap is each type's lGlowNote closing line
@@ -44,6 +45,7 @@ export default function AgniResult() {
   // fabricated "Sama, balanced" reading nobody actually got.
   const hasParams = params.dominant !== undefined;
   const [redirecting, setRedirecting] = useState(false);
+  const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
     if (!hasParams) {
@@ -154,9 +156,9 @@ export default function AgniResult() {
         {/* CTA */}
         <Pressable
           style={[s.btn, { backgroundColor: c.accent, shadowColor: c.accent }]}
-          onPress={() => router.replace('/')}
+          onPress={() => setShowAssessments(true)}
         >
-          <Text style={s.btnText}>RETURN HOME  ›</Text>
+          <Text style={s.btnText}>SEE WHAT'S NEXT  ›</Text>
         </Pressable>
 
         {/* Retake */}
@@ -168,7 +170,18 @@ export default function AgniResult() {
           <Text style={[s.retakeText, { color: c.accent }]}>Want to talk to Thea? Book a session</Text>
         </Pressable>
 
+        <Pressable style={s.retakeBtn} onPress={() => router.replace('/')}>
+          <Text style={[s.retakeText, { color: c.textMuted }]}>Return home</Text>
+        </Pressable>
+
       </ScrollView>
+
+      <AssessmentsChecklistModal
+        visible={showAssessments}
+        onDismiss={() => setShowAssessments(false)}
+        title="Nice work. What's next?"
+        subtitle="You just read your Agni. Five more reads whenever you're ready — take them in any order."
+      />
     </SafeAreaView>
   );
 }

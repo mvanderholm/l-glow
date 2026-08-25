@@ -7,6 +7,7 @@ import { savePrakritiTierAnswers, loadPrakritiProgress } from '../data/user/stor
 import { tierClosings } from '../data/content/tierClosings';
 import { useTheme } from '../context/ThemeContext';
 import BackButton, { smartBack } from '../components/BackButton';
+import AssessmentsChecklistModal from '../components/AssessmentsChecklistModal';
 
 // Prakriti tier quiz — one question at a time, same shell as guna-quiz.js
 // (the one existing quiz that already does cache-then-live-refresh instead
@@ -59,6 +60,7 @@ export default function PrakritiQuiz() {
   const [completed, setCompleted] = useState(false);
   const [savedAnswers, setSavedAnswers] = useState([]);
   const [locked, setLocked] = useState(false);
+  const [showAssessments, setShowAssessments] = useState(false);
 
   useEffect(() => {
     // router.replace to this same route with a new `tier` param (the
@@ -146,11 +148,24 @@ export default function PrakritiQuiz() {
             <Pressable style={[s.primaryBtn, { backgroundColor: c.accent }]} onPress={() => router.replace({ pathname: '/prakriti-quiz', params: { tier: nextTier } })}>
               <Text style={s.primaryBtnText}>Continue to {TIER_LABELS[nextTier]}</Text>
             </Pressable>
-          ) : null}
+          ) : (
+            <Pressable style={[s.primaryBtn, { backgroundColor: c.accent }]} onPress={() => setShowAssessments(true)}>
+              <Text style={s.primaryBtnText}>See what else you can explore</Text>
+            </Pressable>
+          )}
           <Pressable style={{ marginTop: 16, alignItems: 'center' }} onPress={() => router.replace('/prakriti')}>
             <Text style={{ color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 14 }}>Back to Prakriti</Text>
           </Pressable>
         </ScrollView>
+
+        {!nextTier && (
+          <AssessmentsChecklistModal
+            visible={showAssessments}
+            onDismiss={() => setShowAssessments(false)}
+            title="Nice work. What's next?"
+            subtitle="You just finished your full Blueprint. A few more reads whenever you're ready — take them in any order."
+          />
+        )}
       </SafeAreaView>
     );
   }
