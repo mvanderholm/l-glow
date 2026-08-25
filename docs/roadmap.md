@@ -1770,6 +1770,18 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**89. Re-audit: full route/link/orphan check across app and web.** Source: Matt, Aug 25 2026 — re-ran #55's original audit given how much shipped since (#70-#88). Clean result, no code changes needed.
+
+**Static check:** every route file under `app/` (60 files) cross-referenced against every `router.push`/`router.replace`/`href`/`pathname` string literal anywhere in `app/`, `components/`, `context/`, `data/` — every route has at least one real inbound reference, no dead-link strings pointing at nonexistent routes. `data/nav.js` (the single source of truth for the drawer + Web View sidebar, since #70) has no stale references to the `tools`/`quizzes` routes deleted that same session.
+
+**Live crawl:** all 53 real routes (every top-level screen, all 14 practitioner-hub routes, the three param-dependent result screens loaded with no params) loaded via Playwright with zero console errors, zero page crashes, zero blank renders. A deliberately-invalid URL correctly showed expo-router's "Unmatched Route" page, confirming the 404 case itself still works.
+
+**One minor finding, not a live bug:** `components/LogoAlt.js` and `components/LogoFull.js` are genuinely unused anywhere in the app — leftover from an early logo exploration, superseded by `LogoMark.js` (#25). Dead code, not fixed (deleting files needs a judgment call, left for Matt to decide). `components/practitioner/ReorderableList.web.js` was initially flagged by the same check but is not actually orphaned — it's the correct platform-specific file Metro picks up automatically on web; the native version is `ReorderableList.js`.
+
+**What this pass does not cover:** deep interactive testing of every button/form across the app (that's the cumulative effect of every feature's own verification pass already logged in #70-#88, not something re-run wholesale here) — this audit specifically checked for orphaned pages and first-load crashes/dead links, which was the ask.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
