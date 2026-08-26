@@ -32,7 +32,7 @@ const STEPS = [
   { key: 'tongue',   label: 'Do a Tongue Check',         sub: 'A quick morning read, before coffee.',         href: '/tongue-check', Icon: TongueIcon },
 ];
 
-export default function AssessmentsChecklistModal({ visible, onDismiss, title, subtitle }) {
+export default function AssessmentsChecklistModal({ visible, onDismiss, title, subtitle, showSignupNudge = true }) {
   const { theme: { colors: c, type, spacing } } = useTheme();
   const router = useRouter();
   const [done, setDone] = useState({});
@@ -89,7 +89,9 @@ export default function AssessmentsChecklistModal({ visible, onDismiss, title, s
               </Pressable>
             ))}
 
-            <SignupNudge message="Create a free account and everything you've shared here is saved and waiting for you next time." />
+            {showSignupNudge && (
+              <SignupNudge message="Create a free account and everything you've shared here is saved and waiting for you next time." />
+            )}
 
             <View style={[s.divider, { borderTopColor: c.border }]} />
 

@@ -193,6 +193,10 @@ export default function Result() {
           <Text style={styles.secondaryBtnText}>See what else you can explore</Text>
         </Pressable>
 
+        {/* This screen keeps its own SignupNudge (Dosha result is a real
+            completion moment on its own) — the checklist modal below is
+            told not to render a second one via showSignupNudge={false}, or
+            both would show at once whenever someone opens it from here. */}
         <SignupNudge message="You just found your Dosha. Create a free account and it's saved and waiting for you next time." />
 
         <Pressable style={styles.retakeBtn} onPress={() => router.replace('/quiz')}>
@@ -210,6 +214,7 @@ export default function Result() {
         onDismiss={() => setShowAssessments(false)}
         title="Nice work. What's next?"
         subtitle="You just got your Dosha. Five more reads whenever you're ready — take them in any order."
+        showSignupNudge={false}
       />
     </SafeAreaView>
   );
