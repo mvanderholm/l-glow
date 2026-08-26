@@ -50,7 +50,7 @@ function buildRecommendationEntries() {
     title: `${dosha[0].toUpperCase()}${dosha.slice(1)} recommendations`, subtitle: null,
     searchableText: joinText(dosha, rec.foods?.favor, rec.foods?.avoid, rec.herbs, rec.meditation, rec.lifestyle),
     snippet: rec.lifestyle || (rec.foods?.favor || [])[0] || '',
-    route: '/recommendations', params: { dosha },
+    route: '/',
   }));
 }
 
@@ -60,7 +60,7 @@ function buildDoshaInfoEntries() {
     title: info.name, subtitle: info.elements,
     searchableText: joinText(info.name, info.elements, info.qualities, info.summary, info.constitution, info.movementFocus),
     snippet: info.summary,
-    route: '/recommendations', params: { dosha },
+    route: '/',
   }));
 }
 

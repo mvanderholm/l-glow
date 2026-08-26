@@ -6,76 +6,19 @@ import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import Svg, { Path, Circle } from 'react-native-svg';
 import { SEASONAL_CONTENT, LUNAR_CONTENT } from '../data/content/cycles';
-import { loadDoshaResult, loadRecentCheckins, loadTodayPracticeCompletions, togglePracticeCompletion } from '../data/user/storage';
+import { loadDoshaResult, loadRecentCheckins } from '../data/user/storage';
 import { computeVikritiScores } from '../data/user/vikritiScoring';
 import { useAuth } from '../context/AuthContext';
 import { loadCheckinDimensions, refreshCheckinDimensions, loadRoutines, refreshRoutines } from '../data/content/remote';
 import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
-import { recommendations } from '../data/content/recommendations';
-import { asanas } from '../data/content/movement';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import CheckinTrendChart from '../components/CheckinTrendChart';
+import DailyPractices from '../components/DailyPractices';
 import Header from '../components/Header';
 
 const TABS = ['Overview', 'Ayurveda', 'Habits', 'Cycles'];
 
 const FOCUS = ['Nourish your body', 'Calm your mind', 'Honor your pace'];
-
-// done: false for all — buildPractices() only fills in content, never
-// completion state. Real completion state now lives in Supabase's
-// practice_completions table (data/user/storage.js's loadTodayPracticeCompletions/
-// togglePracticeCompletion, wired below), keyed per day so it resets every
-// morning rather than carrying yesterday's checks forward. Starting two of
-// these pre-checked showed every user, including a brand-new one, fake
-// completed progress on first load — fixed July 2026, stayed fixed now that
-// completion is real persisted state instead of local-only.
-//
-// Stable ids for the checked-state initializer below — independent of
-// whatever personalized content buildPractices() fills in, so toggling a
-// checkbox never breaks when the dosha/routines data finishes loading after
-// mount.
-const PRACTICE_IDS = ['morning', 'move', 'meal', 'mind', 'eve'];
-
-// Deterministic daily pick — stable on refresh, rotates each day. Same
-// helper as app/today.js's "Today's Rhythm"/pillar-card picks; duplicated
-// rather than shared since it's a 3-line pure function, not worth a new
-// module for.
-function dailyPick(arr) {
-  const dayIndex = Math.floor(Date.now() / 86400000);
-  return arr[dayIndex % arr.length];
-}
-
-function pickForTime(pool, time) {
-  const candidates = pool.filter(item => item.time === time);
-  return candidates.length ? dailyPick(candidates) : null;
-}
-
-// Daily Practices, personalized where real content exists — pulls from the
-// same authored sources already used elsewhere (Daily Rhythms routine
-// items, movement.js asanas, recommendations.js foods/meditation) rather
-// than inventing anything new. Falls back to the original generic line
-// for any slot without dosha-specific content yet (e.g. a dosha with no
-// morning routine_items authored, or before the quiz is taken at all).
-function buildPractices(dosha, routinesData) {
-  const rec = dosha && recommendations[dosha];
-  const asanaList = dosha && asanas[dosha];
-  const pool = dosha && routinesData
-    ? [...(routinesData.anchors ?? []), ...(routinesData.routines[dosha] ?? [])]
-    : [];
-  const morningPick = pickForTime(pool, 'morning');
-  const eveningPick = pickForTime(pool, 'evening');
-  const asanaPick = asanaList?.length ? dailyPick(asanaList) : null;
-  const foodPick = rec?.foods?.favor?.length ? dailyPick(rec.foods.favor) : null;
-  const meditationLine = rec?.meditation ? rec.meditation.split('. ')[0].replace(/\.$/, '') + '.' : null;
-
-  return [
-    { id: 'morning', title: 'Morning Ritual',   desc: morningPick?.label ?? 'Warm water, oil pulling, tongue scrape', time: '10 min',                    Icon: SunIcon,    done: false },
-    { id: 'move',    title: 'Movement',          desc: asanaPick?.name ?? 'Gentle flow + breath',                     time: asanaPick?.duration ?? '20 min', Icon: BreathIcon, done: false },
-    { id: 'meal',    title: 'Nourishing Meal',   desc: foodPick ?? 'Breakfast — warm & grounding',                    time: 'Breakfast',                 Icon: BowlIcon,   done: false },
-    { id: 'mind',    title: 'Mindful Moment',    desc: meditationLine ?? 'Seated stillness',                          time: '10 min',                    Icon: LotusIcon,  done: false },
-    { id: 'eve',     title: 'Evening Wind Down', desc: eveningPick?.label ?? 'Abhyanga + early rest',                 time: '15 min',                    Icon: MoonIcon,   done: false },
-  ];
-}
 
 // DRAFT — Ayurveda tab copy written in Thea's voice. Awaiting her review before treating as final.
 const AYURVEDA_HISTORY = [
@@ -129,9 +72,6 @@ export default function Journey() {
   const router = useRouter();
   const { tab } = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState(0);
-  const [checked, setChecked] = useState(() =>
-    Object.fromEntries(PRACTICE_IDS.map(id => [id, false]))
-  );
   const [doshaResult, setDoshaResult] = useState(null);
   const [vikritiScores, setVikritiScores] = useState(undefined); // undefined = loading, null = signed out or not enough data
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
@@ -144,28 +84,11 @@ export default function Journey() {
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
   }, []);
-  useEffect(() => {
-    loadTodayPracticeCompletions().then(saved =>
-      setChecked(prev => ({ ...prev, ...saved }))
-    );
-  }, []);
-
-  function toggleChecked(id) {
-    setChecked(prev => {
-      const done = !prev[id];
-      togglePracticeCompletion(id, done);
-      return { ...prev, [id]: done };
-    });
-  }
-
-  const practices = buildPractices(doshaResult?.dosha, routinesData);
 
   // Deep link from global search — see data/searchIndex.js
   useEffect(() => {
     if (tab === 'cycles') setActiveTab(TABS.indexOf('Cycles'));
   }, [tab]);
-
-  const doneCount = Object.values(checked).filter(Boolean).length;
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
@@ -191,11 +114,7 @@ export default function Journey() {
         showsVerticalScrollIndicator={false}
       >
         {activeTab === 0 && (
-          <OverviewTab
-            c={c} spacing={spacing} type={type}
-            checked={checked} toggleChecked={toggleChecked} doneCount={doneCount}
-            practices={practices}
-          />
+          <OverviewTab c={c} spacing={spacing} type={type} dosha={doshaResult?.dosha} routinesData={routinesData} />
         )}
         {activeTab === 1 && <AyurvedaTab c={c} type={type} doshaResult={doshaResult} vikritiScores={vikritiScores} router={router} />}
         {activeTab === 2 && <HabitsTab c={c} type={type} />}
@@ -207,7 +126,7 @@ export default function Journey() {
 
 // ── Overview tab ────────────────────────────────────────────────────────────
 
-function OverviewTab({ c, spacing, type, checked, toggleChecked, doneCount, practices }) {
+function OverviewTab({ c, spacing, type, dosha, routinesData }) {
   return (
     <>
       {/* Today's focus card */}
@@ -228,42 +147,7 @@ function OverviewTab({ c, spacing, type, checked, toggleChecked, doneCount, prac
         </View>
       </View>
 
-      {/* Daily Practices */}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 4 }}>
-        <Text style={[styles.sectionH, { color: c.text }]}>Daily Practices</Text>
-        <Text style={{ color: c.textMedium, fontFamily: 'Inter_500Medium', fontSize: 12.5 }}>{doneCount} of {practices.length} completed</Text>
-      </View>
-
-      <View style={[styles.track, { backgroundColor: c.border }]}>
-        <View style={[styles.fill, { backgroundColor: c.accent, width: `${(doneCount / practices.length) * 100}%` }]} />
-      </View>
-
-      <View style={[styles.checkList, { backgroundColor: c.surface, ...card }]}>
-        {practices.map((p, idx) => {
-          const done = checked[p.id];
-          return (
-            <Pressable
-              key={p.id}
-              style={[styles.checkRow, idx < practices.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-              onPress={() => toggleChecked(p.id)}
-            >
-              <View style={[styles.iconCircle, { backgroundColor: c.surfaceAlt }]}>
-                <p.Icon color={c.textMuted} size={18} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.checkTitle, { color: c.text }]}>{p.title}</Text>
-                <Text style={[styles.checkDesc, { color: c.textMuted }]}>{p.desc} · {p.time}</Text>
-              </View>
-              <View style={[styles.checkbox, {
-                backgroundColor: done ? c.accent : 'transparent',
-                borderColor: done ? c.accent : 'rgba(75,62,58,0.22)',
-              }]}>
-                {done && <CheckIcon />}
-              </View>
-            </Pressable>
-          );
-        })}
-      </View>
+      <DailyPractices dosha={dosha} routinesData={routinesData} />
     </>
   );
 }
@@ -611,42 +495,6 @@ function SlidersIcon({ color }) {
     <Circle cx="10" cy="18" r="2" fill={color} />
   </Svg>;
 }
-function CheckIcon() {
-  return <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
-    <Path d="M5 12l5 5 9-9" stroke="#FFF" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>;
-}
-function SunIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="4" stroke={color} strokeWidth={1.5} />
-    <Path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-  </Svg>;
-}
-function BreathIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 8c3 0 5 3 5 3s2-3 5-3 5 3 5 3" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    <Path d="M3 14c2 0 4 2 4 2s2-2 5-2 5 2 5 2" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-  </Svg>;
-}
-function BowlIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 3C10 3 7 5 7 8h10c0-3-3-5-5-5Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    <Path d="M7 8h10l-1.5 9H8.5L7 8Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-  </Svg>;
-}
-function LotusIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth={1.4} />
-    <Circle cx="12" cy="12" r="2" stroke={color} strokeWidth={1.4} />
-    <Path d="M12 4v2M12 18v2M4 12h2M18 12h2" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-  </Svg>;
-}
-function MoonIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" stroke={color} strokeWidth={1.5} strokeLinejoin="round" />
-  </Svg>;
-}
-
 // ── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
@@ -660,17 +508,6 @@ const styles = StyleSheet.create({
   focusLeft: { flex: 1, padding: 16 },
   focusLabel:{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.98, textTransform: 'uppercase' },
   focusImg:  { width: 95 },
-
-  sectionH:  { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
-  track:     { height: 3, borderRadius: 2 },
-  fill:      { height: 3, borderRadius: 2 },
-
-  checkList: { borderRadius: 26, overflow: 'hidden' },
-  checkRow:  { flexDirection: 'row', alignItems: 'center', padding: 15, gap: 12 },
-  iconCircle:{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  checkTitle:{ fontFamily: 'Inter_600SemiBold', fontSize: 15.5, lineHeight: 20 },
-  checkDesc: { fontFamily: 'Inter_400Regular',  fontSize: 12.5, lineHeight: 17, marginTop: 1 },
-  checkbox:  { width: 24, height: 24, borderRadius: 12, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
   contentCard: {
     borderRadius: 26,

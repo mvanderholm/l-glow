@@ -184,7 +184,7 @@ export default function Result() {
 
         <Pressable
           style={styles.primaryBtn}
-          onPress={() => router.replace({ pathname: '/recommendations', params: { dosha: primary } })}
+          onPress={() => router.replace('/')}
         >
           <Text style={styles.primaryBtnText}>See Today's Guidance</Text>
         </Pressable>

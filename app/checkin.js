@@ -3,27 +3,14 @@ import { View, Text, StyleSheet, Pressable, ScrollView, TextInput, Image, Keyboa
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
 import { saveCheckin } from '../data/user/storage';
 import { loadCheckinDimensions, refreshCheckinDimensions } from '../data/content/remote';
 import BackButton from '../components/BackButton';
-import Svg, { Path } from 'react-native-svg';
-
-function MenuIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 const scale = [1, 2, 3, 4, 5];
 
 export default function CheckIn() {
   const { theme: { colors, spacing, radius, type } } = useTheme();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
   const insets = useSafeAreaInsets();
   const [values, setValues] = useState({ physical: 3, mental: 3, emotional: 3, hunger: 3, tongue: 3 });
   const [note, setNote] = useState('');
@@ -52,15 +39,6 @@ export default function CheckIn() {
           overlay
           style={[styles.backBtn, { top: insets.top + 8 }]}
         />
-        {!isWebMode && (
-          <Pressable
-            onPress={openDrawer}
-            hitSlop={8}
-            style={[styles.menuBtn, { top: insets.top + 8 }]}
-          >
-            <MenuIcon color="#ECE8DF" />
-          </Pressable>
-        )}
         <View style={styles.teaHeaderContent}>
           <Text style={[type.label, { color: 'rgba(236,232,223,0.8)' }]}>
             Today, {new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
@@ -116,7 +94,7 @@ export default function CheckIn() {
           } catch (err) {
             console.error('Failed to save check-in:', err);
           }
-          router.replace('/today');
+          router.replace('/');
         }}
       >
         <Text style={styles.primaryBtnText}>Save & See What Today Needs</Text>
@@ -177,16 +155,6 @@ return StyleSheet.create({
   backBtn: {
     position: 'absolute',
     left: spacing.md,
-  },
-  menuBtn: {
-    position: 'absolute',
-    right: spacing.md,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(20,10,5,0.35)',
   },
 });
 }
