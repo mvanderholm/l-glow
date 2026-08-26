@@ -1782,6 +1782,20 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**90. Full interactive re-test — every button and form, not just routes.** Source: Matt, Aug 25 2026, following #89's route/orphan audit.
+
+**Covered:** all six assessments end-to-end including every "what's next" trigger (Dosha, Guna, Agni, Tongue, and both Prakriti/Vikriti's full 3-tier sequences); check-in (including the new multiple-per-day behavior); Journal; Home's full intention flow (choose/decline/add-to-journal); Today's Guidance (intention display, Daily Rhythms decline, closing CTA); You tab (intake progress row, the new Personal Details form, assessment row navigation); the Intake form (filling a field and confirming the progress bar actually moves); Learn, Herbs (search/filter), the Search screen, and Journey.
+
+**One real bug found and fixed:** the Dosha result screen (`app/result.js`) already shows its own `SignupNudge`, but the assessments checklist modal it opens (`AssessmentsChecklistModal`) also renders one internally — the first time a guest opened the modal from the Dosha result screen specifically, both rendered at once, showing "Don't lose this" twice. New `showSignupNudge` prop on the modal, set to `false` only from `result.js` (the one caller with its own separate nudge). Caught by this pass precisely because the earlier per-feature verification always tested each surface in isolation, never the combination.
+
+**One real finding flagged, not fixed:** "Just for today" intention chips now include richer, Thea-voiced content that reads as full standalone sentences ("I don't have to earn rest. I give myself permission to stop + receive it.") rather than sentence fragments — but the UI still unconditionally prepends "I will " before showing the chosen one, producing "I will I don't have to earn rest." This is a content/display mismatch, not a code bug per se, and changing the display template is a product call (drop the prefix entirely? only for chips, not freehand text?) — flagged for Matt/Thea rather than silently patched, per this app's content-authorship boundaries.
+
+**Two real test-script pitfalls hit again, worth remembering:** `document.body.innerText` reflects CSS `text-transform`, so a locator has to match the *rendered* case (a `type.label`-styled "Just For Today" renders as "JUST FOR TODAY" in `innerText`) — this bit the same way it has before this session. Generic "click the first pointer-cursor div" option-selection heuristics break on screens whose earlier-in-DOM-order elements are also clickable (Home's "Begin Here" grid sits before the intention chips in document order) — scoping matters, coordinate-based clicks don't fix a wrong-element pick.
+
+**Explicitly not covered, and why:** Login/Signup form submission (would create a real Supabase account and send a real confirmation email — not something to trigger without being asked); the practitioner portal's authenticated interactions (client list actions, notes, messaging, content editors — this session has no practitioner credentials); anything native-only (push notifications, the native share sheet).
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
