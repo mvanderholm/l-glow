@@ -1796,6 +1796,12 @@ Web only — native build still deliberately held off per Matt (#70/#71/#72's sa
 
 ---
 
+**91. Dropped the "I will" prefix on displayed intentions — closes #90's flagged finding.** Source: Matt, Aug 25 2026 — "drop the prefix."
+
+Removed `I will ` (or `Intention: I will `) from all five places a chosen intention gets shown as text: Home's Welcome-back card, Today's Guidance's "Just For Today" section, the Journal's auto-appended intention line, the client-facing Activity log, and the practitioner Check-ins tab. The empty-state prompt ("Just for today, I will…", inviting a pick) was left alone — it's not part of the duplication, since nothing follows it yet. Verified directly (checked rendered body text, not just a screenshot) that a full-sentence intention no longer reads "I will I don't have to earn rest." on either Home or Today's Guidance.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
