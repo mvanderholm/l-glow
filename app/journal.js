@@ -80,7 +80,7 @@ const PROMPTS = [
   { id: 'tomorrow', label: "Tomorrow I will…" },
 ];
 
-const INTENTION_LINE_PREFIX = 'Intention: I will ';
+const INTENTION_LINE_PREFIX = 'Intention: ';
 
 // Lets Home's "Just for today" card add its intention into today's Journal
 // entry without duplicating journal.js's own save logic — appends into

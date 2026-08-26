@@ -1209,7 +1209,7 @@ function ClientDetail({ client, practitionerId, colors: c, onBack, initialTab })
                       ))}
                       {day.intention && (
                         <Text style={[s.logNote, { color: c.textMedium, marginTop: day.checkins.length ? 8 : 0 }]}>
-                          "Just for today, I will {day.intention.text}"{platformLabel(day.intention.platform) ? ` · ${platformLabel(day.intention.platform)}` : ''}
+                          "Just for today, {day.intention.text}"{platformLabel(day.intention.platform) ? ` · ${platformLabel(day.intention.platform)}` : ''}
                         </Text>
                       )}
                     </View>

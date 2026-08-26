@@ -407,7 +407,7 @@ function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef })
         {intention.text ? (
           <>
             <Text style={[type.label, { color: c.textMuted }]}>Just for today</Text>
-            <Text style={[type.body, { color: c.text, marginTop: 8 }]}>I will {intention.text}</Text>
+            <Text style={[type.body, { color: c.text, marginTop: 8 }]}>{intention.text}</Text>
             <View style={{ flexDirection: 'row', gap: 18, marginTop: 10 }}>
               <Pressable onPress={addToJournal} disabled={journalAdded}>
                 <Text style={{ color: journalAdded ? c.textMuted : c.accent, fontSize: 12, fontFamily: 'Inter_600SemiBold' }}>

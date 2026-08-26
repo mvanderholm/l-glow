@@ -139,7 +139,7 @@ export default function Recommendations() {
 
         {intention?.text ? (
           <Section title="Just For Today" accent={colors.accentAlt}>
-            <Text style={type.body}>I will {intention.text}</Text>
+            <Text style={type.body}>{intention.text}</Text>
           </Section>
         ) : null}
 

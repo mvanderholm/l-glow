@@ -92,7 +92,7 @@ export default function Activity() {
 
                 {day.intention && (
                   <Text style={[s.line, s.intentionLine, { color: c.text }]}>
-                    "Just for today, I will {day.intention}"
+                    "Just for today, {day.intention}"
                   </Text>
                 )}
 
