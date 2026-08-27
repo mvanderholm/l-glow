@@ -5,13 +5,12 @@ import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useDrawer } from '../context/DrawerContext';
 import { useViewMode } from '../context/ViewModeContext';
-import { card, accentShadow } from '../theme/index';
+import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
-import { agniResults } from '../data/content/agniQuiz';
 import { affirmationsForDosha } from '../data/content/affirmations';
 import { routineAnchors, routines as staticRoutines } from '../data/content/routines';
-import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadTodayCheckin, loadPrakritiProgress, loadTodayIntentionDeclines, declineIntention, loadAgniResult, loadTodayRoutineDeclines, declineRoutineItem } from '../data/user/storage';
+import { loadDoshaResult, buildSessionSummary, loadTodayIntention, saveIntention, loadUserName, loadOnboarded, loadTodayIntentionDeclines, declineIntention } from '../data/user/storage';
 import { useAuth } from '../context/AuthContext';
 import { intentionSuggestions } from '../data/content/intentions';
 import { appendIntentionToJournal } from './journal';
@@ -24,29 +23,6 @@ import DailyPractices from '../components/DailyPractices';
 import TodaysGuidance from '../components/TodaysGuidance';
 import TodayCheckIn from '../components/TodayCheckIn';
 import Svg, { Path, Circle, G } from 'react-native-svg';
-
-// Deterministic daily pick — stable on refresh, rotates each day. Same
-// helper duplicated across today.js/journey.js; kept as a 3-line pure
-// function rather than a shared module.
-function dailyPick(arr) {
-  const dayIndex = Math.floor(Date.now() / 86400000);
-  return arr[dayIndex % arr.length];
-}
-
-// Moved from app/recommendations.js (nav restructure, Move 1) — one pick
-// per time-of-day category, skipping anything declined today. Always
-// visible on Today now, not nested in the guidance accordion.
-const ROUTINE_TIME_ORDER = ['morning', 'midday', 'evening', 'night'];
-function buildDailyRhythmPicks(routinesData, dosha, declines) {
-  const pool = [...(routinesData.anchors ?? []), ...((dosha && routinesData.routines[dosha]) ?? [])];
-  return ROUTINE_TIME_ORDER
-    .map(category => {
-      const declinedIds = declines?.[category] ?? [];
-      const item = pool.find(r => r.time === category && !declinedIds.includes(r.id));
-      return item ? { category, item } : null;
-    })
-    .filter(Boolean);
-}
 
 // Picks a starting index from an affirmation pool that changes each day but
 // is stable within a day — same helper as app/affirmations.js.
@@ -85,28 +61,15 @@ export default function Home() {
   const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
   const [userName, setUserName] = useState(null);
-  const [hasCheckedInToday, setHasCheckedInToday] = useState(null); // null = loading
-  const [prakritiDone, setPrakritiDone] = useState(null); // null = loading
   const [routinesData, setRoutinesData] = useState({ anchors: routineAnchors, routines: staticRoutines });
-  const [agniResult, setAgniResult] = useState(null); // null = loading, false = not taken
-  const [declines, setDeclines] = useState(null); // null = loading, then { category: [itemId, ...] }
   const scrollRef = useRef(null);
 
   useEffect(() => {
     loadDoshaResult().then(r => setSavedDosha(r ? r.dosha : false));
     loadOnboarded().then(flag => { if (!flag) router.replace('/welcome'); });
-    loadTodayCheckin().then(entry => setHasCheckedInToday(!!entry));
-    loadPrakritiProgress().then(progress => setPrakritiDone(!!progress.foundation));
     loadRoutines().then(setRoutinesData);
     refreshRoutines().then(() => loadRoutines()).then(setRoutinesData);
-    loadAgniResult().then(r => setAgniResult(r || false));
-    loadTodayRoutineDeclines().then(setDeclines);
   }, []);
-
-  function declineRhythm(category, itemId) {
-    setDeclines(prev => ({ ...prev, [category]: [...(prev?.[category] ?? []), itemId] }));
-    declineRoutineItem(category, itemId);
-  }
 
   // No more anonymous "what's your name" prompt — name only shows once
   // there's an actual signed-in account. `display_name` (set via loadUserName,
@@ -149,110 +112,23 @@ export default function Home() {
           <Text style={[type.bodyItalic, { color: c.textMedium }]}>Let's see where you are today.</Text>
         </View>
 
-        {/* Hero remedy card */}
-        <View style={[styles.heroCard, { backgroundColor: c.surface, ...card }]}>
-          <Image source={require('../assets/checkin-tea.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
-        </View>
-
-        {/* CTA button */}
-        <CtaButton colors={c} />
-
-        {/* Getting started — shown from first login through Prakriti
-            completion (Matt's call, Aug 7 2026), not just until dosha +
-            first-ever check-in are done. The check-in row tracks *today's*
-            check-in specifically (resets each day) so it keeps nudging the
-            daily habit throughout that window instead of marking itself
-            permanently done after one check-in. Both rows are independently
-            tappable in any order (no locking, no streaks) — the only
-            "guidance" is which row gets the emphasized treatment. */}
-        {savedDosha !== null && hasCheckedInToday !== null && prakritiDone !== null && (!savedDosha || !prakritiDone) && (
-          <GettingStartedCard hasDosha={!!savedDosha} hasCheckedIn={hasCheckedInToday} colors={c} type={type} />
-        )}
-
         {/* Inline check-in — merges checkin.js's first-question UI with
             today.js's multi-check-in dot rows (nav restructure, Move 1). */}
-        <TodayCheckIn dosha={savedDosha || null} onSaved={() => setHasCheckedInToday(true)} />
+        <TodayCheckIn dosha={savedDosha || null} />
 
         {/* Daily Practices — extracted from journey.js's Overview tab so
             /journey and / share one implementation during the migration. */}
         <DailyPractices dosha={savedDosha || null} routinesData={routinesData} />
 
-        {/* Agni — secondary signal alongside dosha, always visible now
-            rather than nested in the guidance accordion. */}
-        {agniResult && (() => {
-          const agni = agniResults[agniResult.agniType] ?? agniResults.sama;
-          return (
-            <View style={[styles.agniStrip, { backgroundColor: c.surface, ...card }]}>
-              <Text style={[type.label, { color: c.textMuted, marginBottom: 6 }]}>Your Agni</Text>
-              <Text style={[type.body, { color: c.text, fontWeight: '600' }]}>{agni.name} · {agni.subtitle}</Text>
-              <Pressable
-                style={{ marginTop: 8 }}
-                onPress={() => router.push({
-                  pathname: '/agni-result',
-                  params: {
-                    dominant: agniResult.agniType,
-                    sama:    agniResult.counts?.sama    ?? 0,
-                    vishama: agniResult.counts?.vishama ?? 0,
-                    tikshna: agniResult.counts?.tikshna ?? 0,
-                    manda:   agniResult.counts?.manda   ?? 0,
-                  },
-                })}
-              >
-                <Text style={{ color: agni.color, fontWeight: '600', fontSize: 13 }}>See your full Agni picture →</Text>
-              </Pressable>
-            </View>
-          );
-        })()}
-        {agniResult === false && (
-          <Pressable style={{ marginBottom: spacing.lg }} onPress={() => router.push('/agni-quiz')}>
-            <Text style={[type.muted, { color: c.textMuted, textAlign: 'center', fontStyle: 'italic' }]}>
-              Curious about your digestive fire too? Take the Agni check-in →
-            </Text>
-          </Pressable>
-        )}
-
-        {/* Today's Guidance — merged in from /recommendations, collapsed to
-            4 rows (nourishment/herbs/movement/lifestyle). */}
-        {savedDosha && <TodaysGuidance dosha={savedDosha} />}
-
-        {/* Daily Rhythms — always visible now, not nested in the accordion. */}
-        {declines && savedDosha && (() => {
-          const picks = buildDailyRhythmPicks(routinesData, savedDosha, declines);
-          if (!picks.length) return null;
-          return (
-            <View style={{ marginTop: spacing.xl }}>
-              <Text style={[type.h2, { color: c.text, marginBottom: spacing.md }]}>Daily Rhythms</Text>
-              {picks.map(({ category, item }) => {
-                const badgeColor = { morning: c.saffron, midday: c.terracotta, evening: c.vata, night: c.kapha }[item.time] ?? c.saffron;
-                return (
-                  <View key={category} style={styles.rhythmRow}>
-                    <View style={[styles.rhythmBadge, { backgroundColor: badgeColor + '33' }]}>
-                      <Text style={[styles.rhythmBadgeText, { color: c.textMuted }]}>{item.time}</Text>
-                    </View>
-                    <Text style={[type.body, { color: c.text, flex: 1 }]} numberOfLines={2}>{item.label}</Text>
-                    <Pressable onPress={() => declineRhythm(category, item.id)} hitSlop={8}>
-                      <Text style={{ color: c.textMuted, fontSize: 11.5 }}>Not today</Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
-          );
-        })()}
-
-        {/* Begin here — gated to first-run same as GettingStartedCard above,
-            Aug 14 2026 (nav-duplication audit). Previously showed forever,
-            for every user, duplicating four things already one tap away via
-            bottom nav. This grid is genuinely useful for someone still
-            finding their way around; it isn't for someone who's already
-            engaged, so it disappears on the same condition Getting Started
-            already uses instead of running as a permanent parallel path. */}
-        {savedDosha !== null && hasCheckedInToday !== null && prakritiDone !== null && (!savedDosha || !prakritiDone) && (
-          <>
-            <Text style={[type.h2, { color: c.text, marginBottom: spacing.md }]}>Begin here</Text>
-            <BeginGrid colors={c} />
-          </>
-        )}
+        {/* Today's Guidance — merged in from /recommendations, collapsed
+            except Nourishment; the season label doubles as the "your
+            blueprint" pointer into /result (nav restructure, Move 1 —
+            revised to match the mockup Matt shared Aug 26 2026: dropped the
+            hero image, CTA button, Getting Started card, and Begin Here
+            grid, none of which appear in that design). Agni and an
+            always-visible Daily Rhythms strip were cut from this screen for
+            the same reason — Agni already lives on /assessments. */}
+        {savedDosha && <TodaysGuidance dosha={savedDosha} onBlueprintPress={() => router.push('/result')} />}
 
         {savedDosha === null ? null : savedDosha ? (
           <ReturningUser dosha={savedDosha} userName={userName} colors={c} spacing={spacing} type={type} scrollRef={scrollRef} />
@@ -422,79 +298,6 @@ function MythbusterCard({ colors: c, type }) {
   );
 }
 
-function GettingStartedCard({ hasDosha, hasCheckedIn, colors: c, type }) {
-  const router = useRouter();
-  const steps = [
-    { key: 'dosha', label: 'Find your type', sub: 'A short quiz to learn your constitution.', done: hasDosha, href: '/quiz' },
-    { key: 'checkin', label: 'Try today\'s check-in', sub: 'A minute to notice how you\'re doing.', done: hasCheckedIn, href: '/checkin' },
-  ];
-  const nextIndex = steps.findIndex(s => !s.done);
-
-  return (
-    <View style={[styles.gsCard, { backgroundColor: c.surface, ...card }]}>
-      <Text style={[type.label, { color: c.textMuted, marginBottom: 10 }]}>A few places to begin</Text>
-      {steps.map((s, i) => {
-        const isNext = i === nextIndex;
-        return (
-          <Pressable
-            key={s.key}
-            style={[styles.gsRow, isNext && { backgroundColor: c.accent + '14' }]}
-            onPress={() => router.push(s.href)}
-          >
-            <View style={[styles.gsDot, { borderColor: s.done ? c.accent : c.border, backgroundColor: s.done ? c.accent : 'transparent' }]}>
-              {s.done && <Text style={{ color: '#FBF9F4', fontSize: 10, fontFamily: 'Inter_700Bold' }}>✓</Text>}
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.gsLabel, { color: c.text, opacity: s.done ? 0.5 : 1 }]}>{s.label}</Text>
-              {isNext && <Text style={[styles.gsSub, { color: c.textMuted }]}>{s.sub}</Text>}
-            </View>
-            {!s.done && <Text style={{ color: isNext ? c.accent : c.textMuted, fontSize: 16 }}>›</Text>}
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function CtaButton({ colors: c }) {
-  const router = useRouter();
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.ctaBtn, { backgroundColor: c.accent, shadowColor: c.accent, opacity: pressed ? 0.9 : 1 }]}
-      onPress={() => router.push('/checkin')}
-    >
-      <Text style={styles.ctaBtnText}>START MY DAY  ›</Text>
-    </Pressable>
-  );
-}
-
-const BEGIN_ITEMS = [
-  { href: '/herbs',      label: 'Apothecary', Icon: HerbsIcon,      colorKey: 'kapha'      },
-  { href: '/breathwork', label: 'Breathwork', Icon: BreathIcon,     colorKey: 'sage'       },
-  { href: '/recipes',    label: 'Recipes',    Icon: RecipesIcon,    colorKey: 'honeyAmber' },
-  { href: '/meditation', label: 'Meditate',   Icon: MeditationIcon, colorKey: 'vata'       },
-];
-
-function BeginGrid({ colors: c }) {
-  const router = useRouter();
-  return (
-    <View style={styles.beginGrid}>
-      {BEGIN_ITEMS.map(item => (
-        <Pressable
-          key={item.href}
-          style={({ pressed }) => [styles.beginCard, { backgroundColor: c.surface, ...card, opacity: pressed ? 0.8 : 1 }]}
-          onPress={() => router.push(item.href)}
-        >
-          <View style={[styles.beginIconWrap, { backgroundColor: c.surfaceAlt }]}>
-            <item.Icon color={c[item.colorKey]} size={20} />
-          </View>
-          <Text style={[styles.beginLabel, { color: c.textMedium }]}>{item.label}</Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
 function ReturningUser({ dosha, userName, colors: c, spacing, type, scrollRef }) {
   const router = useRouter();
   const info = doshaInfo[dosha];
@@ -647,42 +450,6 @@ function MenuIcon({ color }) {
   );
 }
 
-function HerbsIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M12 21V10M9 13l3-3 3 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function BreathIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 8c3 0 5 3 5 3s2-3 5-3 5 3 5 3" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
-      <Path d="M3 14c2 0 4 2 4 2s2-2 5-2 5 2 5 2" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function RecipesIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path d="M12 3C10 3 7 5 7 8h10c0-3-3-5-5-5Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-      <Path d="M7 8h10l-1.5 9H8.5L7 8Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function MeditationIcon({ color, size }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth={1.4} />
-      <Circle cx="12" cy="12" r="2" stroke={color} strokeWidth={1.4} />
-      <Path d="M12 4v2M12 18v2M4 12h2M18 12h2" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 // ── Styles ─────────────────────────────────────────────────────────────────
 
@@ -707,60 +474,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  heroCard: {
-    height: 190,
-    borderRadius: 26,
-    marginBottom: 16,
-    overflow: 'hidden',
-  },
-
-  ctaBtn: {
-    borderRadius: 999,
-    paddingVertical: 14,
-    paddingHorizontal: 22,
-    alignItems: 'center',
-    marginBottom: 16,
-    ...accentShadow,
-  },
-  ctaBtnText: {
-    color: '#FBF9F4',
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 13,
-    letterSpacing: 1.4,
-  },
-
-  gsCard: {
-    borderRadius: 26,
-    padding: 18,
-    marginBottom: 16,
-  },
-  gsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 14,
-  },
-  gsDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gsLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 15,
-  },
-  gsSub: {
-    fontFamily: 'Inter_400Regular',
-    fontSize: 12.5,
-    marginTop: 2,
-    lineHeight: 17,
-  },
-
   affirmCard: {
     flexDirection: 'row',
     borderRadius: 26,
@@ -781,35 +494,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     fontStyle: 'italic',
-  },
-
-  beginGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  beginCard: {
-    flexBasis: '47.5%',
-    flexGrow: 1,
-    maxWidth: '50%',
-    borderRadius: 18,
-    padding: 16,
-    paddingBottom: 18,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  beginIconWrap: {
-    width: 37,
-    height: 37,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  beginLabel: {
-    fontFamily: 'Inter_600SemiBold',
-    fontSize: 12,
-    lineHeight: 16,
   },
 
   footerText: {
@@ -851,31 +535,6 @@ const styles = StyleSheet.create({
   musicBtnText: {
     fontFamily: 'Inter_500Medium',
     fontSize: 13,
-  },
-
-  agniStrip: {
-    borderRadius: 26,
-    padding: 18,
-    marginBottom: 16,
-  },
-  rhythmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 6,
-  },
-  rhythmBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
-    minWidth: 62,
-    alignItems: 'center',
-  },
-  rhythmBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
   },
 
   mythCard: {

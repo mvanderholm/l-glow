@@ -59,7 +59,18 @@ export default function TodayCheckIn({ dosha, onSaved }) {
 
   return (
     <View style={[styles.card, { backgroundColor: c.surface, ...card }]}>
-      <Text style={[type.label, { color: c.textMuted, marginBottom: 10 }]}>Check-in</Text>
+      <View style={styles.headerRow}>
+        <Text style={[type.label, { color: c.textMuted }]}>Today's Check-in</Text>
+        {!alreadyToday && (
+          <View style={[styles.notYetPill, { backgroundColor: c.terracotta + '1F' }]}>
+            <Text style={[styles.notYetText, { color: c.terracotta }]}>Not yet</Text>
+          </View>
+        )}
+      </View>
+
+      {!alreadyToday && firstDim && (
+        <Text style={[type.h2, { color: c.text, marginTop: 6 }]}>How are you, really?</Text>
+      )}
 
       {alreadyToday && (
         <View style={{ marginBottom: answeredValue == null ? 0 : spacing.md }}>
@@ -82,8 +93,7 @@ export default function TodayCheckIn({ dosha, onSaved }) {
 
       {!alreadyToday && firstDim && (
         <>
-          <Text style={[type.h3, { color: c.text }]}>{firstDim.label}</Text>
-          <Text style={[type.muted, { color: c.textMuted, marginTop: 2 }]}>{firstDim.desc}</Text>
+          <Text style={[type.body, { color: c.textMuted, marginTop: 6 }]}>{firstDim.desc}</Text>
           <View style={styles.scaleRow}>
             {scale.map(n => (
               <Pressable
@@ -105,6 +115,17 @@ export default function TodayCheckIn({ dosha, onSaved }) {
         </>
       )}
 
+      {!alreadyToday && answeredValue == null && (
+        <View style={[styles.footerRow, { borderTopColor: c.border }]}>
+          <Text style={[type.muted, { color: c.textMuted, fontSize: 12 }]}>
+            1 of {dimensions.length || 5} · about a minute
+          </Text>
+          <Pressable onPress={() => router.push('/checkin')}>
+            <Text style={[type.muted, { color: c.accent, fontFamily: 'Inter_600SemiBold', fontSize: 12.5 }]}>Continue ›</Text>
+          </Pressable>
+        </View>
+      )}
+
       {(alreadyToday || answeredValue != null) && (
         <Pressable
           style={[styles.continueBtn, { borderColor: c.border }]}
@@ -122,6 +143,10 @@ export default function TodayCheckIn({ dosha, onSaved }) {
 function makeStyles(c, spacing, radius) {
   return StyleSheet.create({
     card: { borderRadius: 26, padding: 20, marginBottom: 16 },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    notYetPill: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 999 },
+    notYetText: { fontSize: 10.5, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 },
+    footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth },
     dotsRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     dot: { width: 11, height: 11, borderRadius: 6 },
     scaleRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md },
