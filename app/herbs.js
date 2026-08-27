@@ -6,6 +6,7 @@ import { herbFoodDatabase, HERB_FOOD_TYPES } from '../data/content/herbFoodDatab
 import { DOSHA_COLORS } from '../components/DoshaWheel';
 import { useTheme } from '../context/ThemeContext';
 import Header from '../components/Header';
+import { smartBack } from '../components/BackButton';
 import Svg, { Path } from 'react-native-svg';
 
 const ENERGY_COLOR = { heating: '#C97855', cooling: '#4A8FA8' };
@@ -46,7 +47,7 @@ export default function Herbs() {
 
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <Header title="Herbs" left="menu" right="search" />
+      <Header title="Herbs" left="back" onBack={() => smartBack('/explore')} right="search" />
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
         <Text style={[type.muted, { marginBottom: spacing.md, fontStyle: 'italic', lineHeight: 18 }]}>
           For education and wellness support only — not diagnosis or dosing instructions. Nothing here is for everybody; it's for somebody.

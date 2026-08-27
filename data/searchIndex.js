@@ -66,11 +66,11 @@ function buildDoshaInfoEntries() {
 
 function buildCyclesEntries() {
   return [...SEASONAL_CONTENT, ...LUNAR_CONTENT].map(c => ({
-    id: `cycles:${c.id}`, source: 'cycles', sourceLabel: 'Journey', group: 'content',
+    id: `cycles:${c.id}`, source: 'cycles', sourceLabel: 'From Thea', group: 'content',
     title: c.title, subtitle: c.label,
     searchableText: joinText(c.label, c.title, c.body),
     snippet: c.body,
-    route: '/journey', params: { tab: 'cycles' },
+    route: '/cycles',
   }));
 }
 

@@ -1,8 +1,5 @@
-import { View, Pressable, Text, StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
 import BackButton from './BackButton';
 import SearchButton from './SearchButton';
 
@@ -14,9 +11,9 @@ import SearchButton from './SearchButton';
 // variant. See docs/roadmap.md's design-cohesion audit (July 30 2026) for
 // the full inventory this was built from.
 //
-// left: 'menu' | 'back' | 'none' — 'menu' auto-hides (renders an empty
-//   same-width spacer instead) in Web View, matching how every hub screen
-//   already hid its hamburger there before this component existed.
+// left: 'back' | 'none' — the drawer 'menu' variant was removed in the
+//   nav restructure (Aug 2026); every tab root renders just the centered
+//   mark now, with no per-screen Header call at all.
 // onBack: passed straight to BackButton's onPress when left='back' — the
 //   caller decides between router.back(), smartBack('/'), or a custom
 //   handler (e.g. intake.js's SectionForm uses a different back target).
@@ -27,12 +24,8 @@ import SearchButton from './SearchButton';
 //   (tab roots) omit it.
 export default function Header({ title, left = 'none', onBack, right, bordered = false }) {
   const { theme: { colors: c, spacing, type } } = useTheme();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
 
-  const leftEl = left === 'menu'
-    ? (isWebMode ? <View style={s.btn} /> : <Pressable style={s.btn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>)
-    : left === 'back'
+  const leftEl = left === 'back'
     ? <BackButton onPress={onBack} color={c.text} />
     : null;
 
@@ -52,14 +45,6 @@ export default function Header({ title, left = 'none', onBack, right, bordered =
       <Text style={[type.h1, { color: c.text }]} numberOfLines={1}>{title}</Text>
       {rightEl}
     </View>
-  );
-}
-
-function MenuIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
   );
 }
 

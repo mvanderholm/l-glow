@@ -9,12 +9,10 @@ import * as NavigationBar from 'expo-navigation-bar';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { ViewModeProvider, useViewMode } from '../context/ViewModeContext';
-import { DrawerProvider } from '../context/DrawerContext';
 import { AuthProvider } from '../context/AuthContext';
 import LogoMark from '../components/LogoMark';
 import WebLayout from '../components/WebLayout';
 import BottomNav from '../components/BottomNav';
-import HamburgerDrawer from '../components/HamburgerDrawer';
 
 function HeaderLogo() {
   return <LogoMark size={36} compact />;
@@ -145,12 +143,16 @@ function AppNavigator() {
       <Stack.Screen name="login"        options={{ headerShown: false }} />
       <Stack.Screen name="signup"       options={{ headerShown: false }} />
       <Stack.Screen name="welcome"      options={{ headerShown: false }} />
+      <Stack.Screen name="assessments"  options={{ headerShown: false }} />
+      <Stack.Screen name="settings"     options={{ headerShown: false }} />
+      <Stack.Screen name="explore"      options={{ headerShown: false }} />
+      <Stack.Screen name="cycles"       options={{ headerShown: false }} />
+      <Stack.Screen name="thea"         options={{ headerShown: false }} />
     </Stack>
   );
 
   return (
     <>
-      <HamburgerDrawer />
       <StatusBar style={theme.statusBar} />
       {isPractitionerRoute ? (
         <View style={isWeb ? { width: '100%', height: '100vh' } : { flex: 1 }}>
@@ -195,9 +197,7 @@ export default function RootLayout() {
     <ThemeProvider>
       <ViewModeProvider>
         <AuthProvider>
-          <DrawerProvider>
-            <AppNavigator />
-          </DrawerProvider>
+          <AppNavigator />
         </AuthProvider>
       </ViewModeProvider>
     </ThemeProvider>

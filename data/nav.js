@@ -18,31 +18,20 @@
 // with this, since nothing links to them anymore.
 
 import { BOOKING_URL } from './booking';
-import { SPOTIFY_PROFILE_URL } from './content/music';
 
+// Nav restructure, Move 3 (Aug 2026): the hamburger drawer this file used
+// to feed is gone — WebLayout is the only remaining consumer. The old
+// Home/Your Profile/My Journey group is dropped since it just duplicated
+// BottomNav's own 4 tabs (My Journey pointed at /journey, now a redirect
+// stub to /you); the Playlist link is dropped since Today's Sound
+// (app/index.js's MusicCard) already supersedes it; Practitioner Hub moved
+// to a plain row on /settings instead of its own section here, matching
+// where the mobile app now surfaces it.
 export const NAV_SECTIONS = [
-  [
-    { key: 'home',    label: 'Home',           href: '/' },
-    { key: 'profile', label: 'Your Profile',   href: '/you' },
-    { key: 'journey', label: 'My Journey',     href: '/journey' },
-  ],
   [
     { key: 'learn',   label: 'Learn',          href: '/learn' },
     { key: 'journal', label: 'Journal',        href: '/journal' },
     { key: 'about',   label: 'About Thea',     href: '/about' },
     { key: 'booking', label: 'Book a Session', external: BOOKING_URL },
   ],
-  [
-    { key: 'playlist', label: 'Playlist', external: SPOTIFY_PROFILE_URL },
-  ],
-];
-
-// Kept out of NAV_SECTIONS itself (rather than baked in and hidden by a
-// per-item flag) so both render sites — HamburgerDrawer and WebLayout —
-// append it the same conditional way instead of one of them quietly
-// drifting out of sync, the exact failure mode this file's own header
-// comment exists to prevent. Only ever shown for role === 'practitioner'
-// accounts (see context/AuthContext.js's isPractitioner).
-export const PRACTITIONER_NAV_SECTION = [
-  { key: 'practitioner', label: 'Practitioner Hub', href: '/practitioner' },
 ];

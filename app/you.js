@@ -1,19 +1,20 @@
-import { View, Text, StyleSheet, Pressable, ScrollView, Switch, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { card } from '../theme/index';
 import {
   loadDoshaResult, loadGunaResult, loadTongueResult, loadAgniResult, loadRecentCheckins, loadPrakritiProgress, loadVikritiProgress,
-  loadUserName, saveUserName, loadFirstName, saveFirstName, loadLastName, saveLastName, loadPhone, savePhone, loadAddress, saveAddress,
-  loadCity, saveCity, loadState, saveState, loadZip, saveZip,
+  loadUserName,
 } from '../data/user/storage';
+import { loadAllJournalEntries } from './journal';
+import { computeVikritiScores } from '../data/user/vikritiScoring';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
-import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
 import { SECTIONS, sectionProgress, loadIntake } from './intake';
-import Header from '../components/Header';
+import Constitution from '../components/Constitution';
+import LogoMark from '../components/LogoMark';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 function computeStats(checkins) {
@@ -41,54 +42,22 @@ function computeStats(checkins) {
   return { streak, total, thisWeek };
 }
 
-function Field({ label, value, onChangeText, colors: c, placeholder, keyboardType, autoCapitalize, containerStyle }) {
-  return (
-    <View style={[{ marginBottom: 12 }, containerStyle]}>
-      <Text style={[styles.fieldLabel, { color: c.textMuted }]}>{label}</Text>
-      <TextInput
-        style={[styles.fieldInput, { color: c.text, backgroundColor: c.surfaceAlt, borderColor: c.border }]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={c.textMuted}
-        keyboardType={keyboardType}
-        autoCapitalize={autoCapitalize}
-      />
-    </View>
-  );
-}
-
-const SETTINGS = [
-  { label: 'Reminders',           Icon: BellIcon,     soon: true  },
-  { label: 'Help & guidance',     Icon: QuestionIcon, soon: true  },
-];
-
 export default function You() {
   const { theme: { colors: c, spacing } } = useTheme();
   const router = useRouter();
-  const { user, signOut } = useAuth();
-  const scrollRef = useRef(null);
+  const { user } = useAuth();
   const [result, setResult]         = useState(null);
   const [gunaResult, setGunaResult] = useState(null);
   const [tongueResult, setTongueResult] = useState(null);
   const [agniResult, setAgniResult] = useState(null);
   const [prakritiProgress, setPrakritiProgress] = useState(null);
   const [vikritiProgress, setVikritiProgress]   = useState(null);
+  const [vikritiScores, setVikritiScores] = useState(undefined); // undefined = loading, null = signed out or not enough data
   const [intake, setIntake]         = useState(null);
   const [stats, setStats]           = useState({ streak: 0, total: 0, thisWeek: 0 });
+  const [hungerBars, setHungerBars] = useState([]); // last 7 check-ins' hunger values, oldest first
+  const [journalEntries, setJournalEntries] = useState(null);
   const [userName, setUserName]     = useState('');
-  const [firstName, setFirstName]   = useState('');
-  const [lastName, setLastName]     = useState('');
-  const [phone, setPhone]           = useState('');
-  const [address, setAddress]       = useState('');
-  const [city, setCity]             = useState('');
-  const [state, setState]           = useState('');
-  const [zip, setZip]               = useState('');
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [profileDraft, setProfileDraft] = useState(null);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [consented, setConsented]   = useState(false);
-  const [consentBusy, setConsentBusy] = useState(false);
   const [manualAvailable, setManualAvailable] = useState(false);
 
   useEffect(() => {
@@ -100,51 +69,16 @@ export default function You() {
     loadVikritiProgress().then(setVikritiProgress);
     loadIntake().then(setIntake);
     loadUserName().then(n => { if (n) setUserName(n); });
-    loadFirstName().then(v => setFirstName(v || ''));
-    loadLastName().then(v => setLastName(v || ''));
-    loadPhone().then(v => setPhone(v || ''));
-    loadAddress().then(v => setAddress(v || ''));
-    loadCity().then(v => setCity(v || ''));
-    loadState().then(v => setState(v || ''));
-    loadZip().then(v => setZip(v || ''));
+    loadAllJournalEntries().then(setJournalEntries);
     loadRecentCheckins(365).then(list => {
       setStats(computeStats(list));
+      setHungerBars(list.slice(0, 7).reverse().map(c => c.hunger ?? 3));
     });
   }, []);
 
-  function startEditProfile() {
-    setProfileDraft({ firstName, lastName, displayName: userName, phone, address, city, state, zip });
-    setEditingProfile(true);
-  }
-
-  async function saveProfile() {
-    setSavingProfile(true);
-    await Promise.all([
-      saveFirstName(profileDraft.firstName),
-      saveLastName(profileDraft.lastName),
-      saveUserName(profileDraft.displayName),
-      savePhone(profileDraft.phone),
-      saveAddress(profileDraft.address),
-      saveCity(profileDraft.city),
-      saveState(profileDraft.state),
-      saveZip(profileDraft.zip),
-    ]);
-    setFirstName(profileDraft.firstName.trim());
-    setLastName(profileDraft.lastName.trim());
-    setUserName(profileDraft.displayName.trim());
-    setPhone(profileDraft.phone.trim());
-    setAddress(profileDraft.address.trim());
-    setCity(profileDraft.city.trim());
-    setState(profileDraft.state.trim());
-    setZip(profileDraft.zip.trim());
-    setSavingProfile(false);
-    setEditingProfile(false);
-  }
-
   useEffect(() => {
-    if (!user) { setConsented(false); return; }
-    supabase.from('users').select('consented_to_practitioner_view').eq('id', user.id).single()
-      .then(({ data }) => setConsented(!!data?.consented_to_practitioner_view));
+    if (!user) { setVikritiScores(null); return; }
+    computeVikritiScores(user.id).then(setVikritiScores);
   }, [user]);
 
   // RLS on user_manuals only returns a row to its owner when status =
@@ -156,19 +90,13 @@ export default function You() {
       .then(({ data }) => setManualAvailable(!!data));
   }, [user]);
 
-  async function toggleConsent(next) {
-    setConsented(next); // optimistic — RLS already lets a user update their own row
-    setConsentBusy(true);
-    const { error } = await supabase.from('users').update({ consented_to_practitioner_view: next }).eq('id', user.id);
-    if (error) setConsented(!next); // revert on failure
-    setConsentBusy(false);
-  }
-
   return (
     <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: c.bg }}>
-      <Header title="You" left="menu" right="search" />
+      <View style={{ flexDirection: 'row', justifyContent: 'center', paddingVertical: 12 }}>
+        <LogoMark size={36} compact />
+      </View>
 
-      <ScrollView ref={scrollRef} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 32 }} showsVerticalScrollIndicator={false}>
 
         {/* Avatar */}
         <View style={styles.avatarSection}>
@@ -176,96 +104,29 @@ export default function You() {
             <View style={[styles.avatarInner, { backgroundColor: c.surfaceAlt }]}>
               <ImgPlaceholder color={c.textMuted} />
             </View>
-            <Pressable style={[styles.editBadge, { backgroundColor: c.accent, borderColor: c.bg }]} onPress={startEditProfile} hitSlop={6}>
-              <PenIcon color="#FBF9F4" size={10} />
-            </Pressable>
           </View>
-
-          {editingProfile ? (
-            <View style={[styles.profileEditCard, { backgroundColor: c.surface, ...card }]}>
-              <Field colors={c} label="First name" value={profileDraft.firstName} onChangeText={t => setProfileDraft({ ...profileDraft, firstName: t })} />
-              <Field colors={c} label="Last name" value={profileDraft.lastName} onChangeText={t => setProfileDraft({ ...profileDraft, lastName: t })} />
-              <Field colors={c} label="Display name" value={profileDraft.displayName} onChangeText={t => setProfileDraft({ ...profileDraft, displayName: t })} placeholder="What should we call you?" />
-              <Field colors={c} label="Phone" value={profileDraft.phone} onChangeText={t => setProfileDraft({ ...profileDraft, phone: t })} keyboardType="phone-pad" />
-              <Field colors={c} label="Address" value={profileDraft.address} onChangeText={t => setProfileDraft({ ...profileDraft, address: t })} />
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <Field colors={c} label="City" value={profileDraft.city} onChangeText={t => setProfileDraft({ ...profileDraft, city: t })} containerStyle={{ flex: 2, marginBottom: 12 }} />
-                <Field colors={c} label="State" value={profileDraft.state} onChangeText={t => setProfileDraft({ ...profileDraft, state: t })} containerStyle={{ flex: 1, marginBottom: 12 }} />
-                <Field colors={c} label="Zip" value={profileDraft.zip} onChangeText={t => setProfileDraft({ ...profileDraft, zip: t })} keyboardType="number-pad" containerStyle={{ flex: 1, marginBottom: 12 }} />
-              </View>
-              <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-                <Pressable style={[styles.profileSaveBtn, { flex: 1, backgroundColor: c.accent }]} onPress={saveProfile} disabled={savingProfile}>
-                  <Text style={styles.profileSaveBtnText}>{savingProfile ? 'Saving…' : 'Save'}</Text>
-                </Pressable>
-                <Pressable style={[styles.profileSaveBtn, { flex: 1, backgroundColor: c.surfaceAlt }]} onPress={() => setEditingProfile(false)} disabled={savingProfile}>
-                  <Text style={[styles.profileSaveBtnText, { color: c.textMuted }]}>Cancel</Text>
-                </Pressable>
-              </View>
-            </View>
-          ) : (
-            <>
-              <Text style={[styles.name, { color: c.text }]}>{userName || 'You'}</Text>
-              <Text style={[styles.tagline, { color: c.textMedium }]}>Wellness is a return to you.</Text>
-              {user && (
-                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, color: c.textMuted, marginTop: 4 }} numberOfLines={1}>
-                  {user.email}
-                </Text>
-              )}
-            </>
+          <Text style={[styles.name, { color: c.text }]}>{userName || 'You'}</Text>
+          <Text style={[styles.tagline, { color: c.textMedium }]}>Wellness is a return to you.</Text>
+          {user && (
+            <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, color: c.textMuted, marginTop: 4 }} numberOfLines={1}>
+              {user.email}
+            </Text>
           )}
         </View>
 
-        {/* Dosha wheel — only shown after quiz is taken */}
-        {result && result.scores && (() => {
-          const total = (result.scores.vata + result.scores.pitta + result.scores.kapha) || 1;
-          const pcts = {
-            vata:  Math.round((result.scores.vata  / total) * 100),
-            pitta: Math.round((result.scores.pitta / total) * 100),
-            kapha: Math.round((result.scores.kapha / total) * 100),
-          };
-          return (
-            <View style={[styles.wheelCard, { backgroundColor: c.surface, ...card }]}>
-              <Text style={[styles.wheelLabel, { color: c.textMuted }]}>Your Constitution</Text>
-              <DoshaWheel scores={result.scores} primary={result.dosha} size={180} />
-
-              {/* Three-dosha percentage breakdown */}
-              <View style={styles.doshaBreakdown}>
-                {[
-                  { key: 'vata',  label: 'Vata'  },
-                  { key: 'pitta', label: 'Pitta' },
-                  { key: 'kapha', label: 'Kapha' },
-                ].map(({ key, label }) => (
-                  <View key={key} style={[styles.doshaStat, { backgroundColor: c.surfaceAlt }]}>
-                    <Text style={[styles.doshaStatPct, { color: DOSHA_COLORS[key] }]}>{pcts[key]}%</Text>
-                    <Text style={[styles.doshaStatName, { color: c.textMuted }]}>{label}</Text>
-                  </View>
-                ))}
-              </View>
-
-              <Pressable
-                style={[styles.retakeBtn, { borderColor: c.border }]}
-                onPress={() => router.push('/quiz')}
-              >
-                <Text style={[styles.retakeBtnText, { color: c.textMuted }]}>Retake quiz</Text>
-              </Pressable>
-            </View>
-          );
-        })()}
-
-        {/* Stats */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 14 }}>
-          {[
-            { Icon: SunIcon,   value: stats.streak,   label: 'Day streak' },
-            { Icon: LotusIcon, value: stats.total,    label: 'Check-ins'  },
-            { Icon: LeafIcon,  value: stats.thisWeek, label: 'This week'  },
-          ].map(s => (
-            <View key={s.label} style={[styles.statCard, { backgroundColor: c.surface, ...card }]}>
-              <s.Icon color={c.textMuted} size={18} />
-              <Text style={[styles.statValue, { color: c.text }]}>{s.value}</Text>
-              <Text style={[styles.statLabel, { color: c.textMuted }]}>{s.label}</Text>
-            </View>
-          ))}
+        {/* Your Constitution — Prakriti bars + Vikriti, extracted from
+            journey.js's AyurvedaTab (nav restructure, Move 3). */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 }}>
+          <Text style={[styles.sectionH, { color: c.text }]}>Your Constitution</Text>
+          {result && result.dosha && (
+            <Text style={{ fontSize: 11, letterSpacing: 1.3, textTransform: 'uppercase', color: c.accent, fontFamily: 'Inter_600SemiBold' }}>
+              {result.dosha}
+            </Text>
+          )}
         </View>
+        <Constitution doshaResult={result} vikritiScores={vikritiScores} colors={c} />
+
+        <View style={{ marginTop: 24 }} />
 
         {/* Assessments — one summary row linking to the consolidated
             /assessments screen (nav restructure, Move 2), replacing the
@@ -308,45 +169,61 @@ export default function You() {
           );
         })()}
 
-        {/* Activity / sharing / messaging — separate from the six
-            assessments above, unchanged by the Move 2 consolidation. */}
+        {/* History — stats + a compact 7-day appetite sparkline (extracted
+            from journey.js's HabitsTab, simplified to match the mockup's
+            card instead of the full dimension-picker chart, which is still
+            reachable via Activity log → /activity) + Journal/Activity rows. */}
+        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>History</Text>
+        <View style={[styles.historyCard, { backgroundColor: c.surface, ...card }]}>
+          <View style={{ flexDirection: 'row' }}>
+            {[
+              { value: stats.total, label: 'Check-ins' },
+              { value: journalEntries?.length ?? 0, label: 'Journal entries' },
+              { value: stats.total ? Math.max(stats.total, stats.thisWeek) : 0, label: 'Days tracked' },
+            ].map(s => (
+              <View key={s.label} style={{ flex: 1 }}>
+                <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 26, color: c.text }}>{s.value}</Text>
+                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+          {hungerBars.length > 0 && (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 5, height: 52, marginTop: 14 }}>
+                {hungerBars.map((v, i) => (
+                  <View key={i} style={{ flex: 1, height: `${20 + (v / 5) * 80}%`, borderRadius: 3, backgroundColor: c.accent, opacity: 0.35 + (v / 5) * 0.5 }} />
+                ))}
+              </View>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11.5, color: c.textMuted, marginTop: 8 }}>
+                Nourishment appetite · last {hungerBars.length} check-ins
+              </Text>
+            </>
+          )}
+        </View>
+
         <View style={[styles.settingsList, { backgroundColor: c.surface, ...card, marginTop: 10 }]}>
-          {[
-            { label: 'Your Activity',  Icon: ActivityIcon, activity: true },
-            ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
-            // Was native-only per Matt's original Aug 7 2026 scope call (in-app
-            // messaging as an app feature, not a web one) — reversed Aug 11
-            // 2026, promoted on web too now. Push notifications themselves are
-            // still native-only (no web push mechanism exists), so a web user
-            // sending/receiving here won't get pushed, only whoever's on the
-            // native app does — same as before, just visible from both places.
-            ...(user ? [{ label: 'Message Thea', Icon: MessageIcon, message: true }] : []),
-          ].map((item, idx, rows) => (
-            <Pressable
-              key={item.label}
-              style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-              disabled={item.share}
-              onPress={() => {
-                if (item.activity) router.push('/activity');
-                if (item.message) router.push('/messages');
-              }}
-            >
-              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                <item.Icon color={c.textMuted} size={15} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>{item.label}</Text>
-                {item.share && (
-                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                    {consented ? 'Thea can see your intake form' : 'Your intake form stays private'}
-                  </Text>
-                )}
-              </View>
-              {item.share
-                ? <Switch value={consented} onValueChange={toggleConsent} disabled={consentBusy} />
-                : <ChevronIcon color={c.textMuted} />}
-            </Pressable>
-          ))}
+          <Pressable style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]} onPress={() => router.push('/journal')}>
+            <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+              <JournalIcon color={c.textMuted} size={15} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>Journal</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 3 }}>
+                {journalEntries?.length ? `Last entry ${new Date(journalEntries[0].date + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}` : 'No entries yet'}
+              </Text>
+            </View>
+            <ChevronIcon color={c.textMuted} />
+          </Pressable>
+          <Pressable style={styles.settingsRow} onPress={() => router.push('/activity')}>
+            <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+              <ActivityIcon color={c.textMuted} size={15} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>Activity log</Text>
+              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 3 }}>Every check-in, intention, and practice · 90 days</Text>
+            </View>
+            <ChevronIcon color={c.textMuted} />
+          </Pressable>
         </View>
 
         {/* Your User's Manual — AI-drafted from everything you've shared, in
@@ -374,84 +251,23 @@ export default function You() {
           </View>
         )}
 
-        {/* Settings */}
-        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Settings</Text>
-        <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
-          {/* Personal details — signup only ever collects a first name, and
-              the only other way to add the rest (last name, phone, address)
-              was a small pencil badge on the avatar placeholder above, which
-              wasn't discoverable enough. Aug 25 2026, Matt: "it only asks
-              for my first name and I can't fill out anything else after
-              signup." Reuses startEditProfile()/the same form the pencil
-              badge already opens — this is just a second, clearer way in. */}
-          <Pressable
-            style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-            onPress={() => { startEditProfile(); scrollRef.current?.scrollTo({ y: 0, animated: true }); }}
-          >
-            <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-              <PersonIcon color={c.textMuted} size={15} />
+        {/* Settings & account — consolidated to one row linking to
+            /settings (nav restructure, Move 3), matching the mockup;
+            personal details, reminders, help, the practitioner-only hub
+            link, and sign in/out all live there now. */}
+        <View style={{ marginTop: 28 }}>
+          <Pressable style={[styles.settingsList, { backgroundColor: c.surface, ...card }]} onPress={() => router.push('/settings')}>
+            <View style={styles.settingsRow}>
+              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                <GearIcon color={c.textMuted} size={15} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>Settings & account</Text>
+                <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 3 }}>Personal details, reminders, sign out</Text>
+              </View>
+              <ChevronIcon color={c.textMuted} />
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.settingsLabel, { color: c.text }]}>Personal details</Text>
-              <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 2 }}>
-                Name, phone, address
-              </Text>
-            </View>
-            <ChevronIcon color={c.textMuted} />
           </Pressable>
-          {SETTINGS.map((item, idx) => (
-            <Pressable
-              key={item.label}
-              style={[styles.settingsRow, idx < SETTINGS.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-            >
-              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                <item.Icon color={c.textMuted} size={15} />
-              </View>
-              <Text style={[styles.settingsLabel, { color: item.soon ? c.textMuted : c.text }]}>{item.label}</Text>
-              {item.soon
-                ? <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11, color: c.textMuted }}>soon</Text>
-                : <ChevronIcon color={c.textMuted} />}
-            </Pressable>
-          ))}
-        </View>
-
-        {/* Account */}
-        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12, marginTop: 28 }]}>Account</Text>
-        <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
-          {user ? (
-            <Pressable
-              style={styles.settingsRow}
-              onPress={signOut}
-            >
-              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                <SignOutIcon color={c.textMuted} size={15} />
-              </View>
-              <Text style={[styles.settingsLabel, { color: c.text }]}>Sign out</Text>
-            </Pressable>
-          ) : (
-            <>
-              <Pressable
-                style={[styles.settingsRow, { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-                onPress={() => router.push('/login')}
-              >
-                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                  <PersonIcon color={c.textMuted} size={15} />
-                </View>
-                <Text style={[styles.settingsLabel, { color: c.text }]}>Sign in</Text>
-                <ChevronIcon color={c.textMuted} />
-              </Pressable>
-              <Pressable
-                style={styles.settingsRow}
-                onPress={() => router.push('/signup')}
-              >
-                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                  <PersonIcon color={c.accent} size={15} />
-                </View>
-                <Text style={[styles.settingsLabel, { color: c.accent }]}>Create account</Text>
-                <ChevronIcon color={c.accent} />
-              </Pressable>
-            </>
-          )}
         </View>
 
         <View style={{ alignItems: 'center', marginTop: 32 }}>
@@ -479,60 +295,21 @@ function ImgPlaceholder({ color }) {
 
 // ── Icons ──────────────────────────────────────────────────────────────────
 
-function SlidersIcon({ color }) {
-  return <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-    <Path d="M4 6h16M4 12h16M4 18h16" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-    <Circle cx="8" cy="6" r="2" fill={color} />
-    <Circle cx="16" cy="12" r="2" fill={color} />
-    <Circle cx="10" cy="18" r="2" fill={color} />
-  </Svg>;
-}
-function PenIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M17 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z" stroke={color} strokeWidth={1.4} />
-    <Path d="M9 8h6M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-  </Svg>;
-}
-function SunIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="4" stroke={color} strokeWidth={1.5} />
-    <Path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-  </Svg>;
-}
-function LotusIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="8" stroke={color} strokeWidth={1.4} />
-    <Circle cx="12" cy="12" r="2" stroke={color} strokeWidth={1.4} />
-    <Path d="M12 4v2M12 18v2M4 12h2M18 12h2" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-  </Svg>;
-}
-function LeafIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 21C12 21 5 16 5 10a7 7 0 0 1 14 0c0 6-7 11-7 11Z" stroke={color} strokeWidth={1.5} />
-    <Path d="M12 21V10" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
-  </Svg>;
-}
-function BellIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M6 10a6 6 0 0 1 12 0c0 3 1.5 5 2 6H4c.5-1 2-3 2-6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    <Path d="M10 20a2 2 0 0 0 4 0" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-  </Svg>;
-}
-function QuestionIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.4} />
-    <Path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-  </Svg>;
-}
 function ChevronIcon({ color }) {
   return <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
     <Path d="M9 18l6-6-6-6" stroke={color} strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }
-function PersonIcon({ color, size }) {
+function JournalIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="12" cy="8" r="4" stroke={color} strokeWidth={1.5} />
-    <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
+    <Path d="M4.5 5.5A2 2 0 0 1 6.5 3.5H19v14H6.5a2 2 0 0 0-2 2z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
+    <Path d="M8 8h7M8 11.5h5" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
+  </Svg>;
+}
+function GearIcon({ color, size }) {
+  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="3" stroke={color} strokeWidth={1.4} />
+    <Path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 15a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.6 1.6 0 0 0 11 4.3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7 2 2 0 1 1 0 4h-.2z" stroke={color} strokeWidth={1.3} strokeLinejoin="round" />
   </Svg>;
 }
 function PrakritiIcon({ color, size }) {
@@ -540,19 +317,6 @@ function PrakritiIcon({ color, size }) {
     <Path d="M12 21V11" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
     <Path d="M12 11c0-4 3-6 7-6 0 4-2 7-7 7Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 14c0-3.5-2.5-5.5-6-5.5 0 3.5 2 6 6 6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-  </Svg>;
-}
-function MessageIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M4 5.5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9l-4.5 3.5V17.5H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-  </Svg>;
-}
-function ShareIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Circle cx="6" cy="12" r="2.5" stroke={color} strokeWidth={1.4} />
-    <Circle cx="18" cy="6" r="2.5" stroke={color} strokeWidth={1.4} />
-    <Circle cx="18" cy="18" r="2.5" stroke={color} strokeWidth={1.4} />
-    <Path d="M8.2 10.8 15.8 7.2M8.2 13.2 15.8 16.8" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
 function ActivityIcon({ color, size }) {
@@ -568,48 +332,15 @@ function ManualIcon({ color, size }) {
     <Path d="M8.5 7h7M8.5 10h7" stroke={color} strokeWidth={1.3} strokeLinecap="round" />
   </Svg>;
 }
-function SignOutIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-    <Path d="M16 17l5-5-5-5M21 12H9" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>;
-}
-
 const styles = StyleSheet.create({
 
   avatarSection: { alignItems: 'center', paddingVertical: 20 },
   avatarRing:    { width: 88, height: 88, borderRadius: 44, borderWidth: 1.5, position: 'relative', marginBottom: 12 },
   avatarInner:   { width: 88, height: 88, borderRadius: 44, overflow: 'hidden' },
-  editBadge:     { position: 'absolute', bottom: 0, right: 0, width: 27, height: 27, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   name:          { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 28, lineHeight: 36 },
   tagline:       { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 15.5, fontStyle: 'italic', marginTop: 2 },
 
-  profileEditCard: { width: '100%', borderRadius: 22, padding: 18, marginTop: 4 },
-  fieldLabel: { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 },
-  fieldInput: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, fontFamily: 'Inter_400Regular' },
-  profileSaveBtn: { borderRadius: 999, paddingVertical: 10, alignItems: 'center' },
-  profileSaveBtnText: { color: '#FBF9F4', fontFamily: 'Inter_600SemiBold', fontSize: 13 },
-
-  wheelCard:     { borderRadius: 26, padding: 20, alignItems: 'center', marginBottom: 14 },
-  wheelLabel:    { fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1.98, textTransform: 'uppercase', marginBottom: 20 },
-  doshaBreakdown:  { flexDirection: 'row', gap: 10, marginTop: 20, width: '100%' },
-  doshaStat:       { flex: 1, borderRadius: 18, paddingVertical: 14, alignItems: 'center', gap: 4 },
-  doshaStatPct:    { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 26, lineHeight: 30 },
-  doshaStatName:   { fontFamily: 'Inter_600SemiBold', fontSize: 10, letterSpacing: 1.2, textTransform: 'uppercase' },
-  retakeBtn:     { marginTop: 14, paddingVertical: 8, paddingHorizontal: 20, borderRadius: 999, borderWidth: 1 },
-  retakeBtnText: { fontFamily: 'Inter_400Regular', fontSize: 13 },
-
-  statCard:  { flex: 1, borderRadius: 26, padding: 15, alignItems: 'center', gap: 4 },
-  statValue: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 25, lineHeight: 32 },
-  statLabel: { fontFamily: 'Inter_400Regular', fontSize: 11, textAlign: 'center', lineHeight: 15 },
-
-  progressCard:  { borderRadius: 26, padding: 20 },
-  progressTitle: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 18, lineHeight: 24 },
-  progressPct:   { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 34, lineHeight: 40, color: '#9A5151' },
-  progressOf:    { fontFamily: 'Inter_400Regular', fontSize: 13, lineHeight: 18 },
-  track:         { height: 4, borderRadius: 2 },
-  fill:          { height: 4, borderRadius: 2 },
-  progressNote:  { fontFamily: 'PlayfairDisplay_400Regular', fontSize: 14.5, fontStyle: 'italic', marginTop: 10, lineHeight: 20 },
+  historyCard: { borderRadius: 22, padding: 18 },
 
   sectionH: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, lineHeight: 24 },
   manualCard:    { borderRadius: 26, padding: 20 },

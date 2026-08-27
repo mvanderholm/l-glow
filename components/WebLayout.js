@@ -2,33 +2,28 @@ import { View, Text, Pressable, StyleSheet, Linking } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
 import { useViewMode } from '../context/ViewModeContext';
-import { useAuth } from '../context/AuthContext';
-import { NAV_SECTIONS, PRACTITIONER_NAV_SECTION } from '../data/nav';
+import { NAV_SECTIONS } from '../data/nav';
 import { TABS as BOTTOM_TABS } from './BottomNav';
 import LogoMark from './LogoMark';
 
-// Web View has no separate bottom tab bar, so this sidebar has to cover both
-// navigational planes mobile splits across two controls: BottomNav's 5 tabs,
-// plus the hamburger drawer's items (data/nav.js — same list the drawer
-// renders, so the two can't drift apart the way they used to). Home/Your
-// Profile/My Journey leads, matching the drawer's own order, then the
-// BottomNav tabs, then the rest of the drawer's groups.
+// Web View has no separate bottom tab bar, so this sidebar covers both
+// navigational planes mobile splits across two controls: BottomNav's 4
+// tabs, plus whatever's left in data/nav.js's own list — the tabs lead,
+// same live-import relationship as before (nav restructure, Move 3).
+// Practitioner Hub no longer gets its own sidebar section — it's a plain
+// row on /settings now, reachable through the You tab like everywhere else.
 const NAV_SECTIONS_WITH_TABS = [
-  NAV_SECTIONS[0],
   BOTTOM_TABS.map(t => ({ key: t.href, label: t.name, href: t.href })),
-  ...NAV_SECTIONS.slice(1),
+  ...NAV_SECTIONS,
 ];
 
 export default function WebLayout({ children }) {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
   const { setViewMode } = useViewMode();
-  const { isPractitioner } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const styles = makeStyles(c, spacing, radius);
-  // Same conditional append HamburgerDrawer.js does, kept in sync for the
-  // same reason NAV_SECTIONS itself is centralized (see data/nav.js).
-  const sections = isPractitioner ? [...NAV_SECTIONS_WITH_TABS, PRACTITIONER_NAV_SECTION] : NAV_SECTIONS_WITH_TABS;
+  const sections = NAV_SECTIONS_WITH_TABS;
 
   return (
     <View style={styles.root}>

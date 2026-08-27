@@ -3,8 +3,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../context/ThemeContext';
-import { useDrawer } from '../context/DrawerContext';
-import { useViewMode } from '../context/ViewModeContext';
 import { card } from '../theme/index';
 import { currentSeason } from '../data/content/recommendations';
 import { doshaInfo } from '../data/content/quiz';
@@ -17,7 +15,6 @@ import { appendIntentionToJournal } from './journal';
 import { currentMythbuster } from '../data/content/mythbusters';
 import { loadMythbusters, refreshMythbusters, loadIntentions, refreshIntentions, loadPlaylists, refreshPlaylists, loadRoutines, refreshRoutines, loadAffirmations, refreshAffirmations } from '../data/content/remote';
 import { pickTodaysPlaylist } from '../data/content/music';
-import SearchButton from '../components/SearchButton';
 import OnboardingJourneyModal from '../components/OnboardingJourneyModal';
 import DailyPractices from '../components/DailyPractices';
 import TodaysGuidance from '../components/TodaysGuidance';
@@ -55,8 +52,6 @@ function todayLabel() {
 
 export default function Home() {
   const { theme: { colors: c, spacing, radius, type } } = useTheme();
-  const { open: openDrawer } = useDrawer();
-  const { isWebMode } = useViewMode();
   const { user } = useAuth();
   const router = useRouter();
   const [savedDosha, setSavedDosha] = useState(null);
@@ -97,11 +92,11 @@ export default function Home() {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
+        {/* Header — just the mark, no hamburger/search (nav restructure,
+            Move 3): the drawer's gone and Explore's own search bar replaces
+            the header search icon, matching the mockup on every tab root. */}
         <View style={styles.header}>
-          {isWebMode ? <View style={styles.headerBtn} /> : <Pressable style={styles.headerBtn} onPress={openDrawer}><MenuIcon color={c.text} /></Pressable>}
           <LogoLockup color={c.text} />
-          <SearchButton color={c.text} style={styles.headerBtn} />
         </View>
 
         {/* Greeting */}
@@ -442,13 +437,6 @@ function LogoStar({ color, size = 14 }) {
   );
 }
 
-function MenuIcon({ color }) {
-  return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-      <Path d="M3 7h18M3 12h18M3 17h18" stroke={color} strokeWidth={1.7} strokeLinecap="round" />
-    </Svg>
-  );
-}
 
 
 // ── Styles ─────────────────────────────────────────────────────────────────
