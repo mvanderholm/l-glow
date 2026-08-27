@@ -9,9 +9,6 @@ import {
   loadUserName, saveUserName, loadFirstName, saveFirstName, loadLastName, saveLastName, loadPhone, savePhone, loadAddress, saveAddress,
   loadCity, saveCity, loadState, saveState, loadZip, saveZip,
 } from '../data/user/storage';
-import { tongueReadings } from '../data/content/tongueCheck';
-import { agniResults } from '../data/content/agniQuiz';
-import { gunaResults } from '../data/content/gunaQuiz';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../config/supabase';
 import { DoshaWheel, DOSHA_COLORS } from '../components/DoshaWheel';
@@ -44,17 +41,6 @@ function computeStats(checkins) {
   return { streak, total, thisWeek };
 }
 
-function tierProgressLabel(progress) {
-  if (!progress) return null;
-  const n = Object.values(progress).filter(Boolean).length;
-  if (n === 0) return null;
-  return n === 3 ? 'All 3 sections complete' : `${n} of 3 sections complete`;
-}
-
-function cap(s) {
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
-}
-
 function Field({ label, value, onChangeText, colors: c, placeholder, keyboardType, autoCapitalize, containerStyle }) {
   return (
     <View style={[{ marginBottom: 12 }, containerStyle]}>
@@ -68,17 +54,6 @@ function Field({ label, value, onChangeText, colors: c, placeholder, keyboardTyp
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
       />
-    </View>
-  );
-}
-
-// Colored result pill — every result type already carries its own canonical
-// color in its content data (DOSHA_COLORS, gunaResults[x].color, etc.), so
-// this reuses that instead of inventing a separate badge palette.
-function ResultBadge({ label, color }) {
-  return (
-    <View style={{ alignSelf: 'flex-start', backgroundColor: color + '26', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2, marginTop: 3 }}>
-      <Text style={{ color, fontFamily: 'Inter_600SemiBold', fontSize: 11 }}>{label}</Text>
     </View>
   );
 }
@@ -292,38 +267,52 @@ export default function You() {
           ))}
         </View>
 
-        {/* Your Assessments — dosha/guna results + intake form live here now, not just the drawer */}
-        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Your Assessments</Text>
+        {/* Assessments — one summary row linking to the consolidated
+            /assessments screen (nav restructure, Move 2), replacing the
+            flat 6-row list this used to be. */}
+        <Text style={[styles.sectionH, { color: c.text, marginBottom: 12 }]}>Assessments</Text>
         {(() => {
-          const doshaBadge = result && result.dosha
-            ? { label: cap(result.dosha), color: DOSHA_COLORS[result.dosha] } : null;
-          const agniBadge = agniResult
-            ? { label: (agniResults[agniResult.agniType] ?? agniResults.sama).name, color: (agniResults[agniResult.agniType] ?? agniResults.sama).color }
-            : null;
-          const gunaBadge = gunaResult
-            ? { label: `${cap(gunaResult.dominant)} dominant`, color: gunaResults[gunaResult.dominant]?.color }
-            : null;
-          const tongueBadge = tongueResult
-            ? { label: (tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).name, color: (tongueReadings[tongueResult.reading] ?? tongueReadings.balanced).color }
-            : null;
-          const prakritiProgressText = tierProgressLabel(prakritiProgress);
-          const vikritiProgressText = tierProgressLabel(vikritiProgress);
+          const doshaDone = !!(result && prakritiProgress?.foundation);
+          const vikritiDone = !!vikritiProgress && Object.values(vikritiProgress).some(Boolean);
           const intakeFilled = intake ? SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, intake)?.filled || 0), 0) : 0;
           const intakeTotal  = intake ? SECTIONS.reduce((sum, sec) => sum + (sectionProgress(sec, intake)?.total  || 0), 0) : 0;
-          const intakeProgressText = !intakeTotal ? null
-            : intakeFilled === 0 ? 'Not started'
-            : intakeFilled === intakeTotal ? 'Complete'
-            : `${Math.round((intakeFilled / intakeTotal) * 100)}% complete — tap to continue`;
+          const intakeDone = intakeTotal > 0 && intakeFilled === intakeTotal;
 
-          const rows = [
-            { label: 'My Dosha',        Icon: LeafIcon, dosha: true, badge: doshaBadge, notTaken: !doshaBadge },
-            { label: 'Agni Assessment', Icon: FireIcon, agni: true, badge: agniBadge, notTaken: !agniBadge },
-            { label: 'Guna Assessment', Icon: GunaIcon, guna: true, badge: gunaBadge, notTaken: !gunaBadge },
-            { label: 'Tongue Check',    Icon: TongueIcon, tongue: true, badge: tongueBadge, notTaken: !tongueBadge },
-            { label: 'Prakriti',        Icon: PrakritiIcon, prakriti: true, progressText: prakritiProgressText, notTaken: !prakritiProgressText },
-            { label: 'Vikriti',         Icon: VikritiIcon, vikriti: true, progressText: vikritiProgressText, notTaken: !vikritiProgressText },
-            { label: 'My Intake Form',  Icon: ClipboardIcon, intake: true, progressText: intakeProgressText },
-            { label: 'Your Activity',   Icon: ActivityIcon, activity: true },
+          const items = [
+            { label: 'Dosha',        done: doshaDone },
+            { label: 'Vikriti',      done: vikritiDone },
+            { label: 'Agni',         done: !!agniResult },
+            { label: 'Guna',         done: !!gunaResult },
+            { label: 'Tongue Check', done: !!tongueResult },
+            { label: 'Intake Form',  done: intakeDone },
+          ];
+          const doneCount = items.filter(i => i.done).length;
+          const missing = items.filter(i => !i.done).map(i => i.label);
+          const subtitle = missing.length === 0
+            ? 'All six complete'
+            : `${doneCount} complete · ${missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(', ')} and ${missing[missing.length - 1]}`} still open`;
+
+          return (
+            <Pressable style={[styles.settingsList, { backgroundColor: c.surface, ...card }]} onPress={() => router.push('/assessments')}>
+              <View style={[styles.settingsRow]}>
+                <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                  <PrakritiIcon color={c.textMuted} size={15} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>All six assessments</Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 3 }}>{subtitle}</Text>
+                </View>
+                <ChevronIcon color={c.textMuted} />
+              </View>
+            </Pressable>
+          );
+        })()}
+
+        {/* Activity / sharing / messaging — separate from the six
+            assessments above, unchanged by the Move 2 consolidation. */}
+        <View style={[styles.settingsList, { backgroundColor: c.surface, ...card, marginTop: 10 }]}>
+          {[
+            { label: 'Your Activity',  Icon: ActivityIcon, activity: true },
             ...(user ? [{ label: 'Share with Thea', Icon: ShareIcon, share: true }] : []),
             // Was native-only per Matt's original Aug 7 2026 scope call (in-app
             // messaging as an app feature, not a web one) — reversed Aug 11
@@ -332,99 +321,33 @@ export default function You() {
             // sending/receiving here won't get pushed, only whoever's on the
             // native app does — same as before, just visible from both places.
             ...(user ? [{ label: 'Message Thea', Icon: MessageIcon, message: true }] : []),
-          ];
-          return (
-            <View style={[styles.settingsList, { backgroundColor: c.surface, ...card }]}>
-              {rows.map((item, idx) => (
-                <Pressable
-                  key={item.label}
-                  style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
-                  disabled={item.share}
-                  onPress={() => {
-                    if (item.dosha) router.push(result ? '/result' : '/quiz');
-                    if (item.intake) router.push('/intake');
-                    if (item.activity) router.push('/activity');
-                    if (item.agni) {
-                      if (agniResult) {
-                        router.push({
-                          pathname: '/agni-result',
-                          params: {
-                            dominant: agniResult.agniType,
-                            sama:    agniResult.counts?.sama    ?? 0,
-                            vishama: agniResult.counts?.vishama ?? 0,
-                            tikshna: agniResult.counts?.tikshna ?? 0,
-                            manda:   agniResult.counts?.manda   ?? 0,
-                          },
-                        });
-                      } else {
-                        router.push('/agni-quiz');
-                      }
-                    }
-                    if (item.guna) {
-                      if (gunaResult) {
-                        router.push({
-                          pathname: '/guna-result',
-                          params: {
-                            dominant: gunaResult.dominant,
-                            sattva: gunaResult.scores?.sattva ?? 0,
-                            rajas:  gunaResult.scores?.rajas  ?? 0,
-                            tamas:  gunaResult.scores?.tamas  ?? 0,
-                          },
-                        });
-                      } else {
-                        router.push('/guna-quiz');
-                      }
-                    }
-                    if (item.tongue) {
-                      if (tongueResult) {
-                        router.push({
-                          pathname: '/tongue-result',
-                          params: {
-                            shape: tongueResult.details?.shape, size: tongueResult.details?.size,
-                            color: tongueResult.details?.color, coating: tongueResult.details?.coating,
-                            ama: tongueResult.details?.amaLevel ?? 0,
-                            signs: (tongueResult.details?.signs ?? []).join(','),
-                          },
-                        });
-                      } else {
-                        router.push('/tongue-check');
-                      }
-                    }
-                    if (item.prakriti) router.push('/prakriti');
-                    if (item.vikriti) router.push('/vikriti');
-                    if (item.message) router.push('/messages');
-                  }}
-                >
-                  <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
-                    <item.Icon color={c.textMuted} size={15} />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>{item.label}</Text>
-                    {item.badge && <ResultBadge label={item.badge.label} color={item.badge.color} />}
-                    {item.progressText && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 3 }}>
-                        {item.progressText}
-                      </Text>
-                    )}
-                    {item.notTaken && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 11.5, fontStyle: 'italic', color: c.textMuted, marginTop: 3 }}>
-                        Not yet taken
-                      </Text>
-                    )}
-                    {item.share && (
-                      <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
-                        {consented ? 'Thea can see your intake form' : 'Your intake form stays private'}
-                      </Text>
-                    )}
-                  </View>
-                  {item.share
-                    ? <Switch value={consented} onValueChange={toggleConsent} disabled={consentBusy} />
-                    : <ChevronIcon color={c.textMuted} />}
-                </Pressable>
-              ))}
-            </View>
-          );
-        })()}
+          ].map((item, idx, rows) => (
+            <Pressable
+              key={item.label}
+              style={[styles.settingsRow, idx < rows.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border }]}
+              disabled={item.share}
+              onPress={() => {
+                if (item.activity) router.push('/activity');
+                if (item.message) router.push('/messages');
+              }}
+            >
+              <View style={[styles.settingsIconWrap, { backgroundColor: c.surfaceAlt }]}>
+                <item.Icon color={c.textMuted} size={15} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.settingsLabel, { color: c.text, flex: 0 }]}>{item.label}</Text>
+                {item.share && (
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12, color: c.textMuted, marginTop: 1 }}>
+                    {consented ? 'Thea can see your intake form' : 'Your intake form stays private'}
+                  </Text>
+                )}
+              </View>
+              {item.share
+                ? <Switch value={consented} onValueChange={toggleConsent} disabled={consentBusy} />
+                : <ChevronIcon color={c.textMuted} />}
+            </Pressable>
+          ))}
+        </View>
 
         {/* Your User's Manual — AI-drafted from everything you've shared, in
             Thea's voice, but only ever visible once she's reviewed and
@@ -612,33 +535,11 @@ function PersonIcon({ color, size }) {
     <Path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke={color} strokeWidth={1.5} strokeLinecap="round" />
   </Svg>;
 }
-function GunaIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 3 L20 18 L4 18 Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    <Path d="M12 8 L17 18 L7 18 Z" stroke={color} strokeWidth={0.8} strokeLinejoin="round" opacity="0.5" />
-  </Svg>;
-}
-function FireIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1 1 2 2.5 2 4.5A5 5 0 0 1 7 14.5C7 9 12 7 12 2Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-  </Svg>;
-}
-function TongueIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 3c3 0 5 2 5 5.5S15.5 19 12 21C8.5 19 7 12.5 7 8.5S9 3 12 3Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    <Path d="M12 9v9" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
-  </Svg>;
-}
 function PrakritiIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M12 21V11" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
     <Path d="M12 11c0-4 3-6 7-6 0 4-2 7-7 7Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
     <Path d="M12 14c0-3.5-2.5-5.5-6-5.5 0 3.5 2 6 6 6Z" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-  </Svg>;
-}
-function VikritiIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 12h3.5l2-6 3 12 2-9 1.5 3H21" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
   </Svg>;
 }
 function MessageIcon({ color, size }) {
@@ -658,13 +559,6 @@ function ActivityIcon({ color, size }) {
   return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="12" cy="12" r="8.5" stroke={color} strokeWidth={1.4} />
     <Path d="M12 7.5V12l3 2" stroke={color} strokeWidth={1.4} strokeLinecap="round" strokeLinejoin="round" />
-  </Svg>;
-}
-function ClipboardIcon({ color, size }) {
-  return <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" stroke={color} strokeWidth={1.4} strokeLinejoin="round" />
-    <Path d="M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v0a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2Z" stroke={color} strokeWidth={1.4} />
-    <Path d="M9 12h6M9 16h4" stroke={color} strokeWidth={1.4} strokeLinecap="round" />
   </Svg>;
 }
 function ManualIcon({ color, size }) {
