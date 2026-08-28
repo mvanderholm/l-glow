@@ -107,6 +107,13 @@ export default function Home() {
           <Text style={[type.bodyItalic, { color: c.textMedium }]}>Let's see where you are today.</Text>
         </View>
 
+        {/* Hero image — same shot as the Welcome screen's hero
+            (assets/about-archway.jpg); Thea's favorite of the two, swapped
+            in here in place of the old checkin-tea.jpg, Aug 27 2026. */}
+        <View style={[styles.heroCard, { backgroundColor: c.surface, ...card }]}>
+          <Image source={require('../assets/about-archway.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        </View>
+
         {/* Inline check-in — merges checkin.js's first-question UI with
             today.js's multi-check-in dot rows (nav restructure, Move 1). */}
         <TodayCheckIn dosha={savedDosha || null} />
@@ -460,6 +467,13 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     lineHeight: 20,
+  },
+
+  heroCard: {
+    height: 190,
+    borderRadius: 26,
+    marginBottom: 16,
+    overflow: 'hidden',
   },
 
   affirmCard: {
