@@ -11,6 +11,7 @@ import { BOOKING_URL } from '../data/booking';
 import { INSTAGRAM_HANDLE } from '../data/instagram';
 import { SPOTIFY_PROFILE_URL } from '../data/content/music';
 import LogoMark from '../components/LogoMark';
+import { CornerSprig } from '../components/BotanicalAccent';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 // Thea tab (nav restructure, Move 3/4) — consolidates app/about.js's booking
@@ -70,8 +71,12 @@ export default function Thea() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={[styles.hero, { backgroundColor: c.surfaceAlt, alignSelf: 'center' }]}>
+        <View style={[styles.hero, { backgroundColor: c.surface, borderWidth: 1, borderColor: c.honeyAmber, alignSelf: 'center' }]}>
           <Image source={require('../assets/thea.jpg')} style={{ width: '100%', height: '100%', transform: [{ scale: 1.4 }, { translateY: 5 }] }} resizeMode="cover" />
+          <CornerSprig color={c.olive} size={40} style={{ position: 'absolute', top: 6, right: 6 }} />
+          <View style={{ position: 'absolute', bottom: 6, left: 6, transform: [{ rotate: '180deg' }] }}>
+            <CornerSprig color={c.olive} size={40} />
+          </View>
         </View>
         <Text style={[type.label, { color: c.textMuted, marginTop: spacing.md }]}>Ayurvedic Medicine · RYT · Certified Wellness Coach</Text>
         <Text style={[type.display, { color: c.text, marginTop: 4 }]}>Thea</Text>
