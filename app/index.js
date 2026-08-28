@@ -101,11 +101,15 @@ export default function Home() {
           <Image source={require('../assets/about-archway.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(14,10,7,0.48)' }]} pointerEvents="none" />
           <View style={styles.heroContent}>
-            <LogoLockup color="#F5EDE3" />
-            <Text style={[type.label, { color: 'rgba(245,237,227,0.8)', marginTop: 20 }]}>{todayLabel()}</Text>
-            <Text style={[styles.greetLine, { color: 'rgba(245,237,227,0.85)' }]}>Good morning,</Text>
-            <Text style={[type.display, { color: '#F5EDE3', marginBottom: 6 }]}>{userName ?? ''}</Text>
-            <Text style={[type.bodyItalic, { color: 'rgba(245,237,227,0.78)' }]}>Let's see where you are today.</Text>
+            <View style={{ alignItems: 'center' }}>
+              <LogoLockup color="#F5EDE3" />
+            </View>
+            <View style={{ marginTop: 28 }}>
+              <Text style={[type.label, { color: 'rgba(245,237,227,0.8)' }]}>{todayLabel()}</Text>
+              <Text style={[styles.greetLine, { color: 'rgba(245,237,227,0.85)' }]}>Good morning,</Text>
+              <Text style={[type.display, { color: '#F5EDE3', marginBottom: 6 }]}>{userName ?? ''}</Text>
+              <Text style={[type.bodyItalic, { color: 'rgba(245,237,227,0.78)' }]}>Let's see where you are today.</Text>
+            </View>
           </View>
         </View>
 
@@ -461,9 +465,9 @@ const styles = StyleSheet.create({
   },
   heroContent: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     padding: 20,
-    paddingBottom: 28,
+    paddingTop: 16,
   },
 
   affirmCard: {
