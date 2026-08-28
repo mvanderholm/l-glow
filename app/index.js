@@ -88,31 +88,28 @@ export default function Home() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 4, paddingBottom: 32 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header — just the mark, no hamburger/search (nav restructure,
-            Move 3): the drawer's gone and Explore's own search bar replaces
-            the header search icon, matching the mockup on every tab root. */}
-        <View style={styles.header}>
-          <LogoLockup color={c.text} />
-        </View>
-
-        {/* Greeting */}
-        <View style={{ marginBottom: spacing.lg }}>
-          <Text style={[type.label, { color: c.textMuted, marginBottom: 8 }]}>{todayLabel()}</Text>
-          <Text style={[styles.greetLine, { color: c.textMedium }]}>Good morning,</Text>
-          <Text style={[type.display, { color: c.text, marginBottom: 6 }]}>{userName ?? ''}</Text>
-          <Text style={[type.bodyItalic, { color: c.textMedium }]}>Let's see where you are today.</Text>
-        </View>
-
-        {/* Hero image — same shot as the Welcome screen's hero
-            (assets/about-archway.jpg); Thea's favorite of the two, swapped
-            in here in place of the old checkin-tea.jpg, Aug 27 2026. */}
-        <View style={[styles.heroCard, { backgroundColor: c.surface, ...card }]}>
+        {/* Hero — full-bleed to the top of the screen, same treatment as
+            Welcome's hero (Matt's ask, Aug 28 2026): the mark reversed to
+            white and the greeting overlaid on the image with a dark
+            scrim behind it, instead of a separate header bar + rounded
+            card below it. */}
+        <View style={styles.heroWrap}>
           <Image source={require('../assets/about-archway.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(14,10,7,0.48)' }]} pointerEvents="none" />
+          <View style={styles.heroContent}>
+            <LogoLockup color="#F5EDE3" />
+            <Text style={[type.label, { color: 'rgba(245,237,227,0.8)', marginTop: 20 }]}>{todayLabel()}</Text>
+            <Text style={[styles.greetLine, { color: 'rgba(245,237,227,0.85)' }]}>Good morning,</Text>
+            <Text style={[type.display, { color: '#F5EDE3', marginBottom: 6 }]}>{userName ?? ''}</Text>
+            <Text style={[type.bodyItalic, { color: 'rgba(245,237,227,0.78)' }]}>Let's see where you are today.</Text>
+          </View>
         </View>
+
+        <View style={{ paddingHorizontal: 20, paddingTop: spacing.lg }}>
 
         {/* Inline check-in — merges checkin.js's first-question UI with
             today.js's multi-check-in dot rows (nav restructure, Move 1). */}
@@ -151,6 +148,8 @@ export default function Home() {
         <View style={{ alignItems: 'center', marginTop: spacing.xl }}>
           <Text style={{ color: c.accentSoft, fontSize: 15, marginBottom: 6 }}>❧</Text>
           <Text style={[styles.footerText, { color: c.textMuted }]}>It changes.</Text>
+        </View>
+
         </View>
       </ScrollView>
       </KeyboardAvoidingView>
@@ -449,31 +448,22 @@ function LogoStar({ color, size = 14 }) {
 // ── Styles ─────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    marginBottom: 4,
-  },
-  headerBtn: {
-    width: 40,
-    height: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   greetLine: {
     fontFamily: 'Inter_500Medium',
     fontSize: 16,
     lineHeight: 20,
   },
 
-  heroCard: {
-    height: 190,
-    borderRadius: 26,
-    marginBottom: 16,
+  heroWrap: {
+    height: 420,
+    position: 'relative',
     overflow: 'hidden',
+  },
+  heroContent: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    padding: 20,
+    paddingBottom: 28,
   },
 
   affirmCard: {
