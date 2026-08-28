@@ -70,8 +70,8 @@ export default function Thea() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <View style={[styles.hero, { backgroundColor: c.surfaceAlt }]}>
-          <Image source={require('../assets/thea.jpg')} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
+        <View style={[styles.hero, { backgroundColor: c.surfaceAlt, alignSelf: 'center' }]}>
+          <Image source={require('../assets/thea.jpg')} style={{ width: '100%', height: '100%', transform: [{ scale: 1.4 }, { translateY: 5 }] }} resizeMode="cover" />
         </View>
         <Text style={[type.label, { color: c.textMuted, marginTop: spacing.md }]}>Ayurvedic Medicine · RYT · Certified Wellness Coach</Text>
         <Text style={[type.display, { color: c.text, marginTop: 4 }]}>Thea</Text>
@@ -199,7 +199,7 @@ function SpotifyIcon({ color, size }) {
 }
 
 const styles = StyleSheet.create({
-  hero: { height: 172, borderRadius: 18, overflow: 'hidden' },
+  hero: { width: 190, height: 240, borderRadius: 18, overflow: 'hidden' },
   card: { borderRadius: 18, padding: 16 },
   sectionH: { fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, marginTop: 26, marginBottom: 10 },
   bookBtn: { borderRadius: 999, paddingVertical: 14, alignItems: 'center' },
