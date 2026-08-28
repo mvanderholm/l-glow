@@ -84,16 +84,19 @@ export function BotanicalDivider({ color, borderColor, width }) {
   );
 }
 
-// Corner botanical accent — position absolutely in a card's corner
+// Corner botanical accent — position absolutely in a card's corner. Opacity/
+// stroke bumped up Aug 28 2026 (Matt: "still not seeing the sprigs on the
+// About page") — the original 0.35 opacity + 1px stroke was essentially
+// invisible against the cream background at this size.
 export function CornerSprig({ color, size = 44, style }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 44 44" style={style}>
-      <G stroke={color} strokeWidth="1" fill="none" strokeLinecap="round" opacity={0.35}>
+      <G stroke={color} strokeWidth="1.6" fill="none" strokeLinecap="round" opacity={0.7}>
         <Path d="M40,4 Q22,4 4,40" />
         <Path d="M40,14 Q30,14 22,26" />
         <Path d="M30,4 Q30,14 18,22" />
-        <Circle cx={40} cy={4} r={2.5} fill={color} stroke="none" opacity={0.5} />
-        <Circle cx={40} cy={14} r={1.5} fill={color} stroke="none" opacity={0.4} />
+        <Circle cx={40} cy={4} r={3} fill={color} stroke="none" opacity={0.8} />
+        <Circle cx={40} cy={14} r={2} fill={color} stroke="none" opacity={0.65} />
       </G>
     </Svg>
   );
