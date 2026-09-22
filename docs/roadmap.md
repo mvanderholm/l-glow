@@ -1802,6 +1802,21 @@ Removed `I will ` (or `Intention: I will `) from all five places a chosen intent
 
 ---
 
+**92. Scaffolded the Ayurvedic Cleanse builder — Thea's 15-day protocol, gated, with a safety gate and a PDF export.** Source: Matt, Sept 21 2026 — two files dropped in Downloads (`LGlow 15-Day Ayurvedic Cleanse Guide.pdf`, Thea's own finished protocol; `Ayurvedic Cleanse Plan for Developer.docx`, the dev brief).
+
+Scope locked with Matt before writing any code, per this file's own content-authorship rule: the 15-day protocol is confirmed Thea-authored/approved, not a draft; **only the 15-day length ships this pass** — other lengths need Thea to actually design the pacing, not have one algorithmically stretched or compressed from this one (see the new `docs/cleanse-lengths-questions-for-thea.md`, written for that future conversation); the six safety-gate questions (age, pregnancy/breastfeeding, diabetes, chronic condition, medication, eating-disorder history) are a **real gate**, not decorative text — some answers hard-block starting, others require an explicit written acknowledgment first.
+
+- **Content scaffold** (`data/content/cleanse.js`) — the full protocol transcribed structurally from Thea's PDF: phases, daily rhythm, ground rules, meal plan, shopping list, reintroduction journal prompts, and her 19 recipe prompts (kitchari variations etc.) as data, verbatim from her document.
+- **Recipe generation — both static and live, per Matt's "can we do both?" call:** a one-time Claude-generated draft set (`data/content/cleanseRecipes.js`) for all 19 prompts, explicitly flagged `RECIPE_DRAFT_STATUS = 'draft-awaiting-thea-review'` in code — **not shipped as approved content, just a reviewable starting point** — plus a live per-user regeneration path (`supabase/functions/generate-cleanse-recipe`) for personalization (ghee/oil swaps, serving tweaks), mirroring the existing `AIGuidanceSection` "Regenerate" pattern. This is a scoped exception to this file's "Out of scope: AI-generated clinical content" line below, not a reopening of it — the protocol and prompts are Thea's own; Claude only executes her fixed prompts and every output is marked draft pending her sign-off, same authorship boundary as everything else, just with an explicit review step attached before anything is presented as final.
+- **Data layer** (`data/user/cleanse.js`, new migration `20260921000000_cleanse_and_habit_tracker.sql`) — Supabase-only, no AsyncStorage, matching `messages.js`'s precedent rather than the AsyncStorage-first pattern most user data uses: both features are gated behind sign-in from their first screen, so there's no signed-out case to support. Four tables (`cleanse_plans`, `cleanse_recipe_overrides`, `cleanse_journal_entries`, `habit_tracker_weeks`), RLS on all four, `cleanse_plans.protocol` a text column (default `'15-day'`) so a future length is a new allowed value, not a schema change.
+- **Screen** (`app/cleanse.js`) — intro → safety gate → preferences (ghee/oil) → active plan, with the reintroduction journal unlocking on day 11+, and a "Export PDF" action (`data/pdf/cleansePdf.js` + `expo-print`/`expo-sharing`, newly installed) producing a document visually matching Thea's source PDF, shared via the native share sheet on iOS/Android and a new-tab open on web.
+- **New, separate feature built the same pass, per Matt's "yes, build both":** a **Weekly Habit Tracker** (`app/habit-tracker.js`, `data/content/habitTracker.js`, `data/user/habitTracker.js`), digitized from the dev brief's "My Vedic Practice" worksheet — a 4-category habit grid (3 editable slots × 7 tappable days) plus a daily morning/evening journal, saving on blur/toggle rather than a Save button, matching this app's existing low-friction pattern.
+- Both features linked from Explore's "From Thea" section and registered in `app/_layout.js`.
+- **Deploy steps still needed from Matt, not something Claude Code can do remotely:** run the new migration in the Supabase SQL Editor, and create the `generate-cleanse-recipe` Edge Function in the Supabase dashboard (same two-step pattern as every prior Edge Function/migration this project has shipped).
+- **Not yet done:** Playwright verification of the new screens, and this branch (`ayurvedic-cleanse`) has not yet been committed or merged — still in progress as of this entry.
+
+---
+
 ~~**55. Full QA pass across app and web — bugs, dead links, unreachable pages.**~~
 Source: Matt, July 2026. Static route/link audit (every file vs every `Stack.Screen` registration vs every navigation target referenced anywhere in the codebase — 49 targets, all resolved) plus a live Playwright crawl of all 37 app routes and all 17 practitioner-hub routes/tabs, both logged-out and signed-in as the real practitioner test account. Result: route/link integrity is clean — no dead links, no orphaned screens, zero console errors across the board.
 
@@ -1893,4 +1908,4 @@ A second Thea-facing artifact exists for this wider pass too — same non-techni
 
 - Monetization. The app's job is to build Thea's reputation and funnel to the center.
 - Multi-practitioner content. L. Glow is Thea.
-- AI-generated clinical content. Everything clinical comes from Thea.
+- AI-generated clinical content. Everything clinical comes from Thea. **Scoped exception, #92:** the Cleanse builder's draft recipes are AI-generated executions of Thea's own 19 fixed prompts, explicitly flagged draft-pending-her-review, not a general reopening of this line.
