@@ -16,6 +16,7 @@ import {
   loadCleanseJournalEntries, saveCleanseJournalEntry, loadRecipeOverrides,
 } from '../data/user/cleanse';
 import { buildCleansePdfHtml } from '../data/pdf/cleansePdf';
+import { generateAndDownloadPdf } from '../data/pdf/generateWebPdf';
 import BackButton, { smartBack } from '../components/BackButton';
 
 // Ayurvedic Cleanse builder (Sept 2026) — digitizes
@@ -114,19 +115,12 @@ export default function Cleanse() {
       if (Platform.OS === 'web') {
         // expo-print's web implementation doesn't actually render the
         // given html at all -- Print.printToFileAsync() on web just calls
-        // window.print() on the current page and returns no file, so the
-        // old "open the returned uri" approach opened a blank tab. Build
-        // our own printable window instead: write the guide's html into
-        // a blank tab and print that, so the browser's "Save as PDF"
-        // dialog gets the actual guide, not the app shell.
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-          printWindow.document.open();
-          printWindow.document.write(html);
-          printWindow.document.close();
-          printWindow.focus();
-          printWindow.print();
-        }
+        // window.print() on the current page and returns no file. Rather
+        // than route through the browser's print-to-PDF dialog (which
+        // bundles a date stamp, page title, and URL into its header/
+        // footer with no way to keep just page numbers), generate a real
+        // PDF file ourselves -- see data/pdf/generateWebPdf.web.js.
+        await generateAndDownloadPdf(html, 'lglow-15-day-cleanse.pdf');
       } else {
         const { uri } = await Print.printToFileAsync({ html, base64: false });
         if (await Sharing.isAvailableAsync()) {
