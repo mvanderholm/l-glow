@@ -111,13 +111,27 @@ export default function Cleanse() {
     setExporting(true);
     try {
       const html = buildCleansePdfHtml({ startDate: plan.start_date, gheePreference: plan.ghee_preference, overrides });
-      const { uri } = await Print.printToFileAsync({ html, base64: false });
       if (Platform.OS === 'web') {
-        // expo-print on web returns a blob URL — open it directly so the
-        // browser's own "save as PDF" / print dialog handles the rest.
-        if (typeof window !== 'undefined') window.open(uri, '_blank');
-      } else if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+        // expo-print's web implementation doesn't actually render the
+        // given html at all -- Print.printToFileAsync() on web just calls
+        // window.print() on the current page and returns no file, so the
+        // old "open the returned uri" approach opened a blank tab. Build
+        // our own printable window instead: write the guide's html into
+        // a blank tab and print that, so the browser's "Save as PDF"
+        // dialog gets the actual guide, not the app shell.
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.open();
+          printWindow.document.write(html);
+          printWindow.document.close();
+          printWindow.focus();
+          printWindow.print();
+        }
+      } else {
+        const { uri } = await Print.printToFileAsync({ html, base64: false });
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+        }
       }
     } catch (err) {
       console.error('Cleanse PDF export failed:', err);
