@@ -1904,6 +1904,16 @@ A second Thea-facing artifact exists for this wider pass too — same non-techni
 
 ---
 
+## Competitive analysis — The Habit Ayurveda (thehabit.net)
+
+Source: Matt, Sept 21 2026 — "we really like this website's look, feel and feature set... how could we compete with this site." Full teardown, comparison table, and guidance in `docs/competitive-analysis-thehabit.md` — not reproduced here.
+
+**Important flag surfaced during this analysis:** thehabit.net is Shakti Ayurveda School's own consumer brand (run by Carly, who also runs Shakti School's teacher training and business-coaching lines) — the specific training program CLAUDE.md already names as off-limits for content reproduction, since it's Thea's own former teacher's program. The doc stays strictly at the business-model/funnel/positioning level for that reason; nothing about their actual lesson or course content was reviewed or should be adapted. Also flagged there: worth Thea confirming directly that the Weekly Habit Tracker's source worksheet ("My Vedic Practice," #92) is her own original material, given the name overlap with "The Habit."
+
+**Headline takeaways:** their model is volume-first (570K+ quiz takers, 120K+ newsletter subs, opaque pricing revealed late in a long funnel, plus a parallel teacher-training/business-coaching line) — a media/education company with an Ayurveda subject, not a single practitioner's practice in software form. That's not a model to chase; L. Glow's actual differentiators (one practitioner's real voice throughout, the messaging thread, the eventual physical center) are things their model structurally can't offer regardless of scale. The one concrete, buildable gap worth acting on: a post-assessment email nurture sequence, since L. Glow already has the Resend/SMTP infra live but no lifecycle sequence after someone finishes a free assessment. Their cleanse markets "shed weight, flush toxic cravings" — a useful, real contrast point against L. Glow's own gentler 15-Day Cleanse framing, worth using explicitly in marketing copy rather than treating as a coincidence.
+
+---
+
 ## Out of scope (staying that way unless explicitly reopened)
 
 - Monetization. The app's job is to build Thea's reputation and funnel to the center.
