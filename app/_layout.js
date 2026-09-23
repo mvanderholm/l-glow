@@ -147,6 +147,8 @@ function AppNavigator() {
       <Stack.Screen name="settings"     options={{ headerShown: false }} />
       <Stack.Screen name="explore"      options={{ headerShown: false }} />
       <Stack.Screen name="cycles"       options={{ headerShown: false }} />
+      <Stack.Screen name="cleanse"      options={{ headerShown: false }} />
+      <Stack.Screen name="habit-tracker" options={{ headerShown: false }} />
       <Stack.Screen name="thea"         options={{ headerShown: false }} />
     </Stack>
   );

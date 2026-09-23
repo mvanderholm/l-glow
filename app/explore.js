@@ -194,6 +194,18 @@ export default function Explore() {
                     <Text style={{ fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase', color: c.textMuted }}>Draft · awaiting review</Text>
                   </View>
                 </Pressable>
+
+                <Pressable style={[styles.card, { backgroundColor: c.surface, ...card, marginTop: 10 }]} onPress={() => router.push('/cleanse')}>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted }}>Reset & reintroduce</Text>
+                  <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, color: c.text, marginTop: 4 }}>15-Day Ayurvedic Cleanse</Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 19, color: c.textMuted, marginTop: 6 }}>Elimination, a five-day kitchari reset, and reintroduction — with your own printable guide.</Text>
+                </Pressable>
+
+                <Pressable style={[styles.card, { backgroundColor: c.surface, ...card, marginTop: 10 }]} onPress={() => router.push('/habit-tracker')}>
+                  <Text style={{ fontFamily: 'Inter_600SemiBold', fontSize: 11, letterSpacing: 1, textTransform: 'uppercase', color: c.textMuted }}>My Vedic Practice</Text>
+                  <Text style={{ fontFamily: 'PlayfairDisplay_600SemiBold', fontSize: 19, color: c.text, marginTop: 4 }}>Weekly Habit Tracker</Text>
+                  <Text style={{ fontFamily: 'Inter_400Regular', fontSize: 12.5, lineHeight: 19, color: c.textMuted, marginTop: 6 }}>Small daily habits, tracked one week at a time, plus a morning and evening journal.</Text>
+                </Pressable>
               </Section>
             )}
 
